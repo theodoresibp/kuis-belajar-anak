@@ -8,7 +8,7 @@ interface Props {
 }
 
 function getRating(pct: number) {
-  if (pct === 100) return { emoji: "🏆", text: "Sempurna! Kamu Juara Seni Budaya!" };
+  if (pct === 100) return { emoji: "🏆", text: "Sempurna! Kamu Juara!" };
   if (pct >= 80) return { emoji: "🌟", text: "Keren banget! Hampir sempurna!" };
   if (pct >= 60) return { emoji: "😄", text: "Bagus! Terus berlatih ya!" };
   if (pct >= 40) return { emoji: "🙂", text: "Lumayan! Ayo coba lagi!" };
