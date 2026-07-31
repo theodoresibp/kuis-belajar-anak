@@ -9,8 +9,8 @@ const baloo = Baloo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Kuis Seni Budaya - Kelas 2",
-  description: "Game kuis interaktif Seni Budaya untuk anak kelas 2 SD",
+  title: "Kuis Belajar Anak - Kelas 2",
+  description: "Game kuis interaktif berbagai mata pelajaran untuk anak kelas 2 SD",
 };
 
 export default function RootLayout({

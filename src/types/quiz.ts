@@ -24,3 +24,13 @@ export interface QuizChapter {
   gradient: string;
   questions: QuizQuestion[];
 }
+
+export interface Subject {
+  id: string;
+  title: string;
+  description?: string;
+  emoji: string;
+  /** Tailwind gradient classes for the subject card */
+  gradient: string;
+  chapters: QuizChapter[];
+}

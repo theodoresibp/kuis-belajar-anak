@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { getChapterById, chapters } from "@/data/chapters";
+import { getChapterById, subjects } from "@/data/subjects";
 import QuizGame from "@/components/QuizGame";
 
 export function generateStaticParams() {
-  return chapters.map((c) => ({ chapterId: c.id }));
+  return subjects.flatMap((s) => s.chapters.map((c) => ({ chapterId: c.id })));
 }
 
 export default async function QuizPage({

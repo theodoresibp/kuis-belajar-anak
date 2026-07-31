@@ -46,7 +46,6 @@ export default function QuestionCard({
 
       {image && (
         <div className="mb-5 overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50">
-          {/* External image from Wikimedia Commons */}
           <Image
             src={image}
             alt={imageAlt ?? ""}

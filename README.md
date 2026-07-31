@@ -42,13 +42,44 @@ npm i -g vercel
 vercel
 ```
 
-## Menambah materi/bab baru
+## Menambah mata pelajaran baru
 
-Struktur soal berada di `src/data/chapters/`. Setiap bab adalah satu file, contoh: `bab-1-karya-seni-rupa.ts`.
+Setiap mata pelajaran punya folder sendiri di `src/data/subjects/`, contoh: `seni-budaya/`.
 
-Langkah menambah bab baru:
+Langkah menambah mata pelajaran baru:
 
-1. Buat file baru, misal `src/data/chapters/bab-2-nama-bab.ts`, ikuti pola di `bab-1-karya-seni-rupa.ts`:
+1. Buat folder baru, misal `src/data/subjects/matematika/`.
+2. Buat file bab pertama di dalamnya, misal `bab-1-nama-bab.ts`, ikuti pola di bawah (lihat juga bagian "Menambah bab baru").
+3. Buat `src/data/subjects/matematika/index.ts`:
+
+   ```ts
+   import type { Subject } from "@/types/quiz";
+   import bab1 from "./bab-1-nama-bab";
+
+   const subject: Subject = {
+     id: "matematika",
+     title: "Matematika",
+     description: "Berhitung dan bangun datar",
+     emoji: "🔢",
+     gradient: "from-blue-400 via-cyan-300 to-teal-300",
+     chapters: [bab1],
+   };
+
+   export default subject;
+   ```
+
+4. Daftarkan di `src/data/subjects/index.ts`:
+
+   ```ts
+   import matematika from "./matematika";
+   export const subjects: Subject[] = [seniBudaya, matematika];
+   ```
+
+5. Mata pelajaran baru otomatis muncul sebagai kartu baru di halaman utama.
+
+## Menambah bab baru (dalam satu mata pelajaran)
+
+1. Buat file baru di folder mata pelajarannya, misal `src/data/subjects/seni-budaya/bab-2-nama-bab.ts`, ikuti pola di `bab-1-karya-seni-rupa.ts`:
 
    ```ts
    import type { QuizChapter } from "@/types/quiz";
@@ -81,27 +112,28 @@ Langkah menambah bab baru:
    export default chapter;
    ```
 
-2. Daftarkan di `src/data/chapters/index.ts`:
+2. Daftarkan di `index.ts` mata pelajaran terkait:
 
    ```ts
    import bab2 from "./bab-2-nama-bab";
-   export const chapters: QuizChapter[] = [bab1, bab2];
+   chapters: [bab1, bab2],
    ```
 
-3. Bab baru otomatis muncul di halaman utama sebagai kartu baru, lengkap dengan pengacakan soal & jawaban.
+3. Bab baru otomatis muncul di halaman mata pelajaran sebagai kartu baru, lengkap dengan pengacakan soal & jawaban.
 
 ## Struktur proyek
 
 ```
 src/
   app/
-    page.tsx                 -> halaman utama (pilih bab)
-    quiz/[chapterId]/page.tsx -> halaman kuis per bab
+    page.tsx                    -> halaman utama (katalog mata pelajaran)
+    mapel/[subjectId]/page.tsx  -> halaman daftar bab per mata pelajaran
+    quiz/[chapterId]/page.tsx   -> halaman kuis per bab
   components/
     QuizGame.tsx    -> logika game & pengacakan
     QuestionCard.tsx -> tampilan satu soal
     ResultScreen.tsx -> tampilan skor akhir
-  data/chapters/    -> semua soal, dikelompokkan per bab
+  data/subjects/    -> semua mata pelajaran, tiap folder = 1 mapel berisi bab-bab
   lib/shuffle.ts    -> util pengacakan (Fisher-Yates)
-  types/quiz.ts     -> tipe data soal & bab
+  types/quiz.ts     -> tipe data soal, bab & mata pelajaran
 ```
