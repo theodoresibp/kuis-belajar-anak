@@ -4,9 +4,10 @@ import bahasaIndonesia from "./bahasa-indonesia";
 import english from "./english";
 import agama from "./agama";
 import matematika from "./matematika";
+import ipas from "./ipas";
 
 // Tambahkan mata pelajaran baru di sini, contoh:
-export const subjects: Subject[] = [seniBudaya, bahasaIndonesia, english, agama, matematika];
+export const subjects: Subject[] = [seniBudaya, bahasaIndonesia, english, agama, matematika, ipas];
 
 export function getSubjectById(id: string): Subject | undefined {
   return subjects.find((s) => s.id === id);
