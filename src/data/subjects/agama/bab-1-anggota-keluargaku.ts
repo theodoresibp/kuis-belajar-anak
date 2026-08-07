@@ -6,6 +6,50 @@ const chapter: QuizChapter = {
   subtitle: "Kasih Sayang dalam Keluarga & Kisah Yesus di Bait Allah",
   emoji: "👨‍👩‍👧‍👦",
   gradient: "from-violet-400 via-purple-300 to-fuchsia-300",
+  material: {
+    summary:
+      "Ayo belajar tentang keluarga sebagai anugerah Tuhan, cara menunjukkan kasih sayang, dan kisah Yesus di Bait Allah.",
+    sections: [
+      {
+        heading: "Keluarga adalah Anugerah Tuhan",
+        emoji: "👨‍👩‍👧‍👦",
+        paragraphs: [
+          "Keluarga merupakan anugerah dari Tuhan, tempat kita belajar untuk saling mengasihi.",
+          "Anggota keluarga terdiri dari ayah, ibu, kakak, adik, kakek, nenek, atau saudara lainnya.",
+        ],
+      },
+      {
+        heading: "Kasih Sayang dalam Keluarga",
+        emoji: "❤️",
+        paragraphs: [
+          "Setiap keluarga punya cara yang berbeda-beda untuk menunjukkan kasih sayang. Contohnya lewat masakan rumahan dan kegiatan makan bersama yang mempererat hubungan keluarga.",
+          "Panggilan istimewa untuk orang tua juga jadi tanda kasih sayang, misalnya Papa, Papi, Bapak, atau Ayah untuk ayah, dan Mama, Mami, Bunda, atau Ibu untuk ibu.",
+        ],
+        bullets: [
+          "Dalam film pendek \"Let's Eat\", Ibu (Ma) menunjukkan kasih sayangnya kepada Luan lewat masakan rumahan.",
+          "Hubungan mereka yang sempat renggang menjadi dekat kembali lewat kegiatan memasak dan makan bersama.",
+        ],
+      },
+      {
+        heading: "Kisah Yesus di Bait Allah",
+        emoji: "🙏",
+        paragraphs: [
+          "Kisah ini terdapat dalam Lukas 2: 41-52. Saat berusia 12 tahun, Yesus pergi ke Yerusalem bersama Maria dan Yusuf.",
+          "Yesus sempat terpisah dari orang tua-Nya selama tiga hari. Setelah dicari, Yesus ditemukan sedang berdiskusi dengan para guru di Bait Allah (rumah ibadah).",
+          "Setelah kejadian itu, Yesus pulang ke Nazaret dan terus bertumbuh dalam hikmat serta kasih.",
+        ],
+      },
+      {
+        heading: "Pesan untuk Kita",
+        emoji: "✨",
+        bullets: [
+          "Orang tua memiliki peran untuk merawat dan menyayangi anak-anaknya.",
+          "Yesus memberikan teladan tentang ketaatan kepada orang tua.",
+          "Kita diajak untuk senantiasa menghormati bapak dan ibu, serta menyayangi kakak dan adik.",
+        ],
+      },
+    ],
+  },
   questions: [
     {
       id: "ag1-01",

@@ -6,6 +6,80 @@ const chapter: QuizChapter = {
   subtitle: "Membilang, Nilai Tempat, dan Pola Bilangan",
   emoji: "🔢",
   gradient: "from-blue-400 via-cyan-300 to-sky-300",
+  material: {
+    summary:
+      "Ayo belajar membaca, menulis, membandingkan, dan mengurutkan bilangan sampai 100!",
+    sections: [
+      {
+        heading: "Membaca dan Menulis Bilangan",
+        emoji: "🔢",
+        paragraphs: [
+          "Banyak benda yang lebih dari 10 lebih mudah dihitung dengan cara dikelompokkan.",
+        ],
+        bullets: [
+          "22 dibaca dua puluh dua.",
+          "54 dibaca lima puluh empat.",
+          "32 dibaca tiga puluh dua, 40 dibaca empat puluh, 72 dibaca tujuh puluh dua.",
+        ],
+      },
+      {
+        heading: "Membilang Urut",
+        emoji: "➡️",
+        paragraphs: [
+          "Membilang urut artinya menyebutkan bilangan secara berurutan, bisa dari yang terkecil atau yang terbesar.",
+          "Pada garis bilangan, makin ke kanan nilai bilangan makin besar, dan makin ke kiri nilai bilangan makin kecil.",
+        ],
+        bullets: ["Contoh urutan: 78, 79, 80, 81, 82, 83, 84."],
+      },
+      {
+        heading: "Nilai Tempat",
+        emoji: "🏠",
+        paragraphs: [
+          "Setiap angka pada suatu bilangan memiliki nilai yang berbeda-beda, sesuai dengan tempatnya masing-masing (puluhan dan satuan).",
+        ],
+        bullets: [
+          "Contoh: 44 = 4 puluhan (nilainya 40) + 4 satuan (nilainya 4).",
+          "40 + 4 = 44.",
+        ],
+      },
+      {
+        heading: "Membandingkan dan Mengurutkan Bilangan",
+        emoji: "⚖️",
+        paragraphs: [
+          "Dua bilangan dapat dibandingkan dengan melihat nilai tempat terbesar (puluhan) terlebih dahulu.",
+        ],
+        bullets: [
+          "43 kurang dari 45, karena 43 lebih kecil daripada 45.",
+          "65 lebih dari 53, karena 65 lebih besar daripada 53.",
+          "64 dan 68: angka puluhan sama (6 = 6), angka satuan beda (4 < 8), jadi 64 kurang dari 68.",
+          "Urutan 45, 62, 38, 50, 80 dari yang terkecil: 38, 45, 50, 62, 80.",
+        ],
+      },
+      {
+        heading: "Membilang Loncat",
+        emoji: "🐇",
+        paragraphs: [
+          "Membilang loncat artinya membilang urut dengan selisih yang sama.",
+        ],
+        bullets: [
+          "Membilang loncat 2: 60, 62, 64, 66, 68, 70.",
+          "Membilang loncat 5: 50, 55, 60, 65, 70, 75.",
+        ],
+      },
+      {
+        heading: "Bilangan Genap dan Ganjil",
+        emoji: "🔀",
+        paragraphs: [
+          "Bilangan genap adalah hasil membilang loncat 2 mulai dari 2, yaitu 2, 4, 6, 8, 10, dan seterusnya.",
+          "Bilangan ganjil adalah hasil membilang loncat 2 mulai dari 1, yaitu 1, 3, 5, 7, 9, dan seterusnya.",
+        ],
+        bullets: [
+          "Bilangan genap: angka satuannya 0, 2, 4, 6, atau 8. Contoh: 40, 52, 64, 76, 98.",
+          "Bilangan ganjil: angka satuannya 1, 3, 5, 7, atau 9. Contoh: 31, 43, 65, 87, 99.",
+        ],
+      },
+    ],
+  },
   questions: [
     {
       id: "mtk1-01",

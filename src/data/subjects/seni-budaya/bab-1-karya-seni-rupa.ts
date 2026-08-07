@@ -6,6 +6,84 @@ const chapter: QuizChapter = {
   subtitle: "Karya Dua Dimensi & Tiga Dimensi",
   emoji: "🎨",
   gradient: "from-pink-400 via-orange-300 to-yellow-300",
+  material: {
+    summary:
+      "Ayo mengenal karya seni rupa! Ada karya dua dimensi dan tiga dimensi, warna, alat, dan bahan yang dipakai untuk membuat karya seni.",
+    sections: [
+      {
+        heading: "Karya Dua Dimensi",
+        emoji: "🖼️",
+        paragraphs: [
+          "Karya seni yang hanya punya panjang dan lebar disebut karya dua dimensi. Karya ini hanya bisa dilihat dari depan saja.",
+          "Karya dua dimensi punya 4 unsur, yaitu titik, garis, bentuk, dan warna.",
+        ],
+        bullets: [
+          "Contoh karya dua dimensi: lukisan, foto (potret), sketsa, kolase, dan montase.",
+          "Garis lurus tidak berkelok-kelok dan tidak melengkung.",
+          "Bentuk alami berasal dari alam, misalnya pohon, bunga, dan manusia.",
+        ],
+      },
+      {
+        heading: "Warna Primer dan Sekunder",
+        emoji: "🎨",
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/RYB_Color_wheel.png",
+        imageAlt: "Roda warna dengan warna primer dan sekunder",
+        paragraphs: [
+          "Warna primer atau warna dasar ada tiga: biru, kuning, dan merah. Kalau dua warna primer dicampur, hasilnya adalah warna sekunder.",
+        ],
+        bullets: [
+          "Biru + kuning = hijau",
+          "Merah + biru = ungu",
+          "Kuning + merah = oranye",
+        ],
+      },
+      {
+        heading: "Media, Alat, dan Pewarna",
+        emoji: "✏️",
+        paragraphs: [
+          "Untuk membuat karya seni rupa, kita butuh media, alat, dan pewarna.",
+        ],
+        bullets: [
+          "Media menggambar: buku gambar, kertas HVS, dan kanvas.",
+          "Alat menggambar: pensil, pulpen, penghapus, dan penggaris.",
+          "Pewarna basah (cair): cat air dan cat minyak.",
+          "Pewarna kering: krayon, pensil warna, dan spidol.",
+        ],
+      },
+      {
+        heading: "Teknik Mencetak dan Kolase",
+        emoji: "🖐️",
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Paper_collage_pig.jpg",
+        imageAlt: "Contoh kolase dari kertas",
+        paragraphs: [
+          "Teknik mencetak: potongan buah jeruk, daun, atau telapak tangan dicelup cat air, lalu dicap ke kertas.",
+          "Kolase: karya seni yang dibuat dari potongan-potongan kertas atau bahan lain yang ditempel.",
+        ],
+      },
+      {
+        heading: "Batik, Kain Tradisional Indonesia",
+        emoji: "🧵",
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Batik_pattern_-_kawung.jpg",
+        imageAlt: "Motif kain batik kawung",
+        paragraphs: [
+          "Kain batik punya motif yang indah dan termasuk contoh karya dua dimensi buatan bangsa Indonesia.",
+        ],
+      },
+      {
+        heading: "Karya Tiga Dimensi",
+        emoji: "🗿",
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Patung_Sapundu_Suku_Dayak_Ngaju.jpg",
+        imageAlt: "Contoh patung kayu",
+        paragraphs: [
+          "Karya seni yang punya panjang, lebar, dan tinggi, serta bisa dilihat dari segala arah disebut karya tiga dimensi. Contohnya patung, vas bunga, dan miniatur.",
+        ],
+        bullets: [
+          "Bahan keras seperti batu dan kayu biasanya dipahat.",
+          "Bahan lunak seperti plastisin dan tanah liat mudah dibentuk dengan tangan.",
+        ],
+      },
+    ],
+  },
   questions: [
     {
       id: "b1-01",

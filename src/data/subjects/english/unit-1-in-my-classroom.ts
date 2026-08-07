@@ -6,6 +6,85 @@ const chapter: QuizChapter = {
   subtitle: "Classroom Activities, Grammar & Numbers",
   emoji: "🏫",
   gradient: "from-amber-400 via-orange-300 to-rose-300",
+  material: {
+    summary:
+      "Let's learn about classroom activities, grammar (be + -ing, there is/are), math words, and numbers 11-20!",
+    sections: [
+      {
+        heading: "Classroom Activities (Kegiatan di Kelas)",
+        emoji: "🏫",
+        image: "/assets/english/coloring.jpeg",
+        imageAlt: "Anak sedang mewarnai gambar dengan pensil warna",
+        paragraphs: [
+          "Di kelas, ada banyak kegiatan yang bisa kita lakukan. Ini kosakatanya dalam bahasa Inggris:",
+        ],
+        bullets: [
+          "Coloring = mewarnai",
+          "Counting = menghitung",
+          "Cutting = menggunting",
+          "Gluing = menempel",
+          "Listening to a story = mendengarkan cerita",
+          "Watching a movie = menonton film",
+          "Using the computer = menggunakan komputer",
+          "Writing = menulis",
+          "Playing a game = bermain permainan",
+        ],
+      },
+      {
+        heading: "Be + -ing (Present Continuous)",
+        emoji: "✍️",
+        image: "/assets/english/writing.jpeg",
+        imageAlt: "Anak sedang menulis di buku catatan",
+        paragraphs: [
+          "Kita pakai pola Subject + to be (am/is/are) + Verb-ing untuk menceritakan kegiatan yang sedang berlangsung sekarang.",
+        ],
+        bullets: [
+          "I am (I'm) — contoh: I'm dancing.",
+          "He/She/It is (He's/She's/It's) — contoh: She's writing her name. He's reading a book.",
+          "They/We/You are (They're/We're/You're) — contoh: They're playing soccer.",
+          "Contoh lain: I'm gluing a picture.",
+        ],
+      },
+      {
+        heading: "There is / There are",
+        emoji: "🍎",
+        paragraphs: [
+          "Kita pakai There is (There's) untuk benda tunggal (satu), dan There are untuk benda jamak (lebih dari satu).",
+        ],
+        bullets: [
+          "There's one apple. (Ada satu apel.)",
+          "There are three apples. (Ada tiga apel.)",
+          "How many books are there? There are three books.",
+        ],
+      },
+      {
+        heading: "Math in English",
+        emoji: "➕",
+        paragraphs: [
+          "Simbol matematika juga punya nama dalam bahasa Inggris.",
+        ],
+        bullets: [
+          "+ = Plus (tambah)",
+          "- = Minus (kurang)",
+          "= = Equals (sama dengan)",
+          "Contoh: Four plus five equals nine. (4 + 5 = 9)",
+        ],
+      },
+      {
+        heading: "Numbers 11-20",
+        emoji: "🔢",
+        image: "/assets/english/numbers-11-20.png",
+        imageAlt: "Kartu angka 11 sampai 20 dalam bahasa Inggris",
+        paragraphs: [
+          "Ayo hafalkan angka 11 sampai 20 dalam bahasa Inggris:",
+        ],
+        bullets: [
+          "11 eleven, 12 twelve, 13 thirteen, 14 fourteen, 15 fifteen",
+          "16 sixteen, 17 seventeen, 18 eighteen, 19 nineteen, 20 twenty",
+        ],
+      },
+    ],
+  },
   questions: [
     {
       id: "en1-01",

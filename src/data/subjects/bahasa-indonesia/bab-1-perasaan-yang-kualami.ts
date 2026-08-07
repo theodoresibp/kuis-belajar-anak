@@ -6,6 +6,56 @@ const chapter: QuizChapter = {
   subtitle: "Jenis Perasaan & Ungkapan",
   emoji: "😊",
   gradient: "from-sky-400 via-blue-300 to-indigo-300",
+  material: {
+    summary:
+      "Ayo belajar tentang perasaan, ungkapan untuk menunjukkan perasaan, dan cara menulis huruf kapital yang benar.",
+    sections: [
+      {
+        heading: "Mengenal Perasaan",
+        emoji: "😊",
+        paragraphs: [
+          "Kita punya bermacam-macam perasaan. Setiap perasaan muncul karena hal yang berbeda.",
+        ],
+        bullets: [
+          "Senang: perasaan saat menang lomba.",
+          "Marah: perasaan kesal karena sesuatu yang tidak menyenangkan.",
+          "Sedih: perasaan saat mainan rusak atau kehilangan sesuatu.",
+          "Bangga: perasaan senang karena berhasil meraih nilai bagus atau juara.",
+          "Malu: perasaan tidak enak hati karena melakukan kesalahan atau ditertawakan.",
+          "Takut: perasaan cemas terhadap sesuatu yang berbahaya atau menakutkan.",
+          "Terkejut: rasa kaget karena sesuatu yang datang tiba-tiba.",
+        ],
+      },
+      {
+        heading: "Apa Itu Ungkapan?",
+        emoji: "💬",
+        paragraphs: [
+          "Ungkapan adalah kata yang digunakan untuk menunjukkan perasaan. Ada banyak jenis ungkapan yang biasa kita pakai sehari-hari.",
+        ],
+        bullets: [
+          "Pujian: \"Wah, harum sekali bunga ini!\"",
+          "Pemberitahuan: memberikan informasi kepada orang lain.",
+          "Petunjuk: menjelaskan cara melakukan sesuatu.",
+          "Ajakan: \"Ayo, Beni, kita pulang bersama!\"",
+          "Imbauan: meminta orang lain melakukan sesuatu, misalnya \"Gunakan helm ketika bersepeda!\"",
+          "Tolong: \"Tolong bantu aku membawa buku-buku ini, ya.\"",
+          "Penolakan: menolak ajakan orang lain, biasanya diucapkan dengan kata maaf.",
+          "Permintaan maaf: diucapkan saat kita melakukan kesalahan.",
+        ],
+      },
+      {
+        heading: "Huruf Kapital",
+        emoji: "🔠",
+        paragraphs: [
+          "Huruf kapital disebut juga huruf besar. Huruf kapital digunakan pada awal kalimat dan nama orang.",
+        ],
+        bullets: [
+          "Contoh benar: \"Juara kedua lomba menyanyi adalah Dona.\"",
+          "Contoh benar: \"Beni bermain bersama Siti.\"",
+        ],
+      },
+    ],
+  },
   questions: [
     {
       id: "bi1-01",

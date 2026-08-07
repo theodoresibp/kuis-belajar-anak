@@ -4,9 +4,10 @@ Game kuis interaktif untuk anak, dibuat dengan Next.js (App Router) + TypeScript
 
 ## Fitur
 
+- Halaman **Materi** per bab: rangkuman bacaan yang bisa dipelajari anak sebelum mengerjakan kuis.
 - Soal pilihan ganda dengan urutan soal **acak** dan urutan jawaban **acak** setiap kali main.
 - Pilihan jumlah soal per sesi (5, 10, atau semua).
-- Beberapa soal dilengkapi gambar dari sumber eksternal (Wikimedia Commons).
+- Beberapa soal & materi dilengkapi gambar dari sumber eksternal (Wikimedia Commons) atau aset lokal.
 - Skor, progress bar, dan feedback penjelasan setelah menjawab.
 - Struktur data per "Bab" yang mudah ditambah materi baru.
 
@@ -90,6 +91,20 @@ Langkah menambah mata pelajaran baru:
      subtitle: "Deskripsi singkat",
      emoji: "🎭",
      gradient: "from-blue-400 via-cyan-300 to-teal-300",
+     material: { // opsional, tapi sangat disarankan
+       summary: "Ringkasan singkat isi bab ini.",
+       sections: [
+         {
+           heading: "Judul Bagian",
+           emoji: "🎨", // opsional
+           paragraphs: ["Paragraf penjelasan..."], // opsional
+           bullets: ["Poin singkat 1", "Poin singkat 2"], // opsional
+           image: "https://...", // opsional
+           imageAlt: "Deskripsi gambar", // opsional
+         },
+         // ...bagian lainnya
+       ],
+     },
      questions: [
        {
          id: "b2-01",
@@ -119,7 +134,7 @@ Langkah menambah mata pelajaran baru:
    chapters: [bab1, bab2],
    ```
 
-3. Bab baru otomatis muncul di halaman mata pelajaran sebagai kartu baru, lengkap dengan pengacakan soal & jawaban.
+3. Bab baru otomatis muncul di halaman mata pelajaran sebagai kartu baru, lengkap dengan tombol "📖 Baca Materi" (jika `material` diisi) dan "Main Sekarang" untuk kuis dengan pengacakan soal & jawaban.
 
 ## Struktur proyek
 
@@ -128,12 +143,14 @@ src/
   app/
     page.tsx                    -> halaman utama (katalog mata pelajaran)
     mapel/[subjectId]/page.tsx  -> halaman daftar bab per mata pelajaran
+    materi/[chapterId]/page.tsx -> halaman bacaan materi per bab
     quiz/[chapterId]/page.tsx   -> halaman kuis per bab
   components/
+    MaterialView.tsx -> tampilan halaman materi bacaan
     QuizGame.tsx    -> logika game & pengacakan
     QuestionCard.tsx -> tampilan satu soal
     ResultScreen.tsx -> tampilan skor akhir
   data/subjects/    -> semua mata pelajaran, tiap folder = 1 mapel berisi bab-bab
   lib/shuffle.ts    -> util pengacakan (Fisher-Yates)
-  types/quiz.ts     -> tipe data soal, bab & mata pelajaran
+  types/quiz.ts     -> tipe data soal, materi, bab & mata pelajaran
 ```

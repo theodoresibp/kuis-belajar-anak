@@ -102,6 +102,12 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
             ▶️ Mulai Kuis
           </button>
           <Link
+            href={`/materi/${chapter.id}`}
+            className="rounded-full bg-white border-2 border-violet-600 hover:bg-violet-50 text-violet-700 font-bold px-6 py-3 shadow-sm transition-colors"
+          >
+            📖 Baca Materi Dulu
+          </Link>
+          <Link
             href="/"
             className="rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 shadow-sm transition-colors"
           >

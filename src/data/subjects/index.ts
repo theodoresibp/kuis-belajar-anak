@@ -19,3 +19,7 @@ export function getChapterById(chapterId: string): QuizChapter | undefined {
   }
   return undefined;
 }
+
+export function getSubjectByChapterId(chapterId: string): Subject | undefined {
+  return subjects.find((s) => s.chapters.some((c) => c.id === chapterId));
+}

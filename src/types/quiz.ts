@@ -15,6 +15,23 @@ export interface QuizQuestion {
   explanation?: string;
 }
 
+export interface MaterialSection {
+  heading: string;
+  emoji?: string;
+  /** Paragraphs of body text, rendered in order */
+  paragraphs?: string[];
+  /** Short bullet points, rendered as a list */
+  bullets?: string[];
+  image?: string;
+  imageAlt?: string;
+}
+
+export interface ChapterMaterial {
+  /** Short intro shown at the top of the material page */
+  summary: string;
+  sections: MaterialSection[];
+}
+
 export interface QuizChapter {
   id: string;
   title: string;
@@ -22,6 +39,8 @@ export interface QuizChapter {
   emoji: string;
   /** Tailwind gradient classes for the chapter card */
   gradient: string;
+  /** Readable study material shown before the quiz */
+  material?: ChapterMaterial;
   questions: QuizQuestion[];
 }
 
