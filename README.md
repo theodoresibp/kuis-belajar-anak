@@ -43,6 +43,16 @@ npm i -g vercel
 vercel
 ```
 
+## Mata pelajaran yang tersedia
+
+- Seni Budaya
+- Bahasa Indonesia
+- English
+- Agama
+- Matematika
+- IPAS
+- Pendidikan Pancasila
+
 ## Menambah mata pelajaran baru
 
 Setiap mata pelajaran punya folder sendiri di `src/data/subjects/`, contoh: `seni-budaya/`.
