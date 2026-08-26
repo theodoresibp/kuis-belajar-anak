@@ -7,7 +7,7 @@ Game kuis interaktif untuk anak, dibuat dengan Next.js (App Router) + TypeScript
 - Halaman **Materi** per bab: rangkuman bacaan yang bisa dipelajari anak sebelum mengerjakan kuis.
 - Soal pilihan ganda dengan urutan soal **acak** dan urutan jawaban **acak** setiap kali main.
 - Pilihan jumlah soal per sesi (5, 10, atau semua).
-- Beberapa soal & materi dilengkapi gambar dari sumber eksternal (Wikimedia Commons) atau aset lokal.
+- Materi & soal dibuat kaya akan gambar (aset lokal maupun sumber eksternal seperti Wikimedia Commons) karena anak lebih suka belajar dengan visual, termasuk galeri foto bergrid untuk bagian yang punya beberapa contoh.
 - Skor, progress bar, dan feedback penjelasan setelah menjawab.
 - Struktur data per "Bab" yang mudah ditambah materi baru.
 
@@ -90,6 +90,8 @@ Langkah menambah mata pelajaran baru:
 
 ## Menambah bab baru (dalam satu mata pelajaran)
 
+**Perbanyak gambar.** Anak-anak lebih suka belajar dengan visual. Setiap bagian materi yang bisa diilustrasikan (tempat, benda, simbol, contoh sikap/perilaku) sebaiknya punya gambar, dan sebagian soal kuis juga sebaiknya bergambar — bukan cuma teks. Prioritaskan gambar dari materi sumber yang diberikan (mis. PPTX guru); kalau ada bagian yang tidak tersedia gambarnya di sumber tersebut, boleh cari dari sumber eksternal (mis. Wikimedia Commons) selama relevan dan sopan untuk anak SD. Taruh aset lokal di `public/assets/<nama-mapel>/` dengan nama file deskriptif.
+
 1. Buat file baru di folder mata pelajarannya, misal `src/data/subjects/seni-budaya/bab-2-nama-bab.ts`, ikuti pola di `bab-1-karya-seni-rupa.ts`:
 
    ```ts
@@ -109,8 +111,12 @@ Langkah menambah mata pelajaran baru:
            emoji: "🎨", // opsional
            paragraphs: ["Paragraf penjelasan..."], // opsional
            bullets: ["Poin singkat 1", "Poin singkat 2"], // opsional
-           image: "https://...", // opsional
+           image: "https://...", // opsional, satu gambar besar untuk bagian ini
            imageAlt: "Deskripsi gambar", // opsional
+           images: [ // opsional, dipakai kalau satu bagian butuh BEBERAPA gambar (galeri bergrid dengan keterangan)
+             { src: "https://...", alt: "Deskripsi gambar", caption: "Keterangan singkat" },
+             { src: "https://...", alt: "Deskripsi gambar", caption: "Keterangan singkat" },
+           ],
          },
          // ...bagian lainnya
        ],

@@ -15,6 +15,13 @@ export interface QuizQuestion {
   explanation?: string;
 }
 
+export interface MaterialImage {
+  src: string;
+  alt: string;
+  /** Short label shown under the image in a gallery */
+  caption?: string;
+}
+
 export interface MaterialSection {
   heading: string;
   emoji?: string;
@@ -24,6 +31,8 @@ export interface MaterialSection {
   bullets?: string[];
   image?: string;
   imageAlt?: string;
+  /** Multiple images shown as a captioned gallery grid (e.g. several examples for one section) */
+  images?: MaterialImage[];
 }
 
 export interface ChapterMaterial {

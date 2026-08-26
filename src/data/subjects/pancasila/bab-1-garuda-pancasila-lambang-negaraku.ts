@@ -13,7 +13,7 @@ const chapter: QuizChapter = {
       {
         heading: "Garuda Pancasila, Lambang Negara",
         emoji: "🦅",
-        image: "/assets/pancasila/garuda-pancasila.png",
+        image: "/assets/pancasila/garuda-pancasila.jpeg",
         imageAlt: "Lambang Garuda Pancasila",
         paragraphs: [
           "Garuda Pancasila adalah lambang Negara Indonesia. Garuda Pancasila menggambarkan bangsa Indonesia yang besar dan kuat.",
@@ -40,17 +40,20 @@ const chapter: QuizChapter = {
           "Artinya, bangsa Indonesia percaya kepada Tuhan dengan cara menganut suatu agama. Ada enam agama besar di Indonesia.",
           "Meskipun terdapat berbagai agama, bangsa Indonesia menghormati perbedaan tersebut sehingga semua umat beragama dapat hidup berdampingan.",
         ],
-        bullets: [
-          "Masjid, tempat ibadah umat Islam",
-          "Gereja, tempat ibadah umat Katolik dan Kristen",
-          "Pura, tempat ibadah umat Hindu",
-          "Wihara, tempat ibadah umat Buddha",
-          "Kelenteng, tempat ibadah umat Konghucu",
+        images: [
+          { src: "/assets/pancasila/tempat-ibadah-masjid.jpeg", alt: "Masjid, tempat ibadah umat Islam", caption: "Masjid (Islam)" },
+          { src: "/assets/pancasila/tempat-ibadah-gereja-katolik.jpeg", alt: "Gereja, tempat ibadah umat Katolik", caption: "Gereja (Katolik)" },
+          { src: "/assets/pancasila/tempat-ibadah-gereja-kristen.jpeg", alt: "Gereja, tempat ibadah umat Kristen", caption: "Gereja (Kristen)" },
+          { src: "/assets/pancasila/tempat-ibadah-pura.jpeg", alt: "Pura, tempat ibadah umat Hindu", caption: "Pura (Hindu)" },
+          { src: "/assets/pancasila/tempat-ibadah-wihara.jpeg", alt: "Wihara, tempat ibadah umat Buddha", caption: "Wihara (Buddha)" },
+          { src: "/assets/pancasila/tempat-ibadah-kelenteng.jpeg", alt: "Kelenteng, tempat ibadah umat Konghucu", caption: "Kelenteng (Konghucu)" },
         ],
       },
       {
         heading: "Makna Sila Kedua: Kemanusiaan yang Adil dan Beradab",
         emoji: "🤝",
+        image: "/assets/pancasila/contoh-sila-2-membantu-tanpa-membedakan.jpeg",
+        imageAlt: "Anak-anak bermain bersama tanpa membedakan saat ibu berbelanja",
         paragraphs: [
           "Artinya, kita harus menghargai sesama manusia. Apa pun suku bangsa dan agamanya, manusia harus diperlakukan secara adil karena semua manusia memiliki hak yang sama.",
           "Kita sebaiknya membantu orang lain tanpa melihat perbedaan.",
@@ -59,6 +62,8 @@ const chapter: QuizChapter = {
       {
         heading: "Makna Sila Ketiga: Persatuan Indonesia",
         emoji: "🇮🇩",
+        image: "/assets/pancasila/contoh-sila-3-bermain-bersama.png",
+        imageAlt: "Anak-anak bermain bersama dengan gembira",
         paragraphs: [
           "Artinya, bangsa Indonesia mementingkan persatuan. Bangsa Indonesia bersatu di dalam perbedaan sehingga kita akan hidup rukun.",
           "Kamu dapat bermain dengan gembira bersama semua teman tanpa membeda-bedakan.",
@@ -83,6 +88,8 @@ const chapter: QuizChapter = {
       {
         heading: "Makna Sila Kelima: Keadilan Sosial",
         emoji: "⚖️",
+        image: "/assets/pancasila/contoh-sila-5-mengantre.jpeg",
+        imageAlt: "Para murid mengantre masuk kelas",
         paragraphs: [
           "Sila kelima Pancasila berbunyi 'Keadilan Sosial bagi Seluruh Rakyat Indonesia'. Artinya, kita harus adil kepada setiap orang, tidak boleh membeda-bedakan, dan tidak boleh merugikan orang lain.",
           "Kamu juga harus bersikap adil kepada diri sendiri, misalnya dengan belajar dengan rajin.",
@@ -151,24 +158,24 @@ const chapter: QuizChapter = {
         heading: "Penerapan Nilai Pancasila di Rumah",
         emoji: "🏠",
         paragraphs: ["Nilai-nilai Pancasila dapat kamu terapkan di rumah bersama keluarga."],
-        bullets: [
-          "Sila 1: Beribadah sesuai ajaran agama dan menghormati anggota keluarga yang sedang beribadah",
-          "Sila 2: Menghormati seluruh anggota keluarga dan membantu yang membutuhkan bantuan",
-          "Sila 3: Menyayangi seluruh anggota keluarga tanpa membedakan dan ikut serta saat keluarga bekerja sama",
-          "Sila 4: Berdiskusi saat mengambil keputusan dan melaksanakan hasil musyawarah keluarga",
-          "Sila 5: Membersihkan rumah sesuai kemampuan dan berhemat dengan menabung uang jajan",
+        images: [
+          { src: "/assets/pancasila/rumah-sila-1-berdoa-sebelum-makan.jpeg", alt: "Keluarga berdoa sebelum makan bersama", caption: "Sila 1: Beribadah dan berdoa bersama keluarga" },
+          { src: "/assets/pancasila/rumah-sila-2-membantu-keluarga.jpeg", alt: "Anak membantu ibu mencuci piring", caption: "Sila 2: Membantu anggota keluarga" },
+          { src: "/assets/pancasila/rumah-sila-3-makan-bersama.jpeg", alt: "Ibu dan anak memakan makanan tradisional bersama", caption: "Sila 3: Rukun bersama keluarga" },
+          { src: "/assets/pancasila/rumah-sila-4-berdiskusi-keluarga.jpeg", alt: "Keluarga berdiskusi bersama di ruang tamu", caption: "Sila 4: Berdiskusi mengambil keputusan" },
+          { src: "/assets/pancasila/rumah-sila-5-rajin-belajar.jpeg", alt: "Anak rajin belajar di meja belajar", caption: "Sila 5: Rajin belajar agar berprestasi" },
         ],
       },
       {
         heading: "Penerapan Nilai Pancasila di Sekolah",
         emoji: "🏫",
         paragraphs: ["Nilai-nilai Pancasila juga dapat kamu terapkan di sekolah bersama teman-teman."],
-        bullets: [
-          "Sila 1: Berdoa sebelum belajar dan tidak mengganggu teman yang sedang beribadah",
-          "Sila 2: Bersikap sopan dan membantu teman yang kesulitan",
-          "Sila 3: Bermain dengan semua teman tanpa membedakan dan ikut kerja bakti di sekolah",
-          "Sila 4: Memilih ketua kelas dengan musyawarah dan menyampaikan pendapat dengan santun",
-          "Sila 5: Mengantre sesuai urutan saat jajan dan menghargai hasil karya teman",
+        images: [
+          { src: "/assets/pancasila/sekolah-sila-1-berdoa-sebelum-belajar.jpeg", alt: "Murid berdoa sebelum belajar", caption: "Sila 1: Berdoa sebelum belajar" },
+          { src: "/assets/pancasila/sekolah-sila-2-menyapa-penjaga-sekolah.jpeg", alt: "Murid menyapa penjaga sekolah", caption: "Sila 2: Menghargai semua warga sekolah" },
+          { src: "/assets/pancasila/sekolah-sila-3-bermain-bersama.jpeg", alt: "Murid-murid bermain bersama di sekolah", caption: "Sila 3: Bermain tanpa membedakan" },
+          { src: "/assets/pancasila/sekolah-sila-4-pemilihan-ketua-kelas.jpeg", alt: "Murid memilih ketua kelas lewat bilik suara", caption: "Sila 4: Memilih ketua kelas dengan musyawarah" },
+          { src: "/assets/pancasila/sekolah-sila-5-jajan-di-kantin.jpeg", alt: "Murid jajan secukupnya di kantin sekolah", caption: "Sila 5: Jajan secukupnya" },
         ],
       },
     ],
@@ -177,7 +184,7 @@ const chapter: QuizChapter = {
     {
       id: "pancasila1-01",
       question: "Gambar di atas adalah lambang negara Indonesia, yang disebut ...",
-      image: "/assets/pancasila/garuda-pancasila.png",
+      image: "/assets/pancasila/garuda-pancasila.jpeg",
       imageAlt: "Lambang Garuda Pancasila",
       options: [
         { id: "a", text: "Garuda Pancasila" },
@@ -298,7 +305,9 @@ const chapter: QuizChapter = {
     },
     {
       id: "pancasila1-11",
-      question: "Masjid adalah tempat ibadah umat ...",
+      question: "Gambar di atas adalah tempat ibadah umat ...",
+      image: "/assets/pancasila/tempat-ibadah-masjid.jpeg",
+      imageAlt: "Masjid, tempat ibadah umat Islam",
       options: [
         { id: "a", text: "Islam" },
         { id: "b", text: "Hindu" },
@@ -306,11 +315,13 @@ const chapter: QuizChapter = {
         { id: "d", text: "Konghucu" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Masjid adalah tempat ibadah umat Islam.",
+      explanation: "Betul! Gambar tersebut adalah masjid, tempat ibadah umat Islam.",
     },
     {
       id: "pancasila1-12",
-      question: "Pura adalah tempat ibadah umat ...",
+      question: "Gambar di atas adalah tempat ibadah umat ...",
+      image: "/assets/pancasila/tempat-ibadah-pura.jpeg",
+      imageAlt: "Pura, tempat ibadah umat Hindu",
       options: [
         { id: "a", text: "Hindu" },
         { id: "b", text: "Islam" },
@@ -318,11 +329,13 @@ const chapter: QuizChapter = {
         { id: "d", text: "Katolik" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Pura adalah tempat ibadah umat Hindu.",
+      explanation: "Betul! Gambar tersebut adalah pura, tempat ibadah umat Hindu.",
     },
     {
       id: "pancasila1-13",
-      question: "Wihara adalah tempat ibadah umat ...",
+      question: "Gambar di atas adalah tempat ibadah umat ...",
+      image: "/assets/pancasila/tempat-ibadah-wihara.jpeg",
+      imageAlt: "Wihara, tempat ibadah umat Buddha",
       options: [
         { id: "a", text: "Buddha" },
         { id: "b", text: "Hindu" },
@@ -330,11 +343,13 @@ const chapter: QuizChapter = {
         { id: "d", text: "Kristen" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Wihara adalah tempat ibadah umat Buddha.",
+      explanation: "Betul! Gambar tersebut adalah wihara, tempat ibadah umat Buddha.",
     },
     {
       id: "pancasila1-14",
-      question: "Kelenteng adalah tempat ibadah umat ...",
+      question: "Gambar di atas adalah tempat ibadah umat ...",
+      image: "/assets/pancasila/tempat-ibadah-kelenteng.jpeg",
+      imageAlt: "Kelenteng, tempat ibadah umat Konghucu",
       options: [
         { id: "a", text: "Konghucu" },
         { id: "b", text: "Islam" },
@@ -342,10 +357,24 @@ const chapter: QuizChapter = {
         { id: "d", text: "Buddha" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Kelenteng adalah tempat ibadah umat Konghucu.",
+      explanation: "Betul! Gambar tersebut adalah kelenteng, tempat ibadah umat Konghucu.",
     },
     {
       id: "pancasila1-15",
+      question: "Gambar di atas adalah tempat ibadah umat ...",
+      image: "/assets/pancasila/tempat-ibadah-gereja-katolik.jpeg",
+      imageAlt: "Gereja, tempat ibadah umat Katolik dan Kristen",
+      options: [
+        { id: "a", text: "Katolik dan Kristen" },
+        { id: "b", text: "Islam" },
+        { id: "c", text: "Hindu" },
+        { id: "d", text: "Konghucu" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Gambar tersebut adalah gereja, tempat ibadah umat Katolik dan Kristen.",
+    },
+    {
+      id: "pancasila1-16",
       question: "Sila kedua Pancasila mengajarkan kita untuk memperlakukan sesama manusia secara ...",
       options: [
         { id: "a", text: "Adil" },
@@ -357,7 +386,35 @@ const chapter: QuizChapter = {
       explanation: "Betul! Sila kedua mengajarkan kita untuk memperlakukan sesama manusia secara adil, karena semua manusia memiliki hak yang sama.",
     },
     {
-      id: "pancasila1-16",
+      id: "pancasila1-17",
+      question: "Sikap saling membantu tanpa melihat perbedaan pada gambar di atas sesuai dengan sila ke ...",
+      image: "/assets/pancasila/contoh-sila-2-membantu-tanpa-membedakan.jpeg",
+      imageAlt: "Anak-anak bermain bersama tanpa membedakan saat ibu berbelanja",
+      options: [
+        { id: "a", text: "Kedua" },
+        { id: "b", text: "Pertama" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Membantu orang lain tanpa melihat perbedaan adalah penerapan sila kedua Pancasila.",
+    },
+    {
+      id: "pancasila1-18",
+      question: "Anak-anak pada gambar bermain bersama tanpa membeda-bedakan teman. Sikap ini adalah penerapan sila ke ...",
+      image: "/assets/pancasila/contoh-sila-3-bermain-bersama.png",
+      imageAlt: "Anak-anak bermain bersama dengan gembira",
+      options: [
+        { id: "a", text: "Ketiga" },
+        { id: "b", text: "Kedua" },
+        { id: "c", text: "Keempat" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Bermain bersama tanpa membeda-bedakan teman adalah penerapan sila ketiga Pancasila.",
+    },
+    {
+      id: "pancasila1-19",
       question: "Sebelum memberi pendapat dalam musyawarah, sebaiknya kita ...",
       options: [
         { id: "a", text: "Mengangkat tangan" },
@@ -369,7 +426,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Angkatlah tangan sebelum memberi pendapat dalam musyawarah.",
     },
     {
-      id: "pancasila1-17",
+      id: "pancasila1-20",
       question: "Sikap yang tepat saat teman sedang berbicara dalam musyawarah adalah ...",
       options: [
         { id: "a", text: "Mendengarkan dengan baik" },
@@ -381,7 +438,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Kita harus mendengarkan saat teman berbicara dalam musyawarah.",
     },
     {
-      id: "pancasila1-18",
+      id: "pancasila1-21",
       question: "Hasil keputusan musyawarah sebaiknya kita terima dengan ...",
       options: [
         { id: "a", text: "Ikhlas" },
@@ -393,19 +450,21 @@ const chapter: QuizChapter = {
       explanation: "Betul! Terimalah hasil keputusan musyawarah dengan ikhlas, walaupun tidak sesuai pendapatmu.",
     },
     {
-      id: "pancasila1-19",
-      question: "Sila kelima Pancasila mengajarkan kita untuk bersikap ... kepada setiap orang",
+      id: "pancasila1-22",
+      question: "Para murid pada gambar mengantre masuk kelas. Sikap ini adalah penerapan sila ke ...",
+      image: "/assets/pancasila/contoh-sila-5-mengantre.jpeg",
+      imageAlt: "Para murid mengantre masuk kelas",
       options: [
-        { id: "a", text: "Adil" },
-        { id: "b", text: "Pilih kasih" },
-        { id: "c", text: "Curang" },
-        { id: "d", text: "Merugikan" },
+        { id: "a", text: "Kelima" },
+        { id: "b", text: "Kedua" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Keempat" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Sila kelima mengajarkan kita untuk bersikap adil kepada setiap orang.",
+      explanation: "Betul! Mengantre dengan tertib adalah penerapan sila kelima Pancasila, yaitu bersikap adil kepada semua orang.",
     },
     {
-      id: "pancasila1-20",
+      id: "pancasila1-23",
       question: "Gambar di atas adalah simbol sila ...",
       image: "/assets/pancasila/simbol-sila-1-bintang.jpeg",
       imageAlt: "Simbol bintang emas berlatar hitam untuk sila pertama",
@@ -419,7 +478,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Bintang adalah simbol sila pertama Pancasila.",
     },
     {
-      id: "pancasila1-21",
+      id: "pancasila1-24",
       question: "Gambar di atas adalah simbol sila ...",
       image: "/assets/pancasila/simbol-sila-2-rantai.jpeg",
       imageAlt: "Simbol tali rantai emas berlatar merah untuk sila kedua",
@@ -433,7 +492,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Rantai adalah simbol sila kedua Pancasila.",
     },
     {
-      id: "pancasila1-22",
+      id: "pancasila1-25",
       question: "Gambar di atas adalah simbol sila ...",
       image: "/assets/pancasila/simbol-sila-3-pohon-beringin.jpg",
       imageAlt: "Simbol pohon beringin hijau berlatar putih untuk sila ketiga",
@@ -447,7 +506,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Pohon beringin adalah simbol sila ketiga Pancasila.",
     },
     {
-      id: "pancasila1-23",
+      id: "pancasila1-26",
       question: "Gambar di atas adalah simbol sila ...",
       image: "/assets/pancasila/simbol-sila-4-kepala-banteng.jpeg",
       imageAlt: "Simbol kepala banteng hitam putih berlatar merah untuk sila keempat",
@@ -461,7 +520,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Kepala banteng adalah simbol sila keempat Pancasila.",
     },
     {
-      id: "pancasila1-24",
+      id: "pancasila1-27",
       question: "Gambar di atas adalah simbol sila ...",
       image: "/assets/pancasila/simbol-sila-5-padi-kapas.jpeg",
       imageAlt: "Simbol padi dan kapas untuk sila kelima",
@@ -475,7 +534,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Padi dan kapas adalah simbol sila kelima Pancasila.",
     },
     {
-      id: "pancasila1-25",
+      id: "pancasila1-28",
       question: "Warna latar belakang simbol bintang pada sila pertama adalah ...",
       options: [
         { id: "a", text: "Hitam" },
@@ -487,7 +546,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Latar belakang simbol sila pertama berwarna hitam, menggambarkan warna alam.",
     },
     {
-      id: "pancasila1-26",
+      id: "pancasila1-29",
       question: "Jumlah mata rantai pada simbol sila kedua Pancasila adalah ...",
       options: [
         { id: "a", text: "Tujuh belas" },
@@ -499,7 +558,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Tali rantai berjumlah tujuh belas, terdiri dari sembilan mata rantai bulat dan delapan mata rantai persegi.",
     },
     {
-      id: "pancasila1-27",
+      id: "pancasila1-30",
       question: "Tulisan pada pita yang dicengkeram oleh Garuda Pancasila adalah ...",
       options: [
         { id: "a", text: "Bhinneka Tunggal Ika" },
@@ -511,7 +570,7 @@ const chapter: QuizChapter = {
       explanation: "Betul! Pada pita putih yang dicengkeram Garuda Pancasila terdapat tulisan 'Bhinneka Tunggal Ika'.",
     },
     {
-      id: "pancasila1-28",
+      id: "pancasila1-31",
       question: "Semboyan Bhinneka Tunggal Ika diambil dari Kitab ...",
       options: [
         { id: "a", text: "Sutasoma" },
@@ -523,20 +582,52 @@ const chapter: QuizChapter = {
       explanation: "Betul! Bhinneka Tunggal Ika diambil dari Kitab Sutasoma karangan Mpu Tantular.",
     },
     {
-      id: "pancasila1-29",
-      question: "Contoh penerapan sila pertama Pancasila di rumah adalah ...",
+      id: "pancasila1-32",
+      question: "Keluarga pada gambar berdoa sebelum makan bersama. Sikap ini adalah penerapan sila pertama Pancasila di ...",
+      image: "/assets/pancasila/rumah-sila-1-berdoa-sebelum-makan.jpeg",
+      imageAlt: "Keluarga berdoa sebelum makan bersama",
       options: [
-        { id: "a", text: "Beribadah sesuai ajaran agama" },
-        { id: "b", text: "Bermain gawai sepanjang hari" },
-        { id: "c", text: "Mengganggu anggota keluarga yang beribadah" },
-        { id: "d", text: "Tidak mau berdoa" },
+        { id: "a", text: "Rumah" },
+        { id: "b", text: "Sekolah" },
+        { id: "c", text: "Pasar" },
+        { id: "d", text: "Kantor" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Beribadah sesuai ajaran agama adalah contoh penerapan sila pertama Pancasila di rumah.",
+      explanation: "Betul! Beribadah dan berdoa bersama keluarga adalah contoh penerapan sila pertama Pancasila di rumah.",
     },
     {
-      id: "pancasila1-30",
+      id: "pancasila1-33",
+      question: "Membantu ibu mencuci piring seperti pada gambar adalah contoh penerapan sila ke ... di rumah",
+      image: "/assets/pancasila/rumah-sila-2-membantu-keluarga.jpeg",
+      imageAlt: "Anak membantu ibu mencuci piring",
+      options: [
+        { id: "a", text: "Kedua" },
+        { id: "b", text: "Pertama" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Membantu anggota keluarga yang membutuhkan bantuan adalah contoh penerapan sila kedua Pancasila di rumah.",
+    },
+    {
+      id: "pancasila1-34",
+      question: "Memakan makanan tradisional buatan ibu bersama keluarga adalah contoh penerapan sila ke ... di rumah",
+      image: "/assets/pancasila/rumah-sila-3-makan-bersama.jpeg",
+      imageAlt: "Ibu dan anak memakan makanan tradisional bersama",
+      options: [
+        { id: "a", text: "Ketiga" },
+        { id: "b", text: "Kedua" },
+        { id: "c", text: "Keempat" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Menyayangi dan rukun bersama keluarga tanpa membedakan adalah contoh penerapan sila ketiga Pancasila di rumah.",
+    },
+    {
+      id: "pancasila1-35",
       question: "Contoh penerapan sila keempat Pancasila di rumah adalah ...",
+      image: "/assets/pancasila/rumah-sila-4-berdiskusi-keluarga.jpeg",
+      imageAlt: "Keluarga berdiskusi bersama di ruang tamu",
       options: [
         { id: "a", text: "Berdiskusi saat mengambil keputusan bersama keluarga" },
         { id: "b", text: "Memaksakan pendapat sendiri" },
@@ -547,8 +638,24 @@ const chapter: QuizChapter = {
       explanation: "Betul! Berdiskusi saat mengambil keputusan adalah contoh penerapan sila keempat Pancasila di rumah.",
     },
     {
-      id: "pancasila1-31",
+      id: "pancasila1-36",
+      question: "Anak pada gambar rajin belajar di rumah. Sikap ini adalah penerapan sila ke ...",
+      image: "/assets/pancasila/rumah-sila-5-rajin-belajar.jpeg",
+      imageAlt: "Anak rajin belajar di meja belajar",
+      options: [
+        { id: "a", text: "Kelima" },
+        { id: "b", text: "Kedua" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Keempat" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Rajin belajar agar berprestasi adalah contoh penerapan sila kelima Pancasila di rumah, yaitu bersikap adil kepada diri sendiri.",
+    },
+    {
+      id: "pancasila1-37",
       question: "Contoh penerapan sila pertama Pancasila di sekolah adalah ...",
+      image: "/assets/pancasila/sekolah-sila-1-berdoa-sebelum-belajar.jpeg",
+      imageAlt: "Murid berdoa sebelum belajar",
       options: [
         { id: "a", text: "Berdoa sebelum belajar" },
         { id: "b", text: "Mengganggu teman yang sedang beribadah" },
@@ -559,16 +666,60 @@ const chapter: QuizChapter = {
       explanation: "Betul! Berdoa sebelum belajar sesuai agama masing-masing adalah contoh penerapan sila pertama Pancasila di sekolah.",
     },
     {
-      id: "pancasila1-32",
-      question: "Contoh penerapan sila kelima Pancasila di sekolah adalah ...",
+      id: "pancasila1-38",
+      question: "Menyapa penjaga sekolah dengan sopan seperti pada gambar adalah contoh penerapan sila ke ... di sekolah",
+      image: "/assets/pancasila/sekolah-sila-2-menyapa-penjaga-sekolah.jpeg",
+      imageAlt: "Murid menyapa penjaga sekolah",
       options: [
-        { id: "a", text: "Mengantre sesuai urutan saat jajan" },
+        { id: "a", text: "Kedua" },
+        { id: "b", text: "Pertama" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Menghargai semua warga sekolah, mulai dari teman hingga penjaga sekolah, adalah penerapan sila kedua Pancasila.",
+    },
+    {
+      id: "pancasila1-39",
+      question: "Bermain bersama semua teman tanpa membedakan seperti pada gambar adalah contoh penerapan sila ke ... di sekolah",
+      image: "/assets/pancasila/sekolah-sila-3-bermain-bersama.jpeg",
+      imageAlt: "Murid-murid bermain bersama di sekolah",
+      options: [
+        { id: "a", text: "Ketiga" },
+        { id: "b", text: "Kedua" },
+        { id: "c", text: "Keempat" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Bermain dengan semua teman tanpa membedakan adalah penerapan sila ketiga Pancasila di sekolah.",
+    },
+    {
+      id: "pancasila1-40",
+      question: "Memilih ketua kelas dengan cara pemungutan suara seperti pada gambar adalah contoh penerapan sila ke ... di sekolah",
+      image: "/assets/pancasila/sekolah-sila-4-pemilihan-ketua-kelas.jpeg",
+      imageAlt: "Murid memilih ketua kelas lewat bilik suara",
+      options: [
+        { id: "a", text: "Keempat" },
+        { id: "b", text: "Pertama" },
+        { id: "c", text: "Ketiga" },
+        { id: "d", text: "Kelima" },
+      ],
+      correctOptionId: "a",
+      explanation: "Betul! Memilih ketua kelas dengan musyawarah atau voting adalah penerapan sila keempat Pancasila di sekolah.",
+    },
+    {
+      id: "pancasila1-41",
+      question: "Contoh penerapan sila kelima Pancasila di sekolah adalah ...",
+      image: "/assets/pancasila/sekolah-sila-5-jajan-di-kantin.jpeg",
+      imageAlt: "Murid jajan secukupnya di kantin sekolah",
+      options: [
+        { id: "a", text: "Jajan secukupnya dan mengantre sesuai urutan" },
         { id: "b", text: "Menyerobot antrean" },
         { id: "c", text: "Mengambil jatah teman" },
         { id: "d", text: "Membeda-bedakan teman" },
       ],
       correctOptionId: "a",
-      explanation: "Betul! Mengantre sesuai urutan saat jajan adalah contoh penerapan sila kelima Pancasila di sekolah.",
+      explanation: "Betul! Jajan secukupnya dan mengantre sesuai urutan adalah contoh penerapan sila kelima Pancasila di sekolah.",
     },
   ],
 };

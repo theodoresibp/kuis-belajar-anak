@@ -72,6 +72,31 @@ export default function MaterialView({
                     </p>
                   ))}
 
+                  {section.images && section.images.length > 0 && (
+                    <div className="mt-2 mb-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {section.images.map((img, imgIdx) => (
+                        <div
+                          key={imgIdx}
+                          className="overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50 flex flex-col"
+                        >
+                          <Image
+                            src={img.src}
+                            alt={img.alt}
+                            width={320}
+                            height={240}
+                            unoptimized
+                            className="w-full h-24 sm:h-28 object-contain bg-white"
+                          />
+                          {img.caption && (
+                            <p className="text-center text-xs font-semibold text-slate-600 px-1 py-1.5 bg-violet-50">
+                              {img.caption}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {section.bullets && section.bullets.length > 0 && (
                     <ul className="mt-2 flex flex-col gap-2">
                       {section.bullets.map((b, bIdx) => (
