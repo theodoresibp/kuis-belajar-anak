@@ -12,8 +12,10 @@ interface PreparedQuestion extends QuizQuestion {
 }
 
 type Phase = "settings" | "playing" | "result";
+type QuestionStatus = "active" | "correct" | "failed";
 
 const COUNT_CHOICES = [5, 10, "all"] as const;
+const MAX_LIVES = 3;
 
 function prepareRound(chapter: QuizChapter, count: number): PreparedQuestion[] {
   const picked = pickRandom(chapter.questions, count);
@@ -27,7 +29,9 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   );
   const [round, setRound] = useState<PreparedQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
+  const [status, setStatus] = useState<QuestionStatus>("active");
+  const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [score, setScore] = useState(0);
 
   const currentQuestion = round[currentIndex];
@@ -38,32 +42,45 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   function startRound(count: number) {
     setRound(prepareRound(chapter, count));
     setCurrentIndex(0);
-    setSelectedOptionId(null);
+    setTriedOptionIds([]);
+    setStatus("active");
+    setLivesLeft(MAX_LIVES);
     setScore(0);
     setPhase("playing");
   }
 
   function handleSelect(optionId: string) {
-    if (selectedOptionId !== null) return;
-    setSelectedOptionId(optionId);
+    if (status !== "active" || triedOptionIds.includes(optionId)) return;
+
     if (optionId === currentQuestion.correctOptionId) {
       setScore((s) => s + 1);
+      setStatus("correct");
+      return;
+    }
+
+    const remaining = livesLeft - 1;
+    setLivesLeft(remaining);
+    setTriedOptionIds((prev) => [...prev, optionId]);
+    if (remaining <= 0) {
+      setStatus("failed");
     }
   }
 
   function handleNext() {
+    setTriedOptionIds([]);
+    setStatus("active");
+    setLivesLeft(MAX_LIVES);
     if (isLastQuestion) {
       setPhase("result");
       return;
     }
     setCurrentIndex((i) => i + 1);
-    setSelectedOptionId(null);
   }
 
   const progressPct = useMemo(() => {
     if (round.length === 0) return 0;
-    return Math.round(((currentIndex + (selectedOptionId ? 1 : 0)) / round.length) * 100);
-  }, [currentIndex, round.length, selectedOptionId]);
+    return Math.round(((currentIndex + (status !== "active" ? 1 : 0)) / round.length) * 100);
+  }, [currentIndex, round.length, status]);
 
   if (phase === "settings") {
     return (
@@ -154,12 +171,15 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         imageAlt={currentQuestion.imageAlt}
         options={currentQuestion.shuffledOptions}
         correctOptionId={currentQuestion.correctOptionId}
-        selectedOptionId={selectedOptionId}
+        triedOptionIds={triedOptionIds}
+        status={status}
+        livesLeft={livesLeft}
+        maxLives={MAX_LIVES}
         explanation={currentQuestion.explanation}
         onSelect={handleSelect}
       />
 
-      {selectedOptionId !== null && (
+      {status !== "active" && (
         <button
           onClick={handleNext}
           className="rounded-full bg-white hover:bg-slate-50 text-violet-700 font-bold px-8 py-3 shadow-md transition-colors"
