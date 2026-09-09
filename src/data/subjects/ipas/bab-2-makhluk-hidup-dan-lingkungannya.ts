@@ -249,6 +249,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-02",
       question: "Hewan dapat bergerak dengan berbagai cara, kecuali ...",
+      image: "/assets/ipas/ciri-bergerak-hewan.jpeg",
+      imageAlt: "Seekor ayam berjalan",
       options: [
         { id: "a", text: "Menguap" },
         { id: "b", text: "Berjalan" },
@@ -275,6 +277,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-04",
       question: "Ada hewan yang memakan tumbuhan, memakan daging, dan ada juga yang memakan keduanya. Hal ini menunjukkan bahwa makhluk hidup ...",
+      image: "/assets/ipas/ciri-makan-hewan.jpg",
+      imageAlt: "Kucing makan dari mangkuk",
       options: [
         { id: "a", text: "Memerlukan makanan" },
         { id: "b", text: "Tidak memerlukan makanan" },
@@ -287,6 +291,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-05",
       question: "Tumbuhan memerlukan makanan dalam bentuk zat hara. Zat hara berasal dari ...",
+      image: "/assets/ipas/ciri-makan-tumbuhan.jpeg",
+      imageAlt: "Tunas tumbuhan tumbuh di tanah",
       options: [
         { id: "a", text: "Tanah atau pupuk" },
         { id: "b", text: "Udara" },
@@ -339,6 +345,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-09",
       question: "Tempat hidup makhluk hidup dinamakan ...",
+      image: "/assets/ipas/habitat-intro.jpeg",
+      imageAlt: "Beberapa anak kucing dan marmut bersama",
       options: [
         { id: "a", text: "Habitat" },
         { id: "b", text: "Kandang" },
@@ -363,6 +371,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-11",
       question: "Hewan yang hidup di darat disebut ...",
+      image: "/assets/ipas/hewan-darat-peternakan-bebek.jpeg",
+      imageAlt: "Seekor bebek putih",
       options: [
         { id: "a", text: "Hewan darat" },
         { id: "b", text: "Hewan air" },
@@ -431,6 +441,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-16",
       question: "Hewan yang hidup di perairan disebut ...",
+      image: "/assets/ipas/hewan-air-intro.jpeg",
+      imageAlt: "Paus melompat dari permukaan laut",
       options: [
         { id: "a", text: "Hewan air" },
         { id: "b", text: "Hewan darat" },
@@ -443,6 +455,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-17",
       question: "Hewan air dikelompokkan menjadi tiga macam, yaitu ...",
+      image: "/assets/ipas/hewan-laut-terumbu-karang.jpeg",
+      imageAlt: "Ikan-ikan di terumbu karang",
       options: [
         { id: "a", text: "Hewan air tawar, hewan laut, dan hewan air payau" },
         { id: "b", text: "Hewan darat, hewan udara, dan hewan air" },
@@ -775,6 +789,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-42",
       question: "Hutan yang lebat dan luas menjadi tempat tinggal bagi hewan liar. Berikut ini yang termasuk hewan liar penghuni hutan adalah ...",
+      image: "/assets/ipas/hewan-darat-hutan.jpeg",
+      imageAlt: "Ular, monyet, macan tutul, dan burung rangkong di hutan",
       options: [
         { id: "a", text: "Ular, monyet, dan macan tutul" },
         { id: "b", text: "Sapi, kambing, dan domba" },
@@ -787,6 +803,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-43",
       question: "Padang rumput yang luas menjadi tempat hidup bagi hewan-hewan seperti ...",
+      image: "/assets/ipas/hewan-darat-padang-rumput.jpeg",
+      imageAlt: "Singa, jerapah, dan zebra di padang rumput",
       options: [
         { id: "a", text: "Singa, jerapah, dan zebra" },
         { id: "b", text: "Ayam dan bebek" },
@@ -799,6 +817,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-44",
       question: "Wilayah yang sangat dingin dan bersalju menjadi tempat hidup bagi ...",
+      image: "/assets/ipas/hewan-darat-kutub.jpeg",
+      imageAlt: "Beruang kutub dan penguin di atas es",
       options: [
         { id: "a", text: "Beruang kutub dan penguin" },
         { id: "b", text: "Singa dan zebra" },
@@ -811,6 +831,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-45",
       question: "Ikan mas koki, ikan guppy, dan ikan gurame biasa dipelihara di kolam yang berisi air ...",
+      image: "/assets/ipas/hewan-air-tawar-guppy.jpeg",
+      imageAlt: "Ikan guppy",
       options: [
         { id: "a", text: "Tawar" },
         { id: "b", text: "Laut" },
@@ -823,6 +845,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-46",
       question: "Lumba-lumba, ubur-ubur, gurita, dan bintang laut adalah kelompok hewan yang hidup di ...",
+      image: "/assets/ipas/hewan-laut-gurita.jpeg",
+      imageAlt: "Gurita di dasar laut",
       options: [
         { id: "a", text: "Laut" },
         { id: "b", text: "Sungai" },
@@ -835,6 +859,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-47",
       question: "Kepiting, udang, dan ikan gelodok sering ditemukan hidup di hutan bakau (mangrove) karena hidup di air ...",
+      image: "/assets/ipas/hewan-payau-udang.jpeg",
+      imageAlt: "Udang di air payau",
       options: [
         { id: "a", text: "Payau" },
         { id: "b", text: "Tawar" },
@@ -861,6 +887,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-49",
       question: "Lumut yang tumbuh di atas batu dan kaktus yang tumbuh di tanah berpasir adalah dua contoh tumbuhan yang hidup di ...",
+      image: "/assets/ipas/tumbuhan-darat-lumut.jpeg",
+      imageAlt: "Lumut tumbuh di atas batu",
       options: [
         { id: "a", text: "Darat" },
         { id: "b", text: "Air" },
@@ -873,6 +901,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-50",
       question: "Teratai dan lamun adalah dua contoh tumbuhan yang hidup di ...",
+      image: "/assets/ipas/tumbuhan-air-teratai.jpeg",
+      imageAlt: "Bunga teratai mengapung di kolam",
       options: [
         { id: "a", text: "Air" },
         { id: "b", text: "Darat" },
@@ -885,6 +915,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-51",
       question: "Daging dan telur yang sering kita makan sehari-hari dapat berasal dari hewan seperti ...",
+      image: "/assets/ipas/hewan-menguntungkan-ayam.jpeg",
+      imageAlt: "Seekor ayam",
       options: [
         { id: "a", text: "Ayam dan bebek" },
         { id: "b", text: "Singa dan harimau" },
@@ -897,6 +929,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-52",
       question: "Delman dan bajak sawah dapat bergerak karena ditarik oleh tenaga hewan, yaitu ...",
+      image: "/assets/ipas/hewan-menguntungkan-kuda.jpeg",
+      imageAlt: "Kereta yang ditarik kuda",
       options: [
         { id: "a", text: "Kuda dan kerbau" },
         { id: "b", text: "Ayam dan bebek" },
@@ -933,6 +967,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-55",
       question: "Gas yang dihasilkan oleh tumbuhan dan sangat berguna untuk pernapasan hewan dan manusia adalah ...",
+      image: "/assets/ipas/tumbuhan-menguntungkan-oksigen.jpeg",
+      imageAlt: "Pepohonan yang rimbun di taman",
       options: [
         { id: "a", text: "Oksigen" },
         { id: "b", text: "Karbon dioksida" },
@@ -945,6 +981,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-56",
       question: "Kayu yang berasal dari pohon dapat dimanfaatkan manusia untuk membuat ...",
+      image: "/assets/ipas/tumbuhan-manfaat-perkakas.jpeg",
+      imageAlt: "Kursi kayu",
       options: [
         { id: "a", text: "Perkakas rumah, seperti kursi dan meja" },
         { id: "b", text: "Air minum" },
@@ -983,6 +1021,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-59",
       question: "Ayam, bebek, sapi, kambing, dan kuda termasuk hewan yang ... bagi manusia.",
+      image: "/assets/ipas/hewan-darat-peternakan-kambing.jpeg",
+      imageAlt: "Seekor kambing",
       options: [
         { id: "a", text: "Menguntungkan" },
         { id: "b", text: "Merugikan" },
@@ -995,6 +1035,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-60",
       question: "Nyamuk dan lalat termasuk hewan yang ... bagi manusia karena dapat menyebarkan penyakit.",
+      image: "/assets/ipas/hewan-merugikan-nyamuk.jpeg",
+      imageAlt: "Nyamuk hinggap di kulit",
       options: [
         { id: "a", text: "Merugikan" },
         { id: "b", text: "Menguntungkan" },
@@ -1007,6 +1049,8 @@ const chapter: QuizChapter = {
     {
       id: "ipas2-61",
       question: "Tali putri termasuk tumbuhan yang ... bagi manusia dan tumbuhan lain.",
+      image: "/assets/ipas/tumbuhan-merugikan-gulma.jpeg",
+      imageAlt: "Tali putri yang menumpang pada tumbuhan lain",
       options: [
         { id: "a", text: "Merugikan" },
         { id: "b", text: "Menguntungkan" },
