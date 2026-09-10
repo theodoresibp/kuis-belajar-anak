@@ -171,6 +171,8 @@ const chapter: QuizChapter = {
       {
         heading: "Informasi dalam Grafik",
         emoji: "📊",
+        image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+        imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
         paragraphs: [
           "Informasi dapat terkandung dalam teks, gambar, bahkan grafik. Grafik disebut juga diagram dan merupakan salah satu cara menyajikan informasi.",
           "Contoh: grafik buah kesukaan siswa kelas 2-B menunjukkan bahwa jeruk disukai 5 siswa, apel disukai 8 siswa, pisang disukai 8 siswa, dan pepaya disukai 5 siswa.",
@@ -1112,6 +1114,8 @@ const chapter: QuizChapter = {
     {
       id: "bi2-70",
       question: "Grafik disebut juga ...",
+      image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+      imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
       options: [
         { id: "a", text: "Diagram" },
         { id: "b", text: "Kamus" },
@@ -1124,6 +1128,8 @@ const chapter: QuizChapter = {
     {
       id: "bi2-71",
       question: "Berdasarkan grafik buah kesukaan siswa kelas 2-B, jumlah siswa yang menyukai buah jeruk ada ...",
+      image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+      imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
       options: [
         { id: "a", text: "5 siswa" },
         { id: "b", text: "8 siswa" },
@@ -1136,6 +1142,8 @@ const chapter: QuizChapter = {
     {
       id: "bi2-72",
       question: "Berdasarkan grafik buah kesukaan siswa kelas 2-B, jumlah siswa yang menyukai buah pepaya ada ...",
+      image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+      imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
       options: [
         { id: "a", text: "5 siswa" },
         { id: "b", text: "8 siswa" },
@@ -1148,6 +1156,8 @@ const chapter: QuizChapter = {
     {
       id: "bi2-73",
       question: "Berdasarkan grafik buah kesukaan siswa kelas 2-B, buah apel disukai oleh ...",
+      image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+      imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
       options: [
         { id: "a", text: "8 siswa" },
         { id: "b", text: "5 siswa" },
@@ -1160,6 +1170,8 @@ const chapter: QuizChapter = {
     {
       id: "bi2-74",
       question: "Buah yang disukai siswa kelas 2-B menurut grafik, antara lain jeruk, apel, pisang, dan ...",
+      image: "/assets/bahasa-indonesia/grafik-buah-kesukaan.png",
+      imageAlt: "Grafik batang buah kesukaan siswa kelas 2-B",
       options: [
         { id: "a", text: "Pepaya" },
         { id: "b", text: "Mangga" },
