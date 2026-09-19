@@ -20,6 +20,8 @@ export default function HomePage() {
             (sum, c) => sum + c.questions.length,
             0
           );
+          const babCount = subject.chapters.filter((c) => !c.category).length;
+          const categories = [...new Set(subject.chapters.flatMap((c) => (c.category ? [c.category] : [])))];
           return (
             <Link
               key={subject.id}
@@ -37,7 +39,7 @@ export default function HomePage() {
                 Lihat Bab ▶️
               </div>
               <p className="mt-3 text-xs font-semibold text-slate-900/70">
-                {subject.chapters.length} bab · {totalQuestions} soal
+                {[`${babCount} bab`, ...categories].join(" + ")} · {totalQuestions} soal
               </p>
             </Link>
           );

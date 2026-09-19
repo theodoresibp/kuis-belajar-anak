@@ -152,6 +152,21 @@ Langkah menambah mata pelajaran baru:
 
 3. Bab baru otomatis muncul di halaman mata pelajaran sebagai kartu baru, lengkap dengan tombol "📖 Baca Materi" (jika `material` diisi) dan "Main Sekarang" untuk kuis dengan pengacakan soal & jawaban.
 
+### Kategori terpisah (mis. PSTS)
+
+Untuk latihan yang tidak boleh bercampur dengan bab biasa, misalnya Penilaian Sumatif Tengah Semester, isi field opsional `category` pada bab tersebut:
+
+```ts
+const chapter: QuizChapter = {
+  id: "psts-bab-1-nama-bab",
+  title: "PSTS: Judul Bab",
+  category: "PSTS",
+  // ...
+};
+```
+
+Bab dengan `category` yang sama ditampilkan di bagian tersendiri di halaman mata pelajaran (di bawah bab biasa), dan dihitung terpisah di kartu mata pelajaran (mis. "1 bab + PSTS").
+
 ## Struktur proyek
 
 ```

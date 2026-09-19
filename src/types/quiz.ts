@@ -46,6 +46,8 @@ export interface QuizChapter {
   title: string;
   subtitle?: string;
   emoji: string;
+  /** Optional group label (e.g. "PSTS"). Chapters with a category are listed in their own section on the subject page */
+  category?: string;
   /** Tailwind gradient classes for the chapter card */
   gradient: string;
   /** Readable study material shown before the quiz */
