@@ -1,6 +1,7 @@
 import type { Subject } from "@/types/quiz";
 import bab1 from "./bab-1-benda-di-sekitarku";
 import bab2 from "./bab-2-makhluk-hidup-dan-lingkungannya";
+import pstsBab3 from "./psts-bab-3-matahari-dan-cuaca";
 
 const subject: Subject = {
   id: "ipas",
@@ -8,7 +9,7 @@ const subject: Subject = {
   description: "Ciri-ciri, wujud, dan perubahan benda di sekitar kita",
   emoji: "🔬",
   gradient: "from-lime-400 via-green-300 to-teal-300",
-  chapters: [bab1, bab2],
+  chapters: [bab1, bab2, pstsBab3],
 };
 
 export default subject;

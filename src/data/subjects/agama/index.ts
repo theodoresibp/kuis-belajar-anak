@@ -1,6 +1,7 @@
 import type { Subject } from "@/types/quiz";
 import bab1 from "./bab-1-anggota-keluargaku";
 import pstsBab1 from "./psts-bab-1-aku-dan-lingkunganku";
+import pstsNuhAbraham from "./psts-kisah-nuh-dan-abraham";
 
 // Tambahkan bab baru di sini, contoh:
 // import bab2 from "./bab-2-nama-bab";
@@ -10,7 +11,7 @@ const subject: Subject = {
   description: "Kasih sayang dalam keluarga dan kisah-kisah Alkitab",
   emoji: "🙏",
   gradient: "from-violet-400 via-purple-300 to-fuchsia-300",
-  chapters: [bab1, /* bab2, */ pstsBab1],
+  chapters: [bab1, /* bab2, */ pstsBab1, pstsNuhAbraham],
 };
 
 export default subject;
