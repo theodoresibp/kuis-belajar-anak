@@ -13,9 +13,20 @@ interface PreparedQuestion extends QuizQuestion {
 
 type Phase = "settings" | "playing" | "result";
 type QuestionStatus = "active" | "correct" | "failed";
+type CountChoice = number | "all";
 
-const COUNT_CHOICES = [5, 10, "all"] as const;
 const MAX_LIVES = 3;
+const COUNT_STEPS = [5, 10, 20, 30, 50, 75, 100];
+
+/** Picks up to 3 round-number steps smaller than the bank size, plus "all". Scales with however many questions the chapter has. */
+function getCountChoices(maxCount: number): CountChoice[] {
+  const steps = COUNT_STEPS.filter((n) => n < maxCount).slice(-3);
+  return [...steps, "all"];
+}
+
+function resolveChoice(choice: CountChoice, maxCount: number): number {
+  return choice === "all" ? maxCount : Math.min(choice, maxCount);
+}
 
 function prepareRound(chapter: QuizChapter, count: number): PreparedQuestion[] {
   const picked = pickRandom(chapter.questions, count);
@@ -23,9 +34,12 @@ function prepareRound(chapter: QuizChapter, count: number): PreparedQuestion[] {
 }
 
 export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+  const maxCount = chapter.questions.length;
+  const countChoices = useMemo(() => getCountChoices(maxCount), [maxCount]);
+
   const [phase, setPhase] = useState<Phase>("settings");
-  const [questionCount, setQuestionCount] = useState<number>(
-    Math.min(10, chapter.questions.length)
+  const [questionCount, setQuestionCount] = useState<number>(() =>
+    resolveChoice(countChoices[0], maxCount)
   );
   const [round, setRound] = useState<PreparedQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -36,8 +50,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
   const currentQuestion = round[currentIndex];
   const isLastQuestion = currentIndex === round.length - 1;
-
-  const maxCount = chapter.questions.length;
 
   function startRound(count: number) {
     setRound(prepareRound(chapter, count));
@@ -91,8 +103,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
         <p className="font-bold text-slate-600 mb-3">Mau main berapa soal?</p>
         <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {COUNT_CHOICES.map((choice) => {
-            const value = choice === "all" ? maxCount : Math.min(choice, maxCount);
+          {countChoices.map((choice) => {
+            const value = resolveChoice(choice, maxCount);
             const label = choice === "all" ? `Semua (${maxCount})` : `${value} soal`;
             const active = questionCount === value;
             return (
