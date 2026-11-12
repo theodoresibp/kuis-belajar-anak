@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { BATTLE_CONFIG, HERO_ASSETS, MONSTER_ASSETS } from "@/features/gamification/battle.config";
+import { BATTLE_CONFIG, getHeroById, getMonsterById } from "@/features/gamification/battle.config";
 import type { BattleSummary } from "@/features/gamification/battle.types";
 import { displayHp } from "@/features/gamification/battle.utils";
 import BattleHealthBar from "./BattleHealthBar";
@@ -10,10 +10,13 @@ import BattleHealthBar from "./BattleHealthBar";
 /**
  * Battle summary block embedded in the existing ResultScreen —
  * it extends the result screen, it does not replace it.
+ * Shows the actual hero and monster the child played with.
  */
 export default function BattleResult({ battle, score }: { battle: BattleSummary; score: number }) {
   const [heroFailed, setHeroFailed] = useState(false);
   const [monsterFailed, setMonsterFailed] = useState(false);
+  const hero = getHeroById(battle.heroId);
+  const monster = getMonsterById(battle.monsterId);
   const monsterDefeated = battle.monsterHp <= 0;
   const heroExhausted = battle.heroHp <= 0;
 
@@ -22,33 +25,33 @@ export default function BattleResult({ battle, score }: { battle: BattleSummary;
       <h3 className="mb-1 text-center text-lg font-extrabold text-slate-800">⚔️ Hasil Pertarungan</h3>
       <p className="mb-4 text-center font-bold text-slate-600">
         {monsterDefeated
-          ? "🎉 Naga berhasil dikalahkan! Kerja bagus, Petualang!"
+          ? `🎉 ${monster.name} berhasil dikalahkan oleh ${hero.name}! Kerja bagus, Petualang!`
           : heroExhausted
-            ? "💪 Hero kelelahan, tapi kamu tetap berjuang sampai akhir. Hebat!"
-            : "🌈 Pertarungan selesai! Terus berlatih supaya bisa mengalahkan naganya!"}
+            ? `💪 ${hero.name} kelelahan, tapi kamu tetap berjuang sampai akhir. Hebat!`
+            : "🌈 Pertarungan selesai! Terus berlatih supaya bisa mengalahkan lawannya!"}
       </p>
 
       <div className="mb-4 flex items-end justify-center gap-4">
         {heroFailed ? (
-          <span className="text-6xl" role="img" aria-label="Hero">🦸‍♀️</span>
+          <span className="text-6xl" role="img" aria-label={hero.name}>{hero.fallbackEmoji}</span>
         ) : (
           <Image
-            src={heroExhausted ? HERO_ASSETS.exhausted : HERO_ASSETS.victory}
-            alt="Hero di akhir pertarungan"
+            src={heroExhausted ? hero.assets.exhausted : hero.assets.victory}
+            alt={`${hero.name} di akhir pertarungan`}
             width={480}
             height={480}
             unoptimized
             onError={() => setHeroFailed(true)}
-            className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+            className="battle-victory h-20 w-20 object-contain sm:h-24 sm:w-24"
           />
         )}
         <span aria-hidden className="pb-3 text-xl font-black italic text-amber-500">VS</span>
         {monsterFailed ? (
-          <span className="text-6xl" role="img" aria-label="Naga">🐉</span>
+          <span className="text-6xl" role="img" aria-label={monster.name}>{monster.fallbackEmoji}</span>
         ) : (
           <Image
-            src={monsterDefeated ? MONSTER_ASSETS.defeat : MONSTER_ASSETS.idle}
-            alt="Naga di akhir pertarungan"
+            src={monsterDefeated ? monster.assets.defeat : monster.assets.idle}
+            alt={`${monster.name} di akhir pertarungan`}
             width={480}
             height={480}
             unoptimized
@@ -59,8 +62,8 @@ export default function BattleResult({ battle, score }: { battle: BattleSummary;
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <BattleHealthBar label="🦸‍♀️ Hero" hp={battle.heroHp} maxHp={BATTLE_CONFIG.initialHeroHp} fillClassName="bg-green-500" />
-        <BattleHealthBar label="🐉 Naga" hp={battle.monsterHp} maxHp={BATTLE_CONFIG.initialMonsterHp} fillClassName="bg-red-500" />
+        <BattleHealthBar label={`${hero.fallbackEmoji} ${hero.name}`} hp={battle.heroHp} maxHp={BATTLE_CONFIG.initialHeroHp} fillClassName="bg-green-500" />
+        <BattleHealthBar label={`${monster.fallbackEmoji} ${monster.name}`} hp={battle.monsterHp} maxHp={BATTLE_CONFIG.initialMonsterHp} fillClassName="bg-red-500" />
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-center text-sm font-bold text-slate-600 sm:grid-cols-4">
@@ -69,7 +72,7 @@ export default function BattleResult({ battle, score }: { battle: BattleSummary;
           <dd className="text-lg font-black text-green-600">{displayHp(battle.heroHp)}</dd>
         </div>
         <div className="rounded-2xl bg-white px-2 py-2">
-          <dt>HP Naga Akhir</dt>
+          <dt>HP Lawan Akhir</dt>
           <dd className="text-lg font-black text-red-500">{displayHp(battle.monsterHp)}</dd>
         </div>
         <div className="rounded-2xl bg-white px-2 py-2">

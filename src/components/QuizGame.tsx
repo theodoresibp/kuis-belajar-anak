@@ -1,11 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { QuizChapter, QuizOption, QuizQuestion } from "@/types/quiz";
 import { pickRandom, shuffle } from "@/lib/shuffle";
-import { BATTLE_CONFIG } from "@/features/gamification/battle.config";
+import {
+  BATTLE_CONFIG,
+  HEROES,
+  MONSTERS,
+  getHeroById,
+  getMonsterById,
+  pickMonsterForChapter,
+} from "@/features/gamification/battle.config";
 import { battleReducer, createInitialBattleState } from "@/features/gamification/battle.reducer";
+import {
+  generateHeroDamagePattern,
+  generateMonsterDamageSchedule,
+} from "@/features/gamification/battle.utils";
 import BattleStage from "./gamification/BattleStage";
 import QuestionCard from "./QuestionCard";
 import ResultScreen from "./ResultScreen";
@@ -50,6 +62,9 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   const [status, setStatus] = useState<QuestionStatus>("active");
   const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [score, setScore] = useState(0);
+  // Adventure Battle character/opponent choices (settings screen).
+  const [selectedHeroId, setSelectedHeroId] = useState(HEROES[0].id);
+  const [monsterChoice, setMonsterChoice] = useState<string>("auto");
 
   // Adventure Battle state: cumulative for the whole session. It is separate
   // from the per-question `livesLeft` above (which still resets per question,
@@ -83,7 +98,17 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setLivesLeft(MAX_LIVES);
     setScore(0);
     // A new quiz session is the only moment battle state (and HP) resets.
-    dispatchBattle({ type: "START", totalQuestions: prepared.length });
+    // Each session also gets fresh randomised damage: the monster schedule
+    // always totals exactly 100, the hero pattern averages exactly 5 per miss.
+    const monster = monsterChoice === "auto" ? pickMonsterForChapter(chapter.id) : getMonsterById(monsterChoice);
+    dispatchBattle({
+      type: "START",
+      totalQuestions: prepared.length,
+      heroId: selectedHeroId,
+      monsterId: monster.id,
+      monsterDamageSchedule: generateMonsterDamageSchedule(prepared.length),
+      heroDamagePattern: generateHeroDamagePattern(prepared.length * MAX_LIVES),
+    });
     setPhase("playing");
   }
 
@@ -160,6 +185,65 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
           })}
         </div>
 
+        <p className="font-bold text-slate-600 mb-3">Pilih petualangmu 🦸</p>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {HEROES.map((hero) => {
+            const active = selectedHeroId === hero.id;
+            return (
+              <button
+                key={hero.id}
+                onClick={() => setSelectedHeroId(hero.id)}
+                aria-pressed={active}
+                className={`rounded-3xl border-2 p-2 transition-all ${
+                  active
+                    ? "border-violet-600 bg-violet-50 shadow-md"
+                    : "border-slate-200 bg-white hover:border-violet-300"
+                }`}
+              >
+                <Image src={hero.assets.idle} alt={hero.name} width={480} height={480} unoptimized className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20" />
+                <span className="block font-extrabold text-slate-700">{hero.name}</span>
+                <span className="block text-xs font-semibold text-slate-400">{hero.tagline}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="font-bold text-slate-600 mb-3">Pilih lawan & arena ⚔️</p>
+        <div className="grid grid-cols-4 gap-2 mb-8">
+          <button
+            onClick={() => setMonsterChoice("auto")}
+            aria-pressed={monsterChoice === "auto"}
+            className={`rounded-3xl border-2 p-2 transition-all ${
+              monsterChoice === "auto"
+                ? "border-violet-600 bg-violet-50 shadow-md"
+                : "border-slate-200 bg-white hover:border-violet-300"
+            }`}
+          >
+            <span className="flex h-16 items-center justify-center text-4xl sm:h-20">🎲</span>
+            <span className="block font-extrabold text-slate-700">Acak</span>
+            <span className="block text-xs font-semibold text-slate-400">Ikuti bab ini</span>
+          </button>
+          {MONSTERS.map((monster) => {
+            const active = monsterChoice === monster.id;
+            return (
+              <button
+                key={monster.id}
+                onClick={() => setMonsterChoice(monster.id)}
+                aria-pressed={active}
+                className={`rounded-3xl border-2 p-2 transition-all ${
+                  active
+                    ? "border-violet-600 bg-violet-50 shadow-md"
+                    : "border-slate-200 bg-white hover:border-violet-300"
+                }`}
+              >
+                <Image src={monster.assets.idle} alt={monster.name} width={480} height={480} unoptimized className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20" />
+                <span className="block font-extrabold text-slate-700">{monster.name}</span>
+                <span className="block text-xs font-semibold text-slate-400">{monster.tagline}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => startRound(questionCount)}
@@ -195,6 +279,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
           correctAnswers: battle.correctAnswers,
           totalQuestions: battle.totalQuestions,
           battleStatus: battle.battleStatus,
+          heroId: battle.heroId,
+          monsterId: battle.monsterId,
         }}
         onPlayAgain={() => startRound(questionCount)}
         onBackToMenu={() => setPhase("settings")}
@@ -219,7 +305,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         </div>
       </div>
 
-      <BattleStage battle={battle} />
+      <BattleStage battle={battle} hero={getHeroById(battle.heroId)} monster={getMonsterById(battle.monsterId)} />
 
       <QuestionCard
         questionNumber={currentIndex + 1}

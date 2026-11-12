@@ -5,6 +5,8 @@ import type { BattleState } from "./battle.types";
 import {
   calculateMonsterDamage,
   clampHp,
+  generateHeroDamagePattern,
+  generateMonsterDamageSchedule,
   heroHpAfterWrongAnswers,
   monsterHpAfterCorrectAnswers,
 } from "./battle.utils";
@@ -147,5 +149,103 @@ describe("battle reducer — spec scenarios", () => {
     expect(s.monsterAnimation).toBe("idle");
     expect(s.lastDamage).toBeNull();
     expect(s.monsterHp).toBe(95); // recovering animation never touches HP
+  });
+});
+
+describe("randomised damage (v2)", () => {
+  it("monster schedule always sums to exactly 100, whatever the quiz length", () => {
+    for (const total of [1, 2, 3, 7, 20, 100]) {
+      const schedule = generateMonsterDamageSchedule(total);
+      expect(schedule).toHaveLength(total);
+      expect(schedule.every((d) => d > 0)).toBe(true);
+      expect(Math.round(schedule.reduce((a, b) => a + b, 0) * 100) / 100).toBe(100);
+    }
+    expect(generateMonsterDamageSchedule(1)).toEqual([100]);
+    expect(generateMonsterDamageSchedule(0)).toEqual([]);
+  });
+
+  it("monster schedule actually varies between questions", () => {
+    // A seeded rng makes this deterministic: alternating low/high rolls.
+    let i = 0;
+    const rng = () => (i++ % 2 === 0 ? 0 : 1);
+    const schedule = generateMonsterDamageSchedule(10, rng);
+    expect(new Set(schedule.slice(0, 9)).size).toBeGreaterThan(1);
+  });
+
+  it("hero pattern values are 3-7 and every pair totals exactly 10 (average 5)", () => {
+    const pattern = generateHeroDamagePattern(40);
+    expect(pattern).toHaveLength(40);
+    expect(pattern.every((d) => d >= 3 && d <= 7)).toBe(true);
+    for (let p = 0; p < pattern.length; p += 2) {
+      expect(pattern[p] + pattern[p + 1]).toBe(10);
+    }
+  });
+
+  it("reducer uses the schedule slot of the CURRENT question (failed questions lose their slot)", () => {
+    let s = battleReducer(createInitialBattleState(0), {
+      type: "START",
+      totalQuestions: 3,
+      monsterDamageSchedule: [50, 30, 20],
+    });
+    s = battleReducer(s, { type: "CORRECT_ANSWER" }); // Q1 slot: 50
+    expect(s.monsterHp).toBe(50);
+    expect(s.lastDamage?.amount).toBe(50);
+    s = battleReducer(s, { type: "NEXT_QUESTION" });
+    // Q2 is never answered correctly (child runs out of lives in the quiz layer) -> slot 30 is lost.
+    s = battleReducer(s, { type: "NEXT_QUESTION" });
+    s = battleReducer(s, { type: "CORRECT_ANSWER" }); // Q3 slot: 20
+    expect(s.monsterHp).toBe(30);
+    expect(s.correctAnswers).toBe(2);
+  });
+
+  it("answering everything correctly with a schedule defeats the monster exactly", () => {
+    const schedule = generateMonsterDamageSchedule(7);
+    let s = battleReducer(createInitialBattleState(0), {
+      type: "START",
+      totalQuestions: 7,
+      monsterDamageSchedule: schedule,
+    });
+    for (let q = 0; q < 7; q++) s = correctAndNext(s);
+    expect(s.monsterHp).toBe(0);
+    expect(s.battleStatus).toBe("monster_defeated");
+  });
+
+  it("reducer uses the hero pattern per attempt and tracks totals", () => {
+    let s = battleReducer(createInitialBattleState(0), {
+      type: "START",
+      totalQuestions: 10,
+      heroDamagePattern: [3, 7, 4, 6],
+    });
+    s = wrong(s);
+    expect(s.heroHp).toBe(97);
+    expect(s.lastDamage?.amount).toBe(3);
+    s = wrong(s);
+    expect(s.heroHp).toBe(90);
+    s = wrong(wrong(s));
+    expect(s.heroHp).toBe(80); // 3+7+4+6 = 20 = 4 attempts x average 5
+    // Beyond the pattern, damage falls back to the flat average.
+    s = wrong(s);
+    expect(s.heroHp).toBe(75);
+    expect(s.wrongAttempts).toBe(5);
+  });
+
+  it("combo streak builds on correct answers and resets on a wrong one", () => {
+    let s = start(10);
+    s = battleReducer(s, { type: "CORRECT_ANSWER" });
+    s = battleReducer(battleReducer(s, { type: "NEXT_QUESTION" }), { type: "CORRECT_ANSWER" });
+    expect(s.correctStreak).toBe(2);
+    s = wrong(s);
+    expect(s.correctStreak).toBe(0);
+  });
+
+  it("START records the chosen hero and monster for the session", () => {
+    const s = battleReducer(createInitialBattleState(0), {
+      type: "START",
+      totalQuestions: 5,
+      heroId: "bimo",
+      monsterId: "slime",
+    });
+    expect(s.heroId).toBe("bimo");
+    expect(s.monsterId).toBe("slime");
   });
 });
