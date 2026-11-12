@@ -249,3 +249,84 @@ describe("randomised damage (v2)", () => {
     expect(s.monsterId).toBe("slime");
   });
 });
+
+describe("power-ups, dialogue (v3)", () => {
+  function threeInARow(s: BattleState): BattleState {
+    let out = s;
+    for (let i = 0; i < 3; i++) {
+      out = battleReducer(out, { type: "CORRECT_ANSWER" });
+      out = battleReducer(out, { type: "NEXT_QUESTION" });
+    }
+    return out;
+  }
+
+  it("combo x3 grants exactly one power-up choice; claiming adds the item", () => {
+    let s = threeInARow(start(10));
+    expect(s.correctStreak).toBe(3);
+    expect(s.powerUpChoices).toBe(1);
+    s = battleReducer(s, { type: "CHOOSE_REWARD", item: "potion" });
+    expect(s.powerUpChoices).toBe(0);
+    expect(s.items.potion).toBe(1);
+    // No pending choice: claiming again does nothing.
+    s = battleReducer(s, { type: "CHOOSE_REWARD", item: "shield" });
+    expect(s.items.shield).toBe(0);
+  });
+
+  it("potion heals 15 (capped at 100), consumes the item, and can revive an exhausted hero", () => {
+    let s = wrong(wrong(start(10))); // hero 90
+    s = { ...s, items: { potion: 2, shield: 0, hint: 0 } };
+    s = battleReducer(s, { type: "USE_POTION" });
+    expect(s.heroHp).toBe(100); // 90 + 15 capped
+    expect(s.items.potion).toBe(1);
+    // Full HP: potion is not consumed.
+    s = battleReducer(s, { type: "USE_POTION" });
+    expect(s.items.potion).toBe(1);
+    // Revive from 0.
+    s = { ...s, heroHp: 0, battleStatus: "hero_exhausted" };
+    s = battleReducer(s, { type: "USE_POTION" });
+    expect(s.heroHp).toBe(15);
+    expect(s.battleStatus).toBe("playing");
+    expect(s.lastDamage).toMatchObject({ kind: "heal", amount: 15 });
+  });
+
+  it("shield blocks the next wrong answer completely and is then gone", () => {
+    let s = battleReducer(createInitialBattleState(0), {
+      type: "START",
+      totalQuestions: 10,
+      heroDamagePattern: [7, 3],
+    });
+    s = { ...s, items: { potion: 0, shield: 1, hint: 0 } };
+    s = battleReducer(s, { type: "USE_SHIELD" });
+    expect(s.shieldActive).toBe(true);
+    expect(s.items.shield).toBe(0);
+    s = wrong(s);
+    expect(s.heroHp).toBe(100); // blocked
+    expect(s.shieldActive).toBe(false);
+    expect(s.lastDamage).toMatchObject({ kind: "blocked", amount: 0 });
+    expect(s.wrongAttempts).toBe(0); // pattern not consumed by a blocked hit
+    s = wrong(s);
+    expect(s.heroHp).toBe(93); // first pattern value (7) applies now
+  });
+
+  it("hint use only consumes inventory when one is available", () => {
+    let s = { ...start(10), items: { potion: 0, shield: 0, hint: 1 } };
+    s = battleReducer(s, { type: "USE_HINT" });
+    expect(s.items.hint).toBe(0);
+    s = battleReducer(s, { type: "USE_HINT" });
+    expect(s.items.hint).toBe(0);
+  });
+
+  it("dialogue: monster panics at low HP, hero cheers on attack, defeat line at 0 HP", async () => {
+    const { heroLineFor, monsterLineFor } = await import("./dialogue");
+    const base = start(20);
+    const attacking = battleReducer(base, { type: "CORRECT_ANSWER" });
+    expect(heroLineFor(attacking)).toBeTruthy();
+    expect(monsterLineFor(attacking)).toBeTruthy(); // hurt line
+    const lowMonster = { ...base, monsterHp: 20 };
+    expect(monsterLineFor(lowMonster)).toMatch(/goyah|ampun|kalah/);
+    const deadMonster = { ...base, monsterHp: 0 };
+    expect(monsterLineFor(deadMonster)).toMatch(/kalah/);
+    const exhausted = { ...base, heroHp: 0 };
+    expect(heroLineFor(exhausted)).toMatch(/lelah/);
+  });
+});

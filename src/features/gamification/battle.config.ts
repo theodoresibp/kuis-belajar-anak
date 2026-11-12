@@ -22,6 +22,17 @@ export const BATTLE_CONFIG = {
   monsterDamageVariance: 0.4,
   /** How long an attack/hurt animation + damage number stays on screen. */
   animationDurationMs: 800,
+  /** Every this many consecutive correct answers, the child picks 1 power-up item. */
+  comboRewardInterval: 3,
+  /** HP restored by the potion power-up. */
+  potionHealAmount: 15,
+} as const;
+
+/** Power-up items, earned by choosing a reward after a combo milestone. */
+export const POWER_UP_INFO = {
+  potion: { emoji: "🧪", name: "Ramuan", description: "+15 HP hero" },
+  shield: { emoji: "🛡️", name: "Perisai", description: "Blokir 1 serangan" },
+  hint: { emoji: "💡", name: "Petunjuk", description: "Hapus 1 jawaban salah" },
 } as const;
 
 /* ------------------------------------------------------------------ */

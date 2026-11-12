@@ -6,11 +6,20 @@ export type MonsterPoseSet = Record<MonsterAnimation, string>;
 
 export type BattleStatus = "playing" | "hero_exhausted" | "monster_defeated" | "completed";
 
-/** A floating damage number event. `id` changes per event so React can re-run its CSS animation. */
+export type PowerUpKind = "potion" | "shield" | "hint";
+
+export interface PowerUpInventory {
+  potion: number;
+  shield: number;
+  hint: number;
+}
+
+/** A floating number/text event. `id` changes per event so React can re-run its CSS animation. */
 export interface DamageEvent {
   id: number;
   target: "hero" | "monster";
   amount: number;
+  kind: "damage" | "heal" | "blocked";
 }
 
 export interface BattleState {
@@ -30,6 +39,12 @@ export interface BattleState {
   monsterAnimation: MonsterAnimation;
   battleStatus: BattleStatus;
   lastDamage: DamageEvent | null;
+  /** Power-up inventory earned from combo rewards. */
+  items: PowerUpInventory;
+  /** Unclaimed combo rewards — each one lets the child pick 1 item. */
+  powerUpChoices: number;
+  /** An equipped shield blocks the next monster attack completely. */
+  shieldActive: boolean;
   /** Selected character / opponent for this session. */
   heroId: string;
   monsterId: string;
@@ -70,4 +85,8 @@ export type BattleAction =
   | { type: "CORRECT_ANSWER" }
   | { type: "NEXT_QUESTION" }
   | { type: "ANIMATION_DONE" }
-  | { type: "COMPLETE" };
+  | { type: "COMPLETE" }
+  | { type: "CHOOSE_REWARD"; item: PowerUpKind }
+  | { type: "USE_POTION" }
+  | { type: "USE_SHIELD" }
+  | { type: "USE_HINT" };

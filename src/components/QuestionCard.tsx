@@ -12,6 +12,8 @@ interface Props {
   options: QuizOption[];
   correctOptionId: string;
   triedOptionIds: string[];
+  /** Options removed by a hint power-up: shown greyed out, not selectable, and NOT counted as a wrong try. */
+  eliminatedOptionIds?: string[];
   status: "active" | "correct" | "failed";
   livesLeft: number;
   maxLives: number;
@@ -30,6 +32,7 @@ export default function QuestionCard({
   options,
   correctOptionId,
   triedOptionIds,
+  eliminatedOptionIds = [],
   status,
   livesLeft,
   maxLives,
@@ -72,17 +75,21 @@ export default function QuestionCard({
         {options.map((opt, idx) => {
           const isCorrect = opt.id === correctOptionId;
           const isTried = triedOptionIds.includes(opt.id);
-          const isDisabled = resolved || isTried;
+          const isEliminated = eliminatedOptionIds.includes(opt.id);
+          const isDisabled = resolved || isTried || isEliminated;
 
           let styles =
             "border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300";
           if (isTried) {
             styles = "border-red-400 bg-red-50 text-red-800 opacity-70";
           }
+          if (isEliminated) {
+            styles = "border-slate-200 bg-slate-100 text-slate-400 opacity-50";
+          }
           if (resolved) {
             if (isCorrect) {
               styles = "border-green-400 bg-green-50 text-green-800";
-            } else if (!isTried) {
+            } else if (!isTried && !isEliminated) {
               styles = "border-slate-200 bg-slate-50 opacity-60";
             }
           }
@@ -98,9 +105,10 @@ export default function QuestionCard({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white border-2 border-current font-black text-sm">
                 {LETTER[idx] ?? idx + 1}
               </span>
-              <span>{opt.text}</span>
+              <span className={isEliminated ? "line-through" : undefined}>{opt.text}</span>
               {resolved && isCorrect && <span className="ml-auto text-xl">✅</span>}
               {isTried && <span className="ml-auto text-xl">❌</span>}
+              {!isTried && isEliminated && <span className="ml-auto text-xl">💡</span>}
             </button>
           );
         })}

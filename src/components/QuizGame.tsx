@@ -18,6 +18,8 @@ import {
   generateHeroDamagePattern,
   generateMonsterDamageSchedule,
 } from "@/features/gamification/battle.utils";
+import type { PowerUpKind } from "@/features/gamification/battle.types";
+import { playSound } from "@/features/gamification/sound";
 import BattleStage from "./gamification/BattleStage";
 import QuestionCard from "./QuestionCard";
 import ResultScreen from "./ResultScreen";
@@ -65,6 +67,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   // Adventure Battle character/opponent choices (settings screen).
   const [selectedHeroId, setSelectedHeroId] = useState(HEROES[0].id);
   const [monsterChoice, setMonsterChoice] = useState<string>("auto");
+  // Answer options removed by the hint power-up on the current question.
+  const [hintedOptionIds, setHintedOptionIds] = useState<string[]>([]);
 
   // Adventure Battle state: cumulative for the whole session. It is separate
   // from the per-question `livesLeft` above (which still resets per question,
@@ -86,6 +90,19 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     }, BATTLE_CONFIG.animationDurationMs);
   }
 
+  // Sound when a combo reward is granted, and a fanfare on the result screen.
+  const prevPowerUpChoices = useRef(0);
+  useEffect(() => {
+    if (battle.powerUpChoices > prevPowerUpChoices.current) playSound("combo");
+    prevPowerUpChoices.current = battle.powerUpChoices;
+  }, [battle.powerUpChoices]);
+
+  useEffect(() => {
+    if (phase === "result") playSound(battle.monsterHp <= 0 ? "victory" : "finish");
+    // Only fire on entering the result phase.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   const currentQuestion = round[currentIndex];
   const isLastQuestion = currentIndex === round.length - 1;
 
@@ -94,6 +111,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setRound(prepared);
     setCurrentIndex(0);
     setTriedOptionIds([]);
+    setHintedOptionIds([]);
     setStatus("active");
     setLivesLeft(MAX_LIVES);
     setScore(0);
@@ -118,6 +136,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     if (optionId === currentQuestion.correctOptionId) {
       setScore((s) => s + 1);
       setStatus("correct");
+      playSound("correct");
+      playSound("hit");
       // Correct at last: the monster takes damage exactly once for this question
       // (the reducer also guards with `currentQuestionDamaged`).
       dispatchBattle({ type: "CORRECT_ANSWER" });
@@ -126,7 +146,13 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     }
 
     // Every incorrect attempt — including repeated tries on the same question —
-    // costs the hero HP in the battle layer (existing lives behaviour unchanged).
+    // costs the hero HP in the battle layer (existing lives behaviour unchanged),
+    // unless an equipped shield blocks it.
+    if (battle.shieldActive) playSound("blocked");
+    else {
+      playSound("wrong");
+      playSound("hurt");
+    }
     dispatchBattle({ type: "WRONG_ANSWER" });
     scheduleAnimationDone();
 
@@ -138,8 +164,51 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     }
   }
 
+  /** Wrong options on the current question that a hint could still eliminate. */
+  function hintCandidates(): string[] {
+    if (!currentQuestion || status !== "active") return [];
+    return currentQuestion.shuffledOptions
+      .map((o) => o.id)
+      .filter(
+        (id) =>
+          id !== currentQuestion.correctOptionId &&
+          !triedOptionIds.includes(id) &&
+          !hintedOptionIds.includes(id)
+      );
+  }
+
+  function handleUseItem(item: PowerUpKind) {
+    if (item === "potion") {
+      if (battle.items.potion <= 0 || battle.heroHp >= BATTLE_CONFIG.initialHeroHp) return;
+      dispatchBattle({ type: "USE_POTION" });
+      playSound("heal");
+      scheduleAnimationDone();
+      return;
+    }
+    if (item === "shield") {
+      if (battle.items.shield <= 0 || battle.shieldActive) return;
+      dispatchBattle({ type: "USE_SHIELD" });
+      playSound("shield");
+      return;
+    }
+    // Hint: the battle layer consumes the item, the quiz layer eliminates one
+    // wrong option (no lives lost, no damage — it is a reward, not a guess).
+    const candidates = hintCandidates();
+    if (battle.items.hint <= 0 || candidates.length === 0) return;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    setHintedOptionIds((prev) => [...prev, pick]);
+    dispatchBattle({ type: "USE_HINT" });
+    playSound("powerup");
+  }
+
+  function handleChooseReward(item: PowerUpKind) {
+    dispatchBattle({ type: "CHOOSE_REWARD", item });
+    playSound("powerup");
+  }
+
   function handleNext() {
     setTriedOptionIds([]);
+    setHintedOptionIds([]);
     setStatus("active");
     setLivesLeft(MAX_LIVES);
     if (isLastQuestion) {
@@ -305,7 +374,14 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         </div>
       </div>
 
-      <BattleStage battle={battle} hero={getHeroById(battle.heroId)} monster={getMonsterById(battle.monsterId)} />
+      <BattleStage
+        battle={battle}
+        hero={getHeroById(battle.heroId)}
+        monster={getMonsterById(battle.monsterId)}
+        canUseHint={hintCandidates().length > 0}
+        onUseItem={handleUseItem}
+        onChooseReward={handleChooseReward}
+      />
 
       <QuestionCard
         questionNumber={currentIndex + 1}
@@ -316,6 +392,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         options={currentQuestion.shuffledOptions}
         correctOptionId={currentQuestion.correctOptionId}
         triedOptionIds={triedOptionIds}
+        eliminatedOptionIds={hintedOptionIds}
         status={status}
         livesLeft={livesLeft}
         maxLives={MAX_LIVES}

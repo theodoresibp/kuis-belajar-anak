@@ -85,6 +85,13 @@ body {
   to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes battle-bubble-pop {
+  0% { transform: scale(0.7) translateY(4px); opacity: 0; }
+  60% { transform: scale(1.05) translateY(0); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.battle-bubble-pop { animation: battle-bubble-pop 0.35s ease-out; }
+
 .battle-idle { animation: battle-bob 2.4s ease-in-out infinite; }
 .battle-slash-fly { animation: battle-slash-fly 0.7s ease-out forwards; }
 .battle-fire-fly { animation: battle-fire-fly 0.7s ease-out forwards; }
@@ -123,6 +130,7 @@ body {
   .battle-fire-fly,
   .battle-stage-shake,
   .battle-combo-pop,
+  .battle-bubble-pop,
   .battle-sparkle,
   .battle-enter-left,
   .battle-enter-right {
