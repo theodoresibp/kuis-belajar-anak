@@ -1,8 +1,13 @@
 "use client";
 
+import type { BattleSummary } from "@/features/gamification/battle.types";
+import BattleResult from "./gamification/BattleResult";
+
 interface Props {
   score: number;
   total: number;
+  /** Optional Adventure Battle summary — the result screen works unchanged without it. */
+  battle?: BattleSummary;
   onPlayAgain: () => void;
   onBackToMenu: () => void;
 }
@@ -15,7 +20,7 @@ function getRating(pct: number) {
   return { emoji: "💪", text: "Jangan menyerah, coba lagi yuk!" };
 }
 
-export default function ResultScreen({ score, total, onPlayAgain, onBackToMenu }: Props) {
+export default function ResultScreen({ score, total, battle, onPlayAgain, onBackToMenu }: Props) {
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
   const rating = getRating(pct);
 
@@ -29,6 +34,8 @@ export default function ResultScreen({ score, total, onPlayAgain, onBackToMenu }
         {score} <span className="text-2xl text-slate-400 font-bold">/ {total}</span>
       </div>
       <div className="text-lg font-bold text-slate-500 mb-8">{pct}%</div>
+
+      {battle && <BattleResult battle={battle} score={score} />}
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <button

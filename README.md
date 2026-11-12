@@ -10,6 +10,7 @@ Game kuis interaktif untuk anak, dibuat dengan Next.js (App Router) + TypeScript
 - Materi & soal dibuat kaya akan gambar (aset lokal maupun sumber eksternal seperti Wikimedia Commons) karena anak lebih suka belajar dengan visual, termasuk galeri foto bergrid untuk bagian yang punya beberapa contoh.
 - Skor, progress bar, dan feedback penjelasan setelah menjawab.
 - Struktur data per "Bab" yang mudah ditambah materi baru.
+- **Adventure Battle** (gamifikasi): pahlawan petualang cilik melawan naga ungu lucu di atas kartu soal. Jawaban benar menyerang naga (HP naga berkurang `100 / jumlah soal`, hanya sekali per soal), setiap jawaban salah mengurangi HP hero 5 poin. HP bersifat kumulatif selama satu sesi kuis dan tidak reset antar soal. Hero kehabisan HP tidak menghentikan kuis (mode latihan), dan layar hasil menampilkan ringkasan pertarungan. Logika battle ada di `src/features/gamification/` (terpisah dari komponen tampilan, lengkap dengan unit test: `bun run test`), tampilannya di `src/components/gamification/`, dan cara mengganti aset karakter didokumentasikan di `src/features/gamification/ASSETS.md`.
 
 ## Menjalankan secara lokal
 

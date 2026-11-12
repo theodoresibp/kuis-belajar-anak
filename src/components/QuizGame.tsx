@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import type { QuizChapter, QuizOption, QuizQuestion } from "@/types/quiz";
 import { pickRandom, shuffle } from "@/lib/shuffle";
+import { BATTLE_CONFIG } from "@/features/gamification/battle.config";
+import { battleReducer, createInitialBattleState } from "@/features/gamification/battle.reducer";
+import BattleStage from "./gamification/BattleStage";
 import QuestionCard from "./QuestionCard";
 import ResultScreen from "./ResultScreen";
 
@@ -48,16 +51,39 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [score, setScore] = useState(0);
 
+  // Adventure Battle state: cumulative for the whole session. It is separate
+  // from the per-question `livesLeft` above (which still resets per question,
+  // exactly as before) — battle HP never resets on question navigation.
+  const [battle, dispatchBattle] = useReducer(battleReducer, createInitialBattleState(0));
+  const animationTimer = useRef<number | null>(null);
+
+  // Always let animations recover to idle, even if the component unmounts mid-animation.
+  useEffect(() => {
+    return () => {
+      if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
+    };
+  }, []);
+
+  function scheduleAnimationDone() {
+    if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
+    animationTimer.current = window.setTimeout(() => {
+      dispatchBattle({ type: "ANIMATION_DONE" });
+    }, BATTLE_CONFIG.animationDurationMs);
+  }
+
   const currentQuestion = round[currentIndex];
   const isLastQuestion = currentIndex === round.length - 1;
 
   function startRound(count: number) {
-    setRound(prepareRound(chapter, count));
+    const prepared = prepareRound(chapter, count);
+    setRound(prepared);
     setCurrentIndex(0);
     setTriedOptionIds([]);
     setStatus("active");
     setLivesLeft(MAX_LIVES);
     setScore(0);
+    // A new quiz session is the only moment battle state (and HP) resets.
+    dispatchBattle({ type: "START", totalQuestions: prepared.length });
     setPhase("playing");
   }
 
@@ -67,8 +93,17 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     if (optionId === currentQuestion.correctOptionId) {
       setScore((s) => s + 1);
       setStatus("correct");
+      // Correct at last: the monster takes damage exactly once for this question
+      // (the reducer also guards with `currentQuestionDamaged`).
+      dispatchBattle({ type: "CORRECT_ANSWER" });
+      scheduleAnimationDone();
       return;
     }
+
+    // Every incorrect attempt — including repeated tries on the same question —
+    // costs the hero HP in the battle layer (existing lives behaviour unchanged).
+    dispatchBattle({ type: "WRONG_ANSWER" });
+    scheduleAnimationDone();
 
     const remaining = livesLeft - 1;
     setLivesLeft(remaining);
@@ -83,9 +118,11 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setStatus("active");
     setLivesLeft(MAX_LIVES);
     if (isLastQuestion) {
+      dispatchBattle({ type: "COMPLETE" });
       setPhase("result");
       return;
     }
+    dispatchBattle({ type: "NEXT_QUESTION" });
     setCurrentIndex((i) => i + 1);
   }
 
@@ -152,6 +189,13 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
       <ResultScreen
         score={score}
         total={round.length}
+        battle={{
+          heroHp: battle.heroHp,
+          monsterHp: battle.monsterHp,
+          correctAnswers: battle.correctAnswers,
+          totalQuestions: battle.totalQuestions,
+          battleStatus: battle.battleStatus,
+        }}
         onPlayAgain={() => startRound(questionCount)}
         onBackToMenu={() => setPhase("settings")}
       />
@@ -174,6 +218,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
           />
         </div>
       </div>
+
+      <BattleStage battle={battle} />
 
       <QuestionCard
         questionNumber={currentIndex + 1}
