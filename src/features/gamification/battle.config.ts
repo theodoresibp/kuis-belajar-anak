@@ -39,7 +39,7 @@ export interface HeroDef {
 export const HEROES: HeroDef[] = [
   {
     id: "rara",
-    name: "Rara",
+    name: "Velo",
     tagline: "Petualang pita merah muda",
     fallbackEmoji: "🦸‍♀️",
     assets: {
@@ -52,7 +52,7 @@ export const HEROES: HeroDef[] = [
   },
   {
     id: "bimo",
-    name: "Bimo",
+    name: "Theo",
     tagline: "Petualang topi biru",
     fallbackEmoji: "🦸‍♂️",
     assets: {
@@ -65,7 +65,7 @@ export const HEROES: HeroDef[] = [
   },
   {
     id: "tari",
-    name: "Tari",
+    name: "Sera",
     tagline: "Petualang jepit bintang",
     fallbackEmoji: "🦸‍♀️",
     assets: {

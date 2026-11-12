@@ -5,7 +5,7 @@ Runtime assets live in `public/assets/gamification/`:
 ```
 public/assets/gamification/
 ├── hero/
-│   ├── hero-idle.webp / hero-attack.webp / hero-hurt.webp / hero-victory.webp / hero-exhausted.webp   (Rara)
+│   ├── hero-idle.webp / hero-attack.webp / hero-hurt.webp / hero-victory.webp / hero-exhausted.webp   (Velo)
 │   ├── bimo/  idle.webp attack.webp hurt.webp victory.webp exhausted.webp
 │   └── tari/  idle.webp attack.webp hurt.webp victory.webp exhausted.webp
 ├── monsters/
@@ -28,9 +28,9 @@ automatically.
 
 ## Provenance
 
-- **Rara + Naga Ungu**: cropped from the owner's supplied concept sheets
+- **Velo + Naga Ungu**: cropped from the owner's supplied concept sheets
   ("Cute Chibi Quiz Battle Gamekit") with edge-connected background removal.
-- **Bimo, Tari, Slime Daun, Rubah Oranye**: production sheets generated in the
+- **Theo, Sera, Slime Daun, Rubah Oranye**: production sheets generated in the
   same art style, then cut with the same pipeline. The full source sheets are
   kept in `docs/gamification-sheets/` so poses can be re-cropped later.
   Known quirk: the fox's attack pose lost most of its motion-blur tail during
