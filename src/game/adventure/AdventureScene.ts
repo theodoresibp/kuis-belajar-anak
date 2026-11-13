@@ -32,6 +32,11 @@ export default class AdventureScene extends Phaser.Scene {
   private heroPoseTimer: Phaser.Time.TimerEvent | null = null;
   private isAdventureStopped = false;
   private encounterSprites: Phaser.Physics.Arcade.Sprite[] = [];
+  private readonly monsterPoseKeys = [
+    { attack: "adventure-monster-slime-attack", hurt: "adventure-monster-slime-hurt", defeat: "adventure-monster-slime-defeat" },
+    { attack: "adventure-monster-fox-attack", hurt: "adventure-monster-fox-hurt", defeat: "adventure-monster-fox-defeat" },
+    { attack: "adventure-monster-guardian-attack", hurt: "adventure-monster-guardian-hurt", defeat: "adventure-monster-guardian-defeat" },
+  ];
   private encounterLabels: Phaser.GameObjects.Text[] = [];
   private activeEncounterId: string | null = null;
   private encounterPaused = false;
@@ -81,9 +86,20 @@ export default class AdventureScene extends Phaser.Scene {
     Object.entries(poseFiles).forEach(([pose, filename]) => {
       this.load.image(`adventure-hero-${pose}`, `${heroBase}/${filename}`);
     });
-    this.load.image("adventure-monster-slime", "/assets/gamification/monsters/slime/idle.webp");
-    this.load.image("adventure-monster-fox", "/assets/gamification/monsters/fox/idle.webp");
-    this.load.image("adventure-monster-guardian", "/assets/gamification/monsters/purple-dragon/idle.webp");
+    const monsterAssets = [
+      { key: "slime", folder: "slime" },
+      { key: "fox", folder: "fox" },
+      { key: "guardian", folder: "purple-dragon" },
+    ];
+
+    monsterAssets.forEach(({ key, folder }) => {
+      ["idle", "attack", "hurt", "defeat"].forEach((pose) => {
+        this.load.image(
+          `adventure-monster-${key}${pose === "idle" ? "" : `-${pose}`}`,
+          `/assets/gamification/monsters/${folder}/${pose}.webp`,
+        );
+      });
+    });
   }
 
   create() {
@@ -663,6 +679,9 @@ export default class AdventureScene extends Phaser.Scene {
       callback: () => {
         if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
         const boss = this.encounterSprites[2];
+        if (boss?.active && this.textures.exists("adventure-monster-guardian-attack")) {
+          boss.setTexture("adventure-monster-guardian-attack");
+        }
         boss?.setTint(0xfca5a5);
         if (boss) {
           this.tweens.add({
@@ -681,6 +700,9 @@ export default class AdventureScene extends Phaser.Scene {
           const boss = this.encounterSprites[2];
           if (boss?.active) {
             this.tweens.killTweensOf(boss);
+            if (this.textures.exists("adventure-monster-guardian-attack")) {
+              boss.setTexture("adventure-monster-guardian-attack");
+            }
             boss.setTint(0xf87171);
             this.tweens.add({
               targets: boss,
@@ -743,6 +765,11 @@ export default class AdventureScene extends Phaser.Scene {
     const index = ENCOUNTERS.findIndex((encounter) => encounter.id === encounterId);
     const defeatedMonster = this.encounterSprites[index];
     if (defeatedMonster?.active) {
+      const poseKeys = this.monsterPoseKeys[index];
+      if (poseKeys && this.textures.exists(poseKeys.hurt)) {
+        defeatedMonster.setTexture(poseKeys.hurt);
+      }
+      this.tweens.killTweensOf(defeatedMonster);
       this.playTone(660, 0.13, "sine");
       this.time.delayedCall(100, () => this.playTone(880, 0.16, "sine"));
       for (let particleIndex = 0; particleIndex < 12; particleIndex += 1) {
@@ -763,7 +790,16 @@ export default class AdventureScene extends Phaser.Scene {
         });
       }
     }
-    defeatedMonster?.destroy();
+    if (defeatedMonster?.active) {
+      const poseKeys = this.monsterPoseKeys[index];
+      this.time.delayedCall(260, () => {
+        if (defeatedMonster.active && poseKeys && this.textures.exists(poseKeys.defeat)) {
+          defeatedMonster.setTexture(poseKeys.defeat);
+          defeatedMonster.setAlpha(0.9);
+        }
+      });
+      this.time.delayedCall(760, () => defeatedMonster.destroy());
+    }
     this.encounterLabels[index]?.destroy();
     this.nextEncounterIndex += 1;
     this.activeEncounterId = null;
