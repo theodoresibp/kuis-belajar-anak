@@ -147,7 +147,7 @@ export default class AdventureScene extends Phaser.Scene {
     try {
       this.audioContext ??= new AudioContext();
       if (this.audioContext.state === "suspended") {
-        void this.audioContext.resume();
+        void this.audioContext.resume().catch(() => undefined);
       }
     } catch {
       // Audio is an enhancement; gameplay remains available if it is unsupported.
