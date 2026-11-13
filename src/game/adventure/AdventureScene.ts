@@ -97,9 +97,9 @@ export default class AdventureScene extends Phaser.Scene {
     this.heroIdleTexture = this.textures.exists("adventure-hero-idle")
       ? "adventure-hero-idle"
       : "hero-idle-1";
-    this.heroMoveTexture = this.textures.exists("adventure-hero-attack")
-      ? "adventure-hero-attack"
-      : "hero-walk-1";
+    // Keep the selected character's real artwork while moving; movement is
+    // communicated by body tilt instead of swapping to an attack pose.
+    this.heroMoveTexture = this.heroIdleTexture;
     this.heroHurtTexture = this.textures.exists("adventure-hero-hurt")
       ? "adventure-hero-hurt"
       : this.heroIdleTexture;
