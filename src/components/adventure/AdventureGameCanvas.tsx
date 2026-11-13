@@ -229,7 +229,7 @@ export default function AdventureGameCanvas({
     <div className="w-full">
       <div
         ref={hostRef}
-        className="aspect-[16/9] w-full overflow-hidden rounded-2xl border-4 border-white bg-sky-200 shadow-xl"
+        className="aspect-[16/10] w-full touch-none overflow-hidden rounded-2xl border-4 border-white bg-sky-200 shadow-xl sm:aspect-[16/9]"
         aria-label="Game petualangan Enchanted Forest"
       />
 
@@ -262,7 +262,7 @@ export default function AdventureGameCanvas({
               onPointerUp={handlePointerRelease}
               onPointerCancel={handlePointerRelease}
               onLostPointerCapture={handlePointerRelease}
-              className="h-12 min-w-12 touch-none select-none rounded-xl bg-violet-600 px-4 text-2xl font-black text-white shadow-md transition hover:bg-violet-700 active:scale-95 active:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-14 min-w-14 touch-none select-none rounded-xl bg-violet-600 px-5 text-2xl font-black text-white shadow-md transition hover:bg-violet-700 active:scale-95 active:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {CONTROL_SYMBOLS[direction]}
             </button>
@@ -271,7 +271,7 @@ export default function AdventureGameCanvas({
       </div>
 
       <p className="mt-2 text-center text-xs text-slate-500 sm:text-right">
-        Gunakan tombol di layar atau keyboard untuk bermain.
+        Sentuh dan tahan tombol untuk bergerak. Tekan ↑ untuk melompat. Efek suara aktif setelah interaksi pertama.
       </p>
     </div>
   );
