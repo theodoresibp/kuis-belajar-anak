@@ -13,13 +13,18 @@ import {
 
 interface Props {
   chapter: QuizChapter;
+  questionCount?: number;
 }
 
 const ENCOUNTER_NAMES = ["Slime Hutan", "Rubah Penjaga", "Penjaga Hutan"];
 
-export default function AdventureMode({ chapter }: Props) {
-  // Keep the first server/client render deterministic to avoid hydration mismatch.
-  const questions = chapter.questions;
+export default function AdventureMode({ chapter, questionCount }: Props) {
+  // Keep question selection deterministic so server and client render identically.
+  const selectedCount = Math.max(
+    1,
+    Math.min(questionCount ?? chapter.questions.length, chapter.questions.length),
+  );
+  const questions = chapter.questions.slice(0, selectedCount);
 
   const encounterCount = Math.min(ENCOUNTER_NAMES.length, questions.length);
   const baseQuestionCount = Math.floor(questions.length / Math.max(1, encounterCount));
