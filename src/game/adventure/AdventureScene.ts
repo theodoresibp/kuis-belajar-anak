@@ -1,5 +1,6 @@
 
 import * as Phaser from "phaser";
+import { getHeroById } from "@/features/gamification/battle.config";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -65,28 +66,12 @@ export default class AdventureScene extends Phaser.Scene {
   }
 
   preload() {
-    const heroBase = this.heroId === "rara"
-      ? "/assets/gamification/hero/hero"
-      : `/assets/gamification/hero/${this.heroId}`;
-    const poseFiles = this.heroId === "rara"
-      ? {
-          idle: "hero-idle.webp",
-          attack: "hero-attack.webp",
-          hurt: "hero-hurt.webp",
-          victory: "hero-victory.webp",
-          exhausted: "hero-exhausted.webp",
-        }
-      : {
-          idle: "idle.webp",
-          attack: "attack.webp",
-          hurt: "hurt.webp",
-          victory: "victory.webp",
-          exhausted: "exhausted.webp",
-        };
-
-    Object.entries(poseFiles).forEach(([pose, filename]) => {
-      this.load.image(`adventure-hero-${pose}`, `${heroBase}/${filename}`);
+    // Reuse the exact asset paths used by the character preview and battle UI.
+    const hero = getHeroById(this.heroId);
+    Object.entries(hero.assets).forEach(([pose, assetPath]) => {
+      this.load.image(`adventure-hero-${pose}`, assetPath);
     });
+
     const monsterAssets = [
       { key: "slime", folder: "slime" },
       { key: "fox", folder: "fox" },
@@ -100,6 +85,10 @@ export default class AdventureScene extends Phaser.Scene {
           `/assets/gamification/monsters/${folder}/${pose}.webp`,
         );
       });
+    });
+
+    this.load.on("loaderror", (file: Phaser.Loader.File) => {
+      console.error("Adventure asset gagal dimuat:", file.key, file.src);
     });
   }
 
@@ -937,6 +926,17 @@ export default class AdventureScene extends Phaser.Scene {
       Phaser.Input.Keyboard.JustDown(this.cursors.space) ||
       Phaser.Input.Keyboard.JustDown(this.wasd.jump) ||
       this.virtual.jump;
+
+    // Proximity fallback: start an encounter even if Arcade overlap misses a sprite body.
+    const nextMonster = this.encounterSprites[this.nextEncounterIndex];
+    if (nextMonster?.active) {
+      const playerBounds = this.player.getBounds();
+      const monsterBounds = nextMonster.getBounds();
+      if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, monsterBounds)) {
+        this.triggerEncounter(this.player, nextMonster);
+        return;
+      }
+    }
 
     const body = this.player.body as Phaser.Physics.Arcade.Body;
 
