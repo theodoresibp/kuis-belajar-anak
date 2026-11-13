@@ -26,7 +26,6 @@ interface PreparedQuestion {
   explanation?: string;
 }
 
-const HERO_DAMAGE = 5;
 const ENCOUNTER_NAMES = ["Slime Hutan", "Rubah Penjaga", "Penjaga Hutan"];
 
 export default function AdventureMode({ chapter }: Props) {
@@ -119,10 +118,12 @@ export default function AdventureMode({ chapter }: Props) {
       return;
     }
 
+    dispatch({ type: "NEXT_QUESTION" });
     dispatch({ type: "NEXT_ENCOUNTER" });
   }
 
   function handleNextQuestion() {
+    dispatch({ type: "NEXT_QUESTION" });
     setTriedOptionIds([]);
     setQuestionStatus("active");
   }
