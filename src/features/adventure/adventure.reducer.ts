@@ -19,6 +19,7 @@ export type AdventureRunAction =
   | { type: "START_ENCOUNTER" }
   | { type: "WRONG_ANSWER" }
   | { type: "CORRECT_ANSWER"; damage: number }
+  | { type: "NEXT_QUESTION" }
   | { type: "NEXT_ENCOUNTER" }
   | { type: "VICTORY" }
   | { type: "DEFEAT" };
@@ -58,9 +59,12 @@ export function adventureReducer(
       return {
         ...state,
         score: state.score + 1,
-        currentQuestionIndex: state.currentQuestionIndex + 1,
         monsterHp: Math.max(0, Math.round((state.monsterHp - action.damage) * 100) / 100),
       };
+
+    case "NEXT_QUESTION":
+      if (state.status !== "encounter" || state.monsterHp <= 0) return state;
+      return { ...state, currentQuestionIndex: state.currentQuestionIndex + 1 };
 
     case "NEXT_ENCOUNTER":
       if (state.status !== "encounter" || state.monsterHp > 0) return state;
