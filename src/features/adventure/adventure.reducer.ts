@@ -71,6 +71,7 @@ export function adventureReducer(
       return {
         ...state,
         encounterIndex: state.encounterIndex + 1,
+        currentQuestionIndex: state.currentQuestionIndex + 1,
         monsterHp: BATTLE_CONFIG.initialMonsterHp,
         status: "exploring",
       };
