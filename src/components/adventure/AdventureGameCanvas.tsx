@@ -236,8 +236,6 @@ export default function AdventureGameCanvas({
     }
   };
 
-  const directions: VirtualDirection[] = ["left", "right", "jump"];
-
   return (
     <div className="w-full">
       <div className="relative isolate aspect-[16/10] w-full touch-none overflow-hidden rounded-2xl border-4 border-white bg-sky-200 shadow-xl" aria-label="Game petualangan Enchanted Forest">
