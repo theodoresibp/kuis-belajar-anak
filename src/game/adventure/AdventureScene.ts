@@ -54,11 +54,13 @@ export default class AdventureScene extends Phaser.Scene {
   }
 
   preload() {
-    const heroFolder = this.heroId === "bimo" || this.heroId === "tari"
-      ? this.heroId
-      : "hero";
-    this.load.image("adventure-hero-idle", `/assets/gamification/hero/${heroFolder}/idle.webp`);
-    this.load.image("adventure-hero-attack", `/assets/gamification/hero/${heroFolder}/attack.webp`);
+    const heroBase = this.heroId === "rara"
+      ? "/assets/gamification/hero/hero"
+      : `/assets/gamification/hero/${this.heroId}`;
+    const idleFile = this.heroId === "rara" ? "hero-idle.webp" : "idle.webp";
+    const attackFile = this.heroId === "rara" ? "hero-attack.webp" : "attack.webp";
+    this.load.image("adventure-hero-idle", `${heroBase}/${idleFile}`);
+    this.load.image("adventure-hero-attack", `${heroBase}/${attackFile}`);
     this.load.image("adventure-monster-slime", "/assets/gamification/monsters/slime/idle.webp");
     this.load.image("adventure-monster-fox", "/assets/gamification/monsters/fox/idle.webp");
     this.load.image("adventure-monster-guardian", "/assets/gamification/monsters/purple-dragon/idle.webp");
