@@ -122,7 +122,7 @@ export default function AdventureMode({ chapter }: Props) {
                 Adventure Mode
               </span>
               <span className="rounded-full border border-emerald-300 bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">
-                Sprint 2 • Monster Encounters
+                Sprint 3 • Obstacles & Power-ups
               </span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
@@ -145,6 +145,7 @@ export default function AdventureMode({ chapter }: Props) {
           <div className="overflow-hidden rounded-2xl">
             <AdventureGameCanvas
               encounterCount={encounterCount}
+              isDefeated={run.status === "defeat"}
               onEncounter={handleEncounter}
               onAdventureComplete={() => dispatch({ type: "VICTORY" })}
               onHazard={() => dispatch({ type: "HAZARD" })}
@@ -283,7 +284,7 @@ export default function AdventureMode({ chapter }: Props) {
 
         {!activeEncounter && run.status === "exploring" && (
           <p className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-center text-sm font-semibold text-emerald-800">
-            Gunakan A/D atau tombol arah untuk berjalan. Dekati monster untuk memulai kuis pertarungan!
+            Hindari duri merah dengan melompat. Ambil kristal hati untuk memulihkan 15 HP dan perisai biru untuk memblokir satu rintangan. Dekati monster untuk memulai kuis!
           </p>
         )}
 
