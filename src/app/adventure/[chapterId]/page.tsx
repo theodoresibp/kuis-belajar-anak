@@ -13,7 +13,7 @@ export default async function AdventurePage({
   searchParams,
 }: {
   params: Promise<{ chapterId: string }>;
-  searchParams: Promise<{ count?: string }>;
+  searchParams: Promise<{ count?: string; hero?: string }>;
 }) {
   const [{ chapterId }, query] = await Promise.all([params, searchParams]);
   const chapter = getChapterById(chapterId);
@@ -27,5 +27,8 @@ export default async function AdventurePage({
     ? Math.min(requestedCount, chapter.questions.length)
     : chapter.questions.length;
 
-  return <AdventureMode chapter={chapter} questionCount={questionCount} />;
+  const allowedHeroIds = new Set(["rara", "bimo", "tari"]);
+  const heroId = allowedHeroIds.has(query.hero ?? "") ? query.hero! : "bimo";
+
+  return <AdventureMode chapter={chapter} questionCount={questionCount} heroId={heroId} />;
 }
