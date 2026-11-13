@@ -8,7 +8,15 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
+import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
+
 type VirtualDirection = "left" | "right" | "jump";
+
+interface Props {
+  encounterCount: number;
+  onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
+  onAdventureComplete: () => void;
+}
 
 const CONTROL_LABELS: Record<VirtualDirection, string> = {
   left: "Bergerak ke kiri",
@@ -22,12 +30,20 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
   jump: "↑",
 };
 
-export default function AdventureGameCanvas() {
+export default function AdventureGameCanvas({
+  encounterCount,
+  onEncounter,
+  onAdventureComplete,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<import("phaser").Game | null>(null);
 
   // Menyimpan pointer ID agar beberapa tombol dapat ditekan bersamaan.
   const activePointers = useRef<Map<number, VirtualDirection>>(new Map());
+  const onEncounterRef = useRef(onEncounter);
+  const onAdventureCompleteRef = useRef(onAdventureComplete);
+  onEncounterRef.current = onEncounter;
+  onAdventureCompleteRef.current = onAdventureComplete;
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -68,10 +84,27 @@ export default function AdventureGameCanvas() {
             antialias: true,
             pixelArt: false,
           },
-          scene: [AdventureScene],
+          scene: [new AdventureScene(encounterCount)],
         });
 
         gameRef.current = game;
+
+        const handleEncounter = (encounter: AdventureEncounter) => {
+          onEncounterRef.current(encounter, () => {
+            game.events.emit("resolve-encounter", encounter.id);
+          });
+        };
+        const handleAdventureComplete = () => {
+          onAdventureCompleteRef.current();
+        };
+
+        game.events.on("monster-encounter", handleEncounter);
+        game.events.on("adventure-complete", handleAdventureComplete);
+
+        game.events.once(Phaser.Core.Events.DESTROY, () => {
+          game.events.off("monster-encounter", handleEncounter);
+          game.events.off("adventure-complete", handleAdventureComplete);
+        });
 
         if (!disposed) {
           setReady(true);
@@ -97,7 +130,7 @@ export default function AdventureGameCanvas() {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, []);
+  }, [encounterCount]);
 
   const sendControl = useCallback(
     (direction: VirtualDirection, pressed: boolean) => {
