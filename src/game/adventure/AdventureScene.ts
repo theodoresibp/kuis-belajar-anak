@@ -55,8 +55,8 @@ export default class AdventureScene extends Phaser.Scene {
   private readonly worldWidth = 2600;
   private readonly worldHeight = 640;
   private readonly moveSpeed = 230;
-  // Max jump height is about 236px with gravity 1100, enough to reach the highest 205px platform rise.
-  private readonly jumpVelocity = -720;
+  // Max jump height is about 216px with gravity 1100, enough for the highest 205px platform with a small margin.
+  private readonly jumpVelocity = -690;
 
   constructor(encounterCount = ENCOUNTERS.length, heroId = "bimo") {
     super("AdventureScene");
