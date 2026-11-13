@@ -465,11 +465,12 @@ export default class AdventureScene extends Phaser.Scene {
     });
   }
 
-  private triggerEncounter(
-    _player: Phaser.GameObjects.GameObject,
-    monsterObject: Phaser.GameObjects.GameObject,
-  ) {
+  private triggerEncounter = (
+    _player: unknown,
+    monsterObject: unknown,
+  ) => {
     if (this.encounterPaused) return;
+    if (!(monsterObject instanceof Phaser.GameObjects.GameObject)) return;
 
     const monster = monsterObject as Phaser.Physics.Arcade.Sprite;
     const encounter = monster.getData("encounter") as AdventureEncounter | undefined;
@@ -482,7 +483,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.virtual = { left: false, right: false, jump: false };
     this.physics.world.pause();
     this.game.events.emit("monster-encounter", encounter);
-  }
+  };
 
   private handleResolveEncounter(encounterId: string) {
     if (!this.encounterPaused || encounterId !== this.activeEncounterId) return;
