@@ -725,13 +725,10 @@ export default class AdventureScene extends Phaser.Scene {
     this.heroPoseTimer?.remove(false);
     this.player.setTexture(texture);
     this.heroPoseTimer = this.time.delayedCall(duration, () => {
-      if (
-        this.player?.active &&
-        !this.encounterPaused &&
-        !this.isAdventureStopped
-      ) {
+      if (this.player?.active && !this.isAdventureStopped) {
         this.player.setTexture(this.heroIdleTexture);
       }
+      this.heroPoseTimer = null;
     });
   }
 
@@ -910,18 +907,19 @@ export default class AdventureScene extends Phaser.Scene {
       this.virtual.jump = false;
     }
 
-    // Character animation state
-    if (!body.blocked.down) {
-      this.player.setTexture(this.heroMoveTexture);
-      this.player.setAngle(Phaser.Math.Clamp(body.velocity.y / 55, -10, 10));
-    } else if (left !== right) {
-      // Asset karakter hanya menyediakan pose idle/attack, jadi gerakan kaki
-      // disimulasikan dengan ayunan badan tanpa mengganti nama/karakter.
-      this.player.setTexture(this.heroIdleTexture);
-      this.player.setAngle(Math.sin(this.time.now / 75) * 5);
-    } else {
-      this.player.setTexture(this.heroIdleTexture);
-      this.player.setAngle(0);
+    // Jangan timpa pose hurt selama animasi reaksinya masih berlangsung.
+    if (!this.heroPoseTimer) {
+      if (!body.blocked.down) {
+        this.player.setTexture(this.heroMoveTexture);
+        this.player.setAngle(Phaser.Math.Clamp(body.velocity.y / 55, -10, 10));
+      } else if (left !== right) {
+        // Pose idle dipadukan dengan ayunan badan untuk memberi kesan berjalan.
+        this.player.setTexture(this.heroIdleTexture);
+        this.player.setAngle(Math.sin(this.time.now / 75) * 5);
+      } else {
+        this.player.setTexture(this.heroIdleTexture);
+        this.player.setAngle(0);
+      }
     }
   }
 }
