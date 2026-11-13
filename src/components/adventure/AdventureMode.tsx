@@ -14,11 +14,12 @@ import {
 interface Props {
   chapter: QuizChapter;
   questionCount?: number;
+  heroId?: string;
 }
 
 const ENCOUNTER_NAMES = ["Slime Hutan", "Rubah Penjaga", "Penjaga Hutan"];
 
-export default function AdventureMode({ chapter, questionCount }: Props) {
+export default function AdventureMode({ chapter, questionCount, heroId = "bimo" }: Props) {
   // Keep question selection deterministic so server and client render identically.
   const selectedCount = Math.max(
     1,
@@ -151,6 +152,7 @@ export default function AdventureMode({ chapter, questionCount }: Props) {
           <div className="overflow-hidden rounded-2xl">
             <AdventureGameCanvas
               encounterCount={encounterCount}
+              heroId={heroId}
               isDefeated={run.status === "defeat"}
               onEncounter={handleEncounter}
               onAdventureComplete={() => dispatch({ type: "VICTORY" })}
