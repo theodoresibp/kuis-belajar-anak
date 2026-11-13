@@ -321,7 +321,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
             ▶️ Mulai Kuis
           </button>
           <Link
-            href={`/adventure/${chapter.id}?count=${questionCount}`}
+            href={`/adventure/${chapter.id}?count=${questionCount}&hero=${selectedHeroId}`}
             className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 shadow-md transition-colors"
           >
             🌲 Adventure Mode
