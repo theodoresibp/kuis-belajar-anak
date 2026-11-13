@@ -129,7 +129,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                 Adventure Mode
               </span>
               <span className="rounded-full border border-emerald-300 bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">
-                Sprint 5 • Visual, Audio & Mobile Polish
+                Sprint 7 • Character & Monster Artwork
               </span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
@@ -311,7 +311,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
 
         <footer className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-center">
           <p className="text-xs font-semibold text-emerald-800">
-            Sprint 5 — nikmati animasi monster, efek suara, dan kontrol sentuh yang lebih nyaman pada bab {chapter.title}.
+            Sprint 7 — gunakan karakter pilihanmu dan hadapi monster hutan pada bab {chapter.title}.
           </p>
         </footer>
       </div>
