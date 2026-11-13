@@ -431,7 +431,7 @@ export default class AdventureScene extends Phaser.Scene {
       );
       monster.setDisplaySize(index === 2 ? 104 : 82, index === 2 ? 98 : 78);
       monster.setImmovable(true);
-      monster.setAllowGravity(false);
+      monster.body.allowGravity = false;
       monster.setDepth(9);
       monster.setData("encounter", encounter);
       this.encounterSprites.push(monster);
