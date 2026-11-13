@@ -117,6 +117,12 @@ export default class AdventureScene extends Phaser.Scene {
     // Anchor the artwork at its feet so transparent padding in character sprites
     // does not make Velo appear to float above the platform.
     this.player.setOrigin(0.5, 1);
+    if (this.heroId === "rara") {
+      // Velo's artwork has extra transparent space below the feet.
+      // Shift only the artwork down while keeping its physics body in place.
+      this.player.setY(this.player.y + 8);
+      (this.player.body as Phaser.Physics.Arcade.Body).setOffset(0, -8);
+    }
     this.player.setCollideWorldBounds(true);
     this.player.setBounce(0.02);
     this.player.setDepth(10);
