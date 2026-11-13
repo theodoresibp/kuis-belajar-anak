@@ -67,6 +67,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   const [monsterChoice, setMonsterChoice] = useState<string>("auto");
   // Answer options removed by the hint power-up on the current question.
   const [hintedOptionIds, setHintedOptionIds] = useState<string[]>([]);
+  // Keep the latest wrong-answer feedback stable after the battle animation ends.
+  const [lastWrongWasBlocked, setLastWrongWasBlocked] = useState(false);
 
   // Adventure Battle HP is cumulative for the whole session and never resets
   // when moving to the next question.
@@ -109,6 +111,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setCurrentIndex(0);
     setTriedOptionIds([]);
     setHintedOptionIds([]);
+    setLastWrongWasBlocked(false);
     setStatus("active");
     setScore(0);
     // A new quiz session is the only moment battle state (and HP) resets.
@@ -134,6 +137,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     if (status !== "active" || triedOptionIds.includes(optionId)) return;
 
     if (optionId === currentQuestion.correctOptionId) {
+      setLastWrongWasBlocked(false);
       setScore((s) => s + 1);
       setStatus("correct");
       playSound("correct");
@@ -147,7 +151,9 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
     // Every distinct incorrect option costs hero HP unless an active shield
     // blocks the attack. The player can keep trying until the answer is correct.
-    if (battle.shieldActive) playSound("blocked");
+    const blockedByShield = battle.shieldActive;
+    setLastWrongWasBlocked(blockedByShield);
+    if (blockedByShield) playSound("blocked");
     else {
       playSound("wrong");
       playSound("hurt");
@@ -203,6 +209,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   function handleNext() {
     setTriedOptionIds([]);
     setHintedOptionIds([]);
+    setLastWrongWasBlocked(false);
     setStatus("active");
     if (isLastQuestion) {
       dispatchBattle({ type: "COMPLETE" });
@@ -386,6 +393,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         correctOptionId={currentQuestion.correctOptionId}
         triedOptionIds={triedOptionIds}
         eliminatedOptionIds={hintedOptionIds}
+        lastWrongWasBlocked={lastWrongWasBlocked}
         status={status}
         explanation={currentQuestion.explanation}
         onSelect={handleSelect}

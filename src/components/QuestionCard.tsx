@@ -14,6 +14,8 @@ interface Props {
   triedOptionIds: string[];
   /** Options removed by a hint power-up. */
   eliminatedOptionIds?: string[];
+  /** Whether the latest wrong answer was blocked by an active shield. */
+  lastWrongWasBlocked?: boolean;
   status: "active" | "correct";
   explanation?: string;
   onSelect: (optionId: string) => void;
@@ -31,6 +33,7 @@ export default function QuestionCard({
   correctOptionId,
   triedOptionIds,
   eliminatedOptionIds = [],
+  lastWrongWasBlocked = false,
   status,
   explanation,
   onSelect,
@@ -118,7 +121,9 @@ export default function QuestionCard({
 
       {!resolved && triedOptionIds.length > 0 && (
         <div className="mt-5 rounded-2xl bg-red-50 border-2 border-red-200 px-4 py-3 text-sm sm:text-base text-red-800 font-semibold">
-          ❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang.
+          {lastWrongWasBlocked
+            ? "🛡️ Perisai berhasil melindungi petualang! Coba pilihan lain ya!"
+            : "❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang."}
         </div>
       )}
 

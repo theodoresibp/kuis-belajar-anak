@@ -191,7 +191,7 @@ describe("randomised damage (v2)", () => {
     expect(s.monsterHp).toBe(50);
     expect(s.lastDamage?.amount).toBe(50);
     s = battleReducer(s, { type: "NEXT_QUESTION" });
-    // Q2 is never answered correctly (child runs out of lives in the quiz layer) -> slot 30 is lost.
+    // Q2 is skipped without a correct answer -> its scheduled damage slot is unused.
     s = battleReducer(s, { type: "NEXT_QUESTION" });
     s = battleReducer(s, { type: "CORRECT_ANSWER" }); // Q3 slot: 20
     expect(s.monsterHp).toBe(30);

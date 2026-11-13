@@ -1,0 +1,90 @@
+diff --git a/src/components/QuizGame.tsx b/src/components/QuizGame.tsx
+--- a/src/components/QuizGame.tsx
++++ b/src/components/QuizGame.tsx
+@@ -69,5 +69,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+   const [monsterChoice, setMonsterChoice] = useState<string>("auto");
+   // Answer options removed by the hint power-up on the current question.
+   const [hintedOptionIds, setHintedOptionIds] = useState<string[]>([]);
++  // Keep the latest wrong-answer feedback stable after the battle animation ends.
++  const [lastWrongWasBlocked, setLastWrongWasBlocked] = useState(false);
+ 
+   // Adventure Battle HP is cumulative for the whole session and never resets
+@@ -109,5 +111,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+     setCurrentIndex(0);
+     setTriedOptionIds([]);
+     setHintedOptionIds([]);
++    setLastWrongWasBlocked(false);
+     setStatus("active");
+     setScore(0);
+@@ -137,5 +140,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+     if (status !== "active" || triedOptionIds.includes(optionId)) return;
+ 
+     if (optionId === currentQuestion.correctOptionId) {
++      setLastWrongWasBlocked(false);
+       setScore((s) => s + 1);
+       setStatus("correct");
+@@ -150,7 +154,9 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+ 
+     // Every distinct incorrect option costs hero HP unless an active shield
+     // blocks the attack. The player can keep trying until the answer is correct.
+-    if (battle.shieldActive) playSound("blocked");
++    const blockedByShield = battle.shieldActive;
++    setLastWrongWasBlocked(blockedByShield);
++    if (blockedByShield) playSound("blocked");
+     else {
+       playSound("wrong");
+       playSound("hurt");
+@@ -203,5 +209,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+   function handleNext() {
+     setTriedOptionIds([]);
+     setHintedOptionIds([]);
++    setLastWrongWasBlocked(false);
+     setStatus("active");
+     if (isLastQuestion) {
+@@ -386,5 +393,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+         triedOptionIds={triedOptionIds}
+         eliminatedOptionIds={hintedOptionIds}
++        lastWrongWasBlocked={lastWrongWasBlocked}
+         status={status}
+         explanation={currentQuestion.explanation}
+         onSelect={handleSelect}
+diff --git a/src/components/QuestionCard.tsx b/src/components/QuestionCard.tsx
+--- a/src/components/QuestionCard.tsx
++++ b/src/components/QuestionCard.tsx
+@@ -13,6 +13,8 @@ interface Props {
+   triedOptionIds: string[];
+   /** Options removed by a hint power-up. */
+   eliminatedOptionIds?: string[];
++  /** Whether the latest wrong answer was blocked by an active shield. */
++  lastWrongWasBlocked?: boolean;
+   status: "active" | "correct";
+   explanation?: string;
+   onSelect: (optionId: string) => void;
+@@ -31,5 +33,6 @@ export default function QuestionCard({
+   triedOptionIds,
+   eliminatedOptionIds = [],
++  lastWrongWasBlocked = false,
+   status,
+   explanation,
+   onSelect,
+@@ -101,6 +104,8 @@ export default function QuestionCard({
+ 
+       {!resolved && triedOptionIds.length > 0 && (
+         <div className="mt-5 rounded-2xl bg-red-50 border-2 border-red-200 px-4 py-3 text-sm sm:text-base text-red-800 font-semibold">
+-          ❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang.
++          {lastWrongWasBlocked
++            ? "🛡️ Perisai berhasil melindungi petualang! Coba pilihan lain ya!"
++            : "❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang."}
+         </div>
+       )}
+diff --git a/src/features/gamification/battle.test.ts b/src/features/gamification/battle.test.ts
+--- a/src/features/gamification/battle.test.ts
++++ b/src/features/gamification/battle.test.ts
+@@ -141,5 +141,5 @@ describe("randomised damage (v2)", () => {
+     expect(s.lastDamage?.amount).toBe(50);
+     s = battleReducer(s, { type: "NEXT_QUESTION" });
+-    // Q2 is never answered correctly (child runs out of lives in the quiz layer) -> slot 30 is lost.
++    // Q2 is skipped without a correct answer -> its scheduled damage slot is unused.
+     s = battleReducer(s, { type: "NEXT_QUESTION" });
+     s = battleReducer(s, { type: "CORRECT_ANSWER" }); // Q3 slot: 20
+*** End Patch
