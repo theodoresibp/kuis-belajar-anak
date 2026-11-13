@@ -1,9 +1,12 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import type { QuizChapter } from "@/types/quiz";
 import QuestionCard from "@/components/QuestionCard";
+import BattleStage from "@/components/gamification/BattleStage";
+import { BATTLE_CONFIG, getHeroById, getMonsterById } from "@/features/gamification/battle.config";
+import type { BattleState, DamageEvent, HeroAnimation, MonsterAnimation } from "@/features/gamification/battle.types";
 import AdventureGameCanvas from "./AdventureGameCanvas";
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
 import {
@@ -45,6 +48,16 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
   const [questionStatus, setQuestionStatus] = useState<"active" | "correct">("active");
   const [bossWarning, setBossWarning] = useState(false);
+  const [battleVisual, setBattleVisual] = useState<{ hero: HeroAnimation; monster: MonsterAnimation; lastDamage: DamageEvent | null }>({ hero: "idle", monster: "idle", lastDamage: null });
+  const damageEventId = useRef(0);
+
+  useEffect(() => {
+    if (battleVisual.hero === "idle" && battleVisual.monster === "idle" && !battleVisual.lastDamage) return;
+    const timer = window.setTimeout(() => {
+      setBattleVisual({ hero: "idle", monster: "idle", lastDamage: null });
+    }, BATTLE_CONFIG.animationDurationMs);
+    return () => window.clearTimeout(timer);
+  }, [battleVisual]);
 
   const questionStart = encounterQuestionCounts
     .slice(0, run.encounterIndex)
@@ -65,6 +78,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     setResolveActiveEncounter(() => resolve);
     setTriedOptionIds([]);
     setQuestionStatus("active");
+    setBattleVisual({ hero: "idle", monster: "idle", lastDamage: null });
     dispatch({ type: "START_ENCOUNTER" });
   }
 
@@ -84,12 +98,24 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
         : Math.round((100 / currentEncounterQuestionCount) * 100) / 100;
 
       dispatch({ type: "CORRECT_ANSWER", damage });
+      damageEventId.current += 1;
+      setBattleVisual({
+        hero: "attack",
+        monster: damage >= run.monsterHp ? "defeat" : "hurt",
+        lastDamage: { id: damageEventId.current, target: "monster", amount: damage, kind: "damage" },
+      });
       setQuestionStatus("correct");
       return;
     }
 
     setTriedOptionIds((previous) => [...previous, optionId]);
     dispatch({ type: "WRONG_ANSWER" });
+    damageEventId.current += 1;
+    setBattleVisual({
+      hero: run.heroHp <= BATTLE_CONFIG.heroDamagePerWrongAnswer ? "exhausted" : "hurt",
+      monster: "attack",
+      lastDamage: { id: damageEventId.current, target: "hero", amount: BATTLE_CONFIG.heroDamagePerWrongAnswer, kind: "damage" },
+    });
   }
 
   function handleContinue() {
@@ -100,6 +126,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     setResolveActiveEncounter(null);
     setTriedOptionIds([]);
     setQuestionStatus("active");
+    setBattleVisual({ hero: "idle", monster: "idle", lastDamage: null });
 
     if (isFinalEncounter) {
       dispatch({ type: "VICTORY" });
@@ -204,71 +231,99 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
         </section>
 
         {activeEncounter && run.status === "encounter" && (
-          <section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 rounded-3xl border-4 border-amber-200 bg-white/95 p-5 shadow-xl sm:p-7">
-            <div className="w-full">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-black text-slate-800">
-                  {activeEncounter.emoji} {activeEncounter.name}
-                </h2>
-                <span className="text-sm font-extrabold text-red-700">HP {monsterHpPercent}/100</span>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-2 backdrop-blur-sm sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-label={"Pertarungan melawan " + activeEncounter.name}
+          >
+            <section className="max-h-[96vh] w-full max-w-3xl overflow-y-auto rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-3 shadow-2xl sm:p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-amber-700">Monster Encounter</p>
+                  <h2 className="text-xl font-black text-slate-900 sm:text-2xl">⚔️ {activeEncounter.name}</h2>
+                </div>
+                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-black text-red-700">HP {monsterHpPercent}/100</span>
               </div>
-              <div className="mt-2 h-4 overflow-hidden rounded-full bg-red-100">
-                <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${monsterHpPercent}%` }} />
-              </div>
-            </div>
 
-            {activeEncounter.kind === "boss" && (
-              <div className={`w-full rounded-2xl border-2 px-4 py-3 text-center transition-colors ${bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800"}`}>
-                <p className="font-black">
-                  {bossWarning ? "⚠️ PENJAGA HUTAN SEDANG MENYIAPKAN SERANGAN!" : "👑 BOSS FINAL — PENJAGA HUTAN"}
-                </p>
-                <p className="mt-1 text-xs font-semibold">
-                  {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : "Jawab soal secepat mungkin. Boss menyerang secara berkala!"}
-                </p>
-              </div>
-            )}
+              {activeEncounter.kind === "boss" && (
+                <div className={"mb-3 rounded-2xl border-2 px-4 py-3 text-center transition-colors " + (bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800")}>
+                  <p className="font-black">
+                    {bossWarning ? "⚠️ PENJAGA HUTAN SEDANG MENYIAPKAN SERANGAN!" : "👑 BOSS FINAL — PENJAGA HUTAN"}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold">
+                    {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : "Jawab soal secepat mungkin. Boss menyerang secara berkala!"}
+                  </p>
+                </div>
+              )}
 
-            {currentQuestion && (
-              <QuestionCard
-                questionNumber={run.currentQuestionIndex + 1}
-                totalQuestions={questions.length}
-                question={currentQuestion.question}
-                image={currentQuestion.image}
-                imageAlt={currentQuestion.imageAlt}
-                options={currentQuestion.options}
-                correctOptionId={currentQuestion.correctOptionId}
-                triedOptionIds={triedOptionIds}
-                status={questionStatus}
-                explanation={currentQuestion.explanation}
-                onSelect={handleAnswer}
+              <BattleStage
+                battle={{
+                  totalQuestions: questions.length,
+                  currentQuestionIndex: run.currentQuestionIndex,
+                  correctAnswers: run.score,
+                  wrongAttempts: 0,
+                  correctStreak: 0,
+                  heroHp: run.heroHp,
+                  monsterHp: run.monsterHp,
+                  currentQuestionDamaged: questionStatus === "correct",
+                  heroAnimation: battleVisual.hero,
+                  monsterAnimation: run.monsterHp <= 0 ? "defeat" : battleVisual.monster,
+                  battleStatus: run.heroHp <= 0 ? "hero_exhausted" : run.monsterHp <= 0 ? "monster_defeated" : "playing",
+                  lastDamage: battleVisual.lastDamage,
+                  items: { potion: 0, shield: 0, hint: 0 },
+                  powerUpChoices: 0,
+                  shieldActive: false,
+                  heroId,
+                  monsterId: activeEncounter.id === "forest-slime" ? "slime" : activeEncounter.id === "forest-fox" ? "fox" : "purple-dragon",
+                  monsterDamageSchedule: [],
+                  heroDamagePattern: [],
+                } satisfies BattleState}
+                hero={getHeroById(heroId)}
+                monster={{
+                  ...getMonsterById(activeEncounter.id === "forest-slime" ? "slime" : activeEncounter.id === "forest-fox" ? "fox" : "purple-dragon"),
+                  name: activeEncounter.name,
+                }}
               />
-            )}
 
-            {questionStatus === "correct" && run.monsterHp > 0 && (
-              <button
-                type="button"
-                onClick={handleNextQuestion}
-                className="rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-violet-700"
-              >
-                Soal Berikutnya →
-              </button>
-            )}
+              {currentQuestion && (
+                <div className="mt-3 rounded-3xl border-2 border-violet-200 bg-white p-3 shadow-lg sm:p-4">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-black text-violet-800">🧠 Jawab untuk menyerang!</p>
+                    <span className="text-xs font-bold text-slate-500">Soal {run.currentQuestionIndex + 1}/{questions.length}</span>
+                  </div>
+                  <QuestionCard
+                    questionNumber={run.currentQuestionIndex + 1}
+                    totalQuestions={questions.length}
+                    question={currentQuestion.question}
+                    image={currentQuestion.image}
+                    imageAlt={currentQuestion.imageAlt}
+                    options={currentQuestion.options}
+                    correctOptionId={currentQuestion.correctOptionId}
+                    triedOptionIds={triedOptionIds}
+                    status={questionStatus}
+                    explanation={currentQuestion.explanation}
+                    onSelect={handleAnswer}
+                  />
+                </div>
+              )}
 
-            {run.monsterHp <= 0 && (
-              <div className="w-full text-center">
-                <p className="mb-3 text-lg font-black text-emerald-700">
-                  🎉 {activeEncounter.name} berhasil dikalahkan!
-                </p>
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  className="rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-emerald-700"
-                >
-                  {isFinalEncounter ? "Selesaikan Petualangan 🏆" : "Lanjutkan Perjalanan →"}
+              {questionStatus === "correct" && run.monsterHp > 0 && (
+                <button type="button" onClick={handleNextQuestion} className="mt-3 w-full rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-violet-700">
+                  Soal Berikutnya →
                 </button>
-              </div>
-            )}
-          </section>
+              )}
+
+              {run.monsterHp <= 0 && (
+                <div className="mt-3 w-full text-center">
+                  <p className="mb-3 text-lg font-black text-emerald-700">🎉 {activeEncounter.name} berhasil dikalahkan!</p>
+                  <button type="button" onClick={handleContinue} className="rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-emerald-700">
+                    {isFinalEncounter ? "Selesaikan Petualangan 🏆" : "Lanjutkan Perjalanan →"}
+                  </button>
+                </div>
+              )}
+            </section>
+          </div>
         )}
 
         {run.status === "defeat" && (
