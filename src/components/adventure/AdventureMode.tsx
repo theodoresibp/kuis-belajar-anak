@@ -106,7 +106,6 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
       return;
     }
 
-    dispatch({ type: "NEXT_QUESTION" });
     dispatch({ type: "NEXT_ENCOUNTER" });
   }
 
