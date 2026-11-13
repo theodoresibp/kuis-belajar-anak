@@ -1,188 +1,46 @@
-# Kuis Belajar Anak - SD
+# Adventure Mode — Sprint 1
 
-Game kuis interaktif untuk anak, dibuat dengan Next.js (App Router) + TypeScript + Tailwind CSS, dijalankan dengan **Bun**.
+Prototype Phaser 3 terpisah dari alur kuis yang sudah ada.
 
-## Fitur
+## Instalasi
 
-- Halaman **Materi** per bab: rangkuman bacaan yang bisa dipelajari anak sebelum mengerjakan kuis.
-- Soal pilihan ganda dengan urutan soal **acak** dan urutan jawaban **acak** setiap kali main.
-- Pilihan jumlah soal per sesi (5, 10, atau semua).
-- Materi & soal dibuat kaya akan gambar (aset lokal maupun sumber eksternal seperti Wikimedia Commons) karena anak lebih suka belajar dengan visual, termasuk galeri foto bergrid untuk bagian yang punya beberapa contoh.
-- Skor, progress bar, dan feedback penjelasan setelah menjawab.
-- Struktur data per "Bab" yang mudah ditambah materi baru.
-- **Adventure Battle** (gamifikasi): di layar awal anak bisa memilih petualang (Velo, Theo, atau Sera) dan lawan + arenanya (Naga Ungu di kastil, Slime Daun di hutan, Rubah Oranye di padang rumput, atau Acak mengikuti bab). Damage bersifat acak tapi adil: damage ke monster per soal bervariasi ±40% dari `100 / jumlah soal` dengan jadwal per sesi yang totalnya selalu tepat 100 (menjawab semua soal dengan benar pasti mengalahkan monster; slot soal yang gagal hangus), sedangkan damage ke hero acak 3-7 dalam pasangan berimbang yang rata-ratanya tepat 5 per percobaan salah. Damage hanya diberikan sekali per soal, HP kumulatif selama satu sesi dan tidak reset antar soal, dan hero kehabisan HP tidak menghentikan kuis (mode latihan). Ada animasi proyektil, guncangan arena, lencana kombo untuk jawaban benar beruntun, dan ringkasan pertarungan di layar hasil. Kombo 3 jawaban benar beruntun menghadiahkan power-up yang dipilih anak sendiri: Ramuan (+15 HP, bisa menghidupkan hero yang lelah), Perisai (blokir 1 serangan), atau Petunjuk (menghapus 1 jawaban salah tanpa mengurangi nyawa). Kedua karakter punya balon kata penyemangat/ejekan sesuai keadaan, dan ada efek suara WebAudio (tanpa file audio) dengan tombol bisu yang tersimpan di browser. Logika battle ada di `src/features/gamification/` (terpisah dari komponen tampilan, lengkap dengan unit test: `bun run test`), tampilannya di `src/components/gamification/`, dan cara mengganti aset karakter didokumentasikan di `src/features/gamification/ASSETS.md`.
-
-## Menjalankan secara lokal
-
-Pastikan [Bun](https://bun.sh) sudah terpasang, lalu jalankan:
+Dari root repository:
 
 ```bash
-bun install
+bun add phaser@^3.90.0
+```
+
+Salin folder `src/` dari paket ini ke folder `src/` repository.
+
+## Menjalankan
+
+```bash
 bun run dev
 ```
 
-Buka http://localhost:3000
+Buka:
 
-## Build production
-
-```bash
-bun run build
-bun run start
+```text
+http://localhost:3000/adventure-preview
 ```
 
-## Deploy ke Vercel
+## Kontrol
 
-1. Push folder ini ke sebuah repo GitHub/GitLab/Bitbucket.
-2. Buka https://vercel.com/new, import repo tersebut.
-3. Vercel otomatis mendeteksi Next.js. Set "Install Command" ke `bun install` dan "Build Command" ke `bun run build` jika tidak terdeteksi otomatis (biasanya otomatis terdeteksi dari `bun.lock`).
-4. Klik Deploy.
+- Desktop: `A` / `D` atau tombol panah kiri / kanan untuk bergerak.
+- Desktop: `Space` atau panah atas untuk melompat.
+- Mobile: tombol arah dan lompat di bawah game.
 
-Atau via CLI:
+## Isi Sprint 1
 
-```bash
-npm i -g vercel
-vercel
-```
+- Phaser dimuat secara dinamis di client, bukan saat SSR.
+- Scene Enchanted Forest dengan placeholder scenery dan platform.
+- Arcade Physics, gravity, collision, world bounds.
+- Kamera mengikuti karakter.
+- Tombol kontrol mobile sederhana.
+- Tidak mengubah `QuizGame.tsx`, `QuestionCard.tsx`, atau Battle Mode yang ada.
 
-## Mata pelajaran yang tersedia
+## Batasan prototype
 
-- Seni Budaya
-- Bahasa Indonesia
-- English
-- Agama
-- Matematika
-- IPAS
-- Pendidikan Pancasila
-
-## Menambah mata pelajaran baru
-
-Setiap mata pelajaran punya folder sendiri di `src/data/subjects/`, contoh: `seni-budaya/`.
-
-Langkah menambah mata pelajaran baru:
-
-1. Buat folder baru, misal `src/data/subjects/matematika/`.
-2. Buat file bab pertama di dalamnya, misal `bab-1-nama-bab.ts`, ikuti pola di bawah (lihat juga bagian "Menambah bab baru").
-3. Buat `src/data/subjects/matematika/index.ts`:
-
-   ```ts
-   import type { Subject } from "@/types/quiz";
-   import bab1 from "./bab-1-nama-bab";
-
-   const subject: Subject = {
-     id: "matematika",
-     title: "Matematika",
-     description: "Berhitung dan bangun datar",
-     emoji: "🔢",
-     gradient: "from-blue-400 via-cyan-300 to-teal-300",
-     chapters: [bab1],
-   };
-
-   export default subject;
-   ```
-
-4. Daftarkan di `src/data/subjects/index.ts`:
-
-   ```ts
-   import matematika from "./matematika";
-   export const subjects: Subject[] = [seniBudaya, matematika];
-   ```
-
-5. Mata pelajaran baru otomatis muncul sebagai kartu baru di halaman utama.
-
-## Menambah bab baru (dalam satu mata pelajaran)
-
-**Perbanyak gambar.** Anak-anak lebih suka belajar dengan visual. Setiap bagian materi yang bisa diilustrasikan (tempat, benda, simbol, contoh sikap/perilaku) sebaiknya punya gambar, dan sebagian soal kuis juga sebaiknya bergambar — bukan cuma teks. Prioritaskan gambar dari materi sumber yang diberikan (mis. PPTX guru); kalau ada bagian yang tidak tersedia gambarnya di sumber tersebut, boleh cari dari sumber eksternal (mis. Wikimedia Commons) selama relevan dan sopan untuk anak SD. Taruh aset lokal di `public/assets/<nama-mapel>/` dengan nama file deskriptif.
-
-1. Buat file baru di folder mata pelajarannya, misal `src/data/subjects/seni-budaya/bab-2-nama-bab.ts`, ikuti pola di `bab-1-karya-seni-rupa.ts`:
-
-   ```ts
-   import type { QuizChapter } from "@/types/quiz";
-
-   const chapter: QuizChapter = {
-     id: "bab-2-nama-bab",
-     title: "Bab 2: Judul Bab",
-     subtitle: "Deskripsi singkat",
-     emoji: "🎭",
-     gradient: "from-blue-400 via-cyan-300 to-teal-300",
-     material: { // opsional, tapi sangat disarankan
-       summary: "Ringkasan singkat isi bab ini.",
-       sections: [
-         {
-           heading: "Judul Bagian",
-           emoji: "🎨", // opsional
-           paragraphs: ["Paragraf penjelasan..."], // opsional
-           bullets: ["Poin singkat 1", "Poin singkat 2"], // opsional
-           image: "https://...", // opsional, satu gambar besar untuk bagian ini
-           imageAlt: "Deskripsi gambar", // opsional
-           images: [ // opsional, dipakai kalau satu bagian butuh BEBERAPA gambar (galeri bergrid dengan keterangan)
-             { src: "https://...", alt: "Deskripsi gambar", caption: "Keterangan singkat" },
-             { src: "https://...", alt: "Deskripsi gambar", caption: "Keterangan singkat" },
-           ],
-         },
-         // ...bagian lainnya
-       ],
-     },
-     questions: [
-       {
-         id: "b2-01",
-         question: "Pertanyaan...",
-         image: "https://...", // opsional
-         imageAlt: "Deskripsi gambar", // opsional
-         options: [
-           { id: "a", text: "Jawaban A" },
-           { id: "b", text: "Jawaban B" },
-           { id: "c", text: "Jawaban C" },
-           { id: "d", text: "Jawaban D" },
-         ],
-         correctOptionId: "a",
-         explanation: "Penjelasan singkat setelah dijawab.",
-       },
-       // ...soal lainnya
-     ],
-   };
-
-   export default chapter;
-   ```
-
-2. Daftarkan di `index.ts` mata pelajaran terkait:
-
-   ```ts
-   import bab2 from "./bab-2-nama-bab";
-   chapters: [bab1, bab2],
-   ```
-
-3. Bab baru otomatis muncul di halaman mata pelajaran sebagai kartu baru, lengkap dengan tombol "📖 Baca Materi" (jika `material` diisi) dan "Main Sekarang" untuk kuis dengan pengacakan soal & jawaban.
-
-### Kategori terpisah (mis. PSTS)
-
-Untuk latihan yang tidak boleh bercampur dengan bab biasa, misalnya Penilaian Sumatif Tengah Semester, isi field opsional `category` pada bab tersebut:
-
-```ts
-const chapter: QuizChapter = {
-  id: "psts-bab-1-nama-bab",
-  title: "PSTS: Judul Bab",
-  category: "PSTS",
-  // ...
-};
-```
-
-Bab dengan `category` yang sama ditampilkan di bagian tersendiri di halaman mata pelajaran (di bawah bab biasa), dan dihitung terpisah di kartu mata pelajaran (mis. "1 bab + PSTS").
-
-## Struktur proyek
-
-```
-src/
-  app/
-    page.tsx                    -> halaman utama (katalog mata pelajaran)
-    mapel/[subjectId]/page.tsx  -> halaman daftar bab per mata pelajaran
-    materi/[chapterId]/page.tsx -> halaman bacaan materi per bab
-    quiz/[chapterId]/page.tsx   -> halaman kuis per bab
-  components/
-    MaterialView.tsx -> tampilan halaman materi bacaan
-    QuizGame.tsx    -> logika game & pengacakan
-    QuestionCard.tsx -> tampilan satu soal
-    ResultScreen.tsx -> tampilan skor akhir
-  data/subjects/    -> semua mata pelajaran, tiap folder = 1 mapel berisi bab-bab
-  lib/shuffle.ts    -> util pengacakan (Fisher-Yates)
-  types/quiz.ts     -> tipe data soal, materi, bab & mata pelajaran
-```
+Karakter dan latar masih dibuat dari bentuk grafis placeholder. Pada sprint aset berikutnya,
+placeholder akan diganti dengan spritesheet karakter pilihan (Velo, Theo, atau Sera),
+tileset hutan, dan animasi berjalan/lompat.
