@@ -25,6 +25,7 @@ export type AdventureRunAction =
   | { type: "VICTORY" }
   | { type: "DEFEAT" }
   | { type: "HAZARD" }
+  | { type: "BOSS_ATTACK" }
   | { type: "COLLECT_HEART" }
   | { type: "COLLECT_SHIELD" };
 
@@ -91,6 +92,15 @@ export function adventureReducer(
       }
       const heroHp = Math.max(0, state.heroHp - 10);
       return { ...state, heroHp, status: heroHp <= 0 ? "defeat" : "exploring" };
+    }
+
+    case "BOSS_ATTACK": {
+      if (state.status !== "encounter") return state;
+      if (state.shieldCharges > 0) {
+        return { ...state, shieldCharges: state.shieldCharges - 1 };
+      }
+      const heroHp = Math.max(0, state.heroHp - 15);
+      return { ...state, heroHp, status: heroHp <= 0 ? "defeat" : "encounter" };
     }
 
     case "COLLECT_HEART":
