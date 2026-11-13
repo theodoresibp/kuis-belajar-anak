@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useReducer, useState } from "react";
+import { useReducer, useState } from "react";
 import Link from "next/link";
 import type { QuizChapter } from "@/types/quiz";
-import { shuffle } from "@/lib/shuffle";
 import QuestionCard from "@/components/QuestionCard";
 import AdventureGameCanvas from "./AdventureGameCanvas";
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
@@ -16,37 +15,19 @@ interface Props {
   chapter: QuizChapter;
 }
 
-interface PreparedQuestion {
-  id: string;
-  question: string;
-  image?: string;
-  imageAlt?: string;
-  options: { id: string; text: string }[];
-  correctOptionId: string;
-  explanation?: string;
-}
-
 const ENCOUNTER_NAMES = ["Slime Hutan", "Rubah Penjaga", "Penjaga Hutan"];
 
 export default function AdventureMode({ chapter }: Props) {
-  const questions = useMemo<PreparedQuestion[]>(
-    () =>
-      shuffle(chapter.questions).map((question) => ({
-        ...question,
-        options: shuffle(question.options),
-      })),
-    [chapter.questions],
-  );
+  // Keep the first server/client render deterministic to avoid hydration mismatch.
+  const questions = chapter.questions;
 
   const encounterCount = Math.min(ENCOUNTER_NAMES.length, questions.length);
-  const encounterQuestionCounts = useMemo(() => {
-    const base = Math.floor(questions.length / Math.max(1, encounterCount));
-    const remainder = questions.length % Math.max(1, encounterCount);
-    return Array.from(
-      { length: encounterCount },
-      (_, index) => base + (index < remainder ? 1 : 0),
-    );
-  }, [encounterCount, questions.length]);
+  const baseQuestionCount = Math.floor(questions.length / Math.max(1, encounterCount));
+  const extraQuestions = questions.length % Math.max(1, encounterCount);
+  const encounterQuestionCounts = Array.from(
+    { length: encounterCount },
+    (_, index) => baseQuestionCount + (index < extraQuestions ? 1 : 0),
+  );
 
   const [run, dispatch] = useReducer(
     adventureReducer,
