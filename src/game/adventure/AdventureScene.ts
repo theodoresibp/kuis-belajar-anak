@@ -120,8 +120,8 @@ export default class AdventureScene extends Phaser.Scene {
     if (this.heroId === "rara") {
       // Velo's artwork has extra transparent space below the feet.
       // Shift only the artwork down while keeping its physics body in place.
-      this.player.setY(this.player.y + 16);
-      (this.player.body as Phaser.Physics.Arcade.Body).setOffset(0, -16);
+      this.player.setY(this.player.y + 28);
+      (this.player.body as Phaser.Physics.Arcade.Body).setOffset(0, -28);
     }
     this.player.setCollideWorldBounds(true);
     this.player.setBounce(0.02);
