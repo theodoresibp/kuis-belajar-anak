@@ -342,35 +342,56 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
           </div>
         )}
 
-        {run.status === "defeat" && (
-          <section className="rounded-3xl border-4 border-red-200 bg-white p-8 text-center shadow-xl">
-            <div className="text-5xl">💔</div>
-            <h2 className="mt-3 text-2xl font-black text-red-700">Petualangan Terhenti</h2>
-            <p className="mt-2 text-slate-600">HP petualang habis. Coba lagi dan pilih jawaban dengan lebih teliti, ya!</p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-5 rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md hover:bg-violet-700"
-            >
-              Ulangi Petualangan
-            </button>
-          </section>
-        )}
-
-        {run.status === "victory" && (
-          <section className="rounded-3xl border-4 border-amber-200 bg-white p-8 text-center shadow-xl">
-            <div className="text-6xl">🏆</div>
-            <h2 className="mt-3 text-3xl font-black text-emerald-800">Petualangan Berhasil!</h2>
-            <p className="mt-2 text-slate-600">
-              Kamu berhasil melewati {encounterCount} monster dan menjawab {run.score} soal dengan benar.
-            </p>
-            <Link
-              href="/"
-              className="mt-5 inline-flex rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md hover:bg-emerald-700"
-            >
-              Kembali ke Beranda
-            </Link>
-          </section>
+        {(run.status === "defeat" || run.status === "victory") && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="adventure-result-title"
+          >
+            {run.status === "victory" ? (
+              <section className="w-full max-w-lg rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-7 text-center shadow-2xl sm:p-9">
+                <div className="text-6xl">🏆</div>
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-amber-700">Adventure Completed</p>
+                <h2 id="adventure-result-title" className="mt-2 text-3xl font-black text-emerald-800">
+                  Game Selesai!
+                </h2>
+                <p className="mt-3 text-slate-600">
+                  Hebat! Kamu berhasil melewati {encounterCount} monster dan menjawab {run.score} soal dengan benar.
+                </p>
+                <Link
+                  href="/"
+                  className="mt-6 inline-flex w-full justify-center rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-emerald-700"
+                >
+                  Kembali ke Beranda
+                </Link>
+              </section>
+            ) : (
+              <section className="w-full max-w-lg rounded-3xl border-4 border-red-200 bg-gradient-to-b from-red-50 to-white p-7 text-center shadow-2xl sm:p-9">
+                <div className="text-6xl">💔</div>
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-red-700">Adventure Over</p>
+                <h2 id="adventure-result-title" className="mt-2 text-3xl font-black text-red-700">
+                  Petualangan Terhenti
+                </h2>
+                <p className="mt-3 text-slate-600">
+                  HP petualang habis. Tidak apa-apa, coba lagi dan pilih jawaban dengan lebih teliti, ya!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-6 w-full rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-violet-700"
+                >
+                  Ulangi Petualangan
+                </button>
+                <Link
+                  href="/"
+                  className="mt-3 inline-flex w-full justify-center rounded-full border-2 border-slate-200 bg-white px-8 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Kembali ke Beranda
+                </Link>
+              </section>
+            )}
+          </div>
         )}
 
         {!activeEncounter && run.status === "exploring" && (
