@@ -26,6 +26,11 @@ export default class AdventureScene extends Phaser.Scene {
   private heroId: string;
   private heroIdleTexture = "hero-idle-1";
   private heroMoveTexture = "hero-walk-1";
+  private heroHurtTexture = "hero-idle-1";
+  private heroVictoryTexture = "hero-idle-1";
+  private heroExhaustedTexture = "hero-idle-1";
+  private heroPoseTimer: Phaser.Time.TimerEvent | null = null;
+  private isAdventureStopped = false;
   private encounterSprites: Phaser.Physics.Arcade.Sprite[] = [];
   private encounterLabels: Phaser.GameObjects.Text[] = [];
   private activeEncounterId: string | null = null;
@@ -57,10 +62,25 @@ export default class AdventureScene extends Phaser.Scene {
     const heroBase = this.heroId === "rara"
       ? "/assets/gamification/hero/hero"
       : `/assets/gamification/hero/${this.heroId}`;
-    const idleFile = this.heroId === "rara" ? "hero-idle.webp" : "idle.webp";
-    const attackFile = this.heroId === "rara" ? "hero-attack.webp" : "attack.webp";
-    this.load.image("adventure-hero-idle", `${heroBase}/${idleFile}`);
-    this.load.image("adventure-hero-attack", `${heroBase}/${attackFile}`);
+    const poseFiles = this.heroId === "rara"
+      ? {
+          idle: "hero-idle.webp",
+          attack: "hero-attack.webp",
+          hurt: "hero-hurt.webp",
+          victory: "hero-victory.webp",
+          exhausted: "hero-exhausted.webp",
+        }
+      : {
+          idle: "idle.webp",
+          attack: "attack.webp",
+          hurt: "hurt.webp",
+          victory: "victory.webp",
+          exhausted: "exhausted.webp",
+        };
+
+    Object.entries(poseFiles).forEach(([pose, filename]) => {
+      this.load.image(`adventure-hero-${pose}`, `${heroBase}/${filename}`);
+    });
     this.load.image("adventure-monster-slime", "/assets/gamification/monsters/slime/idle.webp");
     this.load.image("adventure-monster-fox", "/assets/gamification/monsters/fox/idle.webp");
     this.load.image("adventure-monster-guardian", "/assets/gamification/monsters/purple-dragon/idle.webp");
@@ -74,7 +94,15 @@ export default class AdventureScene extends Phaser.Scene {
     this.heroMoveTexture = this.textures.exists("adventure-hero-attack")
       ? "adventure-hero-attack"
       : "hero-walk-1";
-    this.createAnimations();
+    this.heroHurtTexture = this.textures.exists("adventure-hero-hurt")
+      ? "adventure-hero-hurt"
+      : this.heroIdleTexture;
+    this.heroVictoryTexture = this.textures.exists("adventure-hero-victory")
+      ? "adventure-hero-victory"
+      : this.heroIdleTexture;
+    this.heroExhaustedTexture = this.textures.exists("adventure-hero-exhausted")
+      ? "adventure-hero-exhausted"
+      : this.heroIdleTexture;
     this.createWorld();
 
     this.player = this.physics.add.sprite(120, 430, this.heroIdleTexture);
@@ -142,6 +170,8 @@ export default class AdventureScene extends Phaser.Scene {
       this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
       this.game.events.off("toggle-sound", this.handleToggleSound, this);
       this.game.events.off("stop-adventure", this.handleStopAdventure, this);
+      this.heroPoseTimer?.remove(false);
+      this.heroPoseTimer = null;
     });
 
     this.createHud();
@@ -663,6 +693,7 @@ export default class AdventureScene extends Phaser.Scene {
               },
             });
           }
+          this.showHeroPose(this.heroHurtTexture, 600);
           this.playTone(115, 0.32, "sawtooth", 0.06);
           this.game.events.emit("boss-attack");
         });
@@ -681,10 +712,28 @@ export default class AdventureScene extends Phaser.Scene {
 
   private handleStopAdventure = () => {
     this.stopBossAttackCycle();
-    this.encounterPaused = true;
+    this.isAdventureStopped = true;
+    this.heroPoseTimer?.remove(false);
     this.player?.setVelocity(0, 0);
+    this.player?.setTexture(this.heroExhaustedTexture);
     this.physics.world.pause();
   };
+
+  private showHeroPose(texture: string, duration = 450) {
+    if (!this.player?.active) return;
+
+    this.heroPoseTimer?.remove(false);
+    this.player.setTexture(texture);
+    this.heroPoseTimer = this.time.delayedCall(duration, () => {
+      if (
+        this.player?.active &&
+        !this.encounterPaused &&
+        !this.isAdventureStopped
+      ) {
+        this.player.setTexture(this.heroIdleTexture);
+      }
+    });
+  }
 
   private handleResolveEncounter(encounterId: string) {
     if (!this.encounterPaused || encounterId !== this.activeEncounterId) return;
@@ -720,6 +769,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.encounterPaused = false;
 
     if (this.nextEncounterIndex >= this.encounterCount) {
+      this.player.setTexture(this.heroVictoryTexture);
       this.game.events.emit("adventure-complete");
       return;
     }
@@ -774,6 +824,7 @@ export default class AdventureScene extends Phaser.Scene {
     const hazard = hazardObject as Phaser.Physics.Arcade.Sprite;
     if (!hazard.active) return;
     hazard.destroy();
+    this.showHeroPose(this.heroHurtTexture, 450);
     this.playTone(165, 0.22, "sawtooth", 0.05);
     this.game.events.emit("adventure-hazard");
   };
@@ -862,10 +913,15 @@ export default class AdventureScene extends Phaser.Scene {
     // Character animation state
     if (!body.blocked.down) {
       this.player.setTexture(this.heroMoveTexture);
+      this.player.setAngle(Phaser.Math.Clamp(body.velocity.y / 55, -10, 10));
     } else if (left !== right) {
-      this.player.setTexture(this.heroMoveTexture);
+      // Asset karakter hanya menyediakan pose idle/attack, jadi gerakan kaki
+      // disimulasikan dengan ayunan badan tanpa mengganti nama/karakter.
+      this.player.setTexture(this.heroIdleTexture);
+      this.player.setAngle(Math.sin(this.time.now / 75) * 5);
     } else {
       this.player.setTexture(this.heroIdleTexture);
+      this.player.setAngle(0);
     }
   }
 }
