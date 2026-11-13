@@ -101,6 +101,7 @@ export default class AdventureScene extends Phaser.Scene {
       this,
     );
     this.game.events.on("resolve-encounter", this.handleResolveEncounter, this);
+    this.game.events.on("stop-adventure", this.handleStopAdventure, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -109,6 +110,7 @@ export default class AdventureScene extends Phaser.Scene {
         this,
       );
       this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
+      this.game.events.off("stop-adventure", this.handleStopAdventure, this);
     });
 
     this.createHud();
@@ -514,6 +516,12 @@ export default class AdventureScene extends Phaser.Scene {
     this.virtual = { left: false, right: false, jump: false };
     this.physics.world.pause();
     this.game.events.emit("monster-encounter", encounter);
+  };
+
+  private handleStopAdventure = () => {
+    this.encounterPaused = true;
+    this.player?.setVelocity(0, 0);
+    this.physics.world.pause();
   };
 
   private handleResolveEncounter(encounterId: string) {
