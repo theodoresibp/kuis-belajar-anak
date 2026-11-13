@@ -304,7 +304,7 @@ export default function AdventureMode({ chapter }: Props) {
 
         <footer className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-center">
           <p className="text-xs font-semibold text-emerald-800">
-            Sprint 3 — hindari rintangan, kumpulkan power-up, dan kalahkan monster dengan menjawab soal bab {chapter.title}.
+            Sprint 4 — hadapi serangan Penjaga Hutan, gunakan shield dengan tepat, dan menangkan pertarungan final pada bab {chapter.title}.
           </p>
         </footer>
       </div>
