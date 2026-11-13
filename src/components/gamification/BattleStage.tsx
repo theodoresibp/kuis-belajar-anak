@@ -105,7 +105,7 @@ export default function BattleStage({ battle, hero, monster, canUseHint = false,
           <BattleHealthBar
             label={`${monster.fallbackEmoji} ${monster.name}`}
             hp={battle.monsterHp}
-            maxHp={BATTLE_CONFIG.initialMonsterHp}
+            maxHp={battle.monsterMaxHp ?? BATTLE_CONFIG.initialMonsterHp}
             fillClassName="bg-red-500"
           />
         </div>

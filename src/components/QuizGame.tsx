@@ -13,7 +13,10 @@ import {
   getMonsterById,
   pickMonsterForChapter,
 } from "@/features/gamification/battle.config";
-import { battleReducer, createInitialBattleState } from "@/features/gamification/battle.reducer";
+import {
+  battleReducer,
+  createInitialBattleState,
+} from "@/features/gamification/battle.reducer";
 import {
   generateHeroDamagePattern,
   generateMonsterDamageSchedule,
@@ -55,7 +58,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
   const [phase, setPhase] = useState<Phase>("settings");
   const [questionCount, setQuestionCount] = useState<number>(() =>
-    resolveChoice(countChoices[0], maxCount)
+    resolveChoice(countChoices[0], maxCount),
   );
   const [round, setRound] = useState<PreparedQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -72,18 +75,23 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
   // Adventure Battle HP is cumulative for the whole session and never resets
   // when moving to the next question.
-  const [battle, dispatchBattle] = useReducer(battleReducer, createInitialBattleState(0));
+  const [battle, dispatchBattle] = useReducer(
+    battleReducer,
+    createInitialBattleState(0),
+  );
   const animationTimer = useRef<number | null>(null);
 
   // Always let animations recover to idle, even if the component unmounts mid-animation.
   useEffect(() => {
     return () => {
-      if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
+      if (animationTimer.current !== null)
+        window.clearTimeout(animationTimer.current);
     };
   }, []);
 
   function scheduleAnimationDone() {
-    if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
+    if (animationTimer.current !== null)
+      window.clearTimeout(animationTimer.current);
     animationTimer.current = window.setTimeout(() => {
       dispatchBattle({ type: "ANIMATION_DONE" });
     }, BATTLE_CONFIG.animationDurationMs);
@@ -97,7 +105,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   }, [battle.powerUpChoices]);
 
   useEffect(() => {
-    if (phase === "result") playSound(battle.monsterHp <= 0 ? "victory" : "finish");
+    if (phase === "result")
+      playSound(battle.monsterHp <= 0 ? "victory" : "finish");
     // Only fire on entering the result phase.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -118,10 +127,14 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     // The monster damage schedule totals exactly 100. The hero damage pattern
     // covers every distinct wrong option that can be attempted in this round.
     const maxWrongAttempts = prepared.reduce(
-      (total, question) => total + Math.max(0, question.shuffledOptions.length - 1),
+      (total, question) =>
+        total + Math.max(0, question.shuffledOptions.length - 1),
       0,
     );
-    const monster = monsterChoice === "auto" ? pickMonsterForChapter(chapter.id) : getMonsterById(monsterChoice);
+    const monster =
+      monsterChoice === "auto"
+        ? pickMonsterForChapter(chapter.id)
+        : getMonsterById(monsterChoice);
     dispatchBattle({
       type: "START",
       totalQuestions: prepared.length,
@@ -173,13 +186,17 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         (id) =>
           id !== currentQuestion.correctOptionId &&
           !triedOptionIds.includes(id) &&
-          !hintedOptionIds.includes(id)
+          !hintedOptionIds.includes(id),
       );
   }
 
   function handleUseItem(item: PowerUpKind) {
     if (item === "potion") {
-      if (battle.items.potion <= 0 || battle.heroHp >= BATTLE_CONFIG.initialHeroHp) return;
+      if (
+        battle.items.potion <= 0 ||
+        battle.heroHp >= BATTLE_CONFIG.initialHeroHp
+      )
+        return;
       dispatchBattle({ type: "USE_POTION" });
       playSound("heal");
       scheduleAnimationDone();
@@ -222,21 +239,26 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
   const progressPct = useMemo(() => {
     if (round.length === 0) return 0;
-    return Math.round(((currentIndex + (status !== "active" ? 1 : 0)) / round.length) * 100);
+    return Math.round(
+      ((currentIndex + (status !== "active" ? 1 : 0)) / round.length) * 100,
+    );
   }, [currentIndex, round.length, status]);
 
   if (phase === "settings") {
     return (
       <div className="w-full max-w-xl rounded-3xl bg-white/95 shadow-xl p-8 border-4 border-white text-center">
         <div className="text-5xl mb-2">{chapter.emoji}</div>
-        <h2 className="text-2xl font-extrabold text-slate-800 mb-1">{chapter.title}</h2>
+        <h2 className="text-2xl font-extrabold text-slate-800 mb-1">
+          {chapter.title}
+        </h2>
         <p className="text-slate-500 mb-6">{chapter.subtitle}</p>
 
         <p className="font-bold text-slate-600 mb-3">Mau main berapa soal?</p>
         <div className="flex flex-wrap justify-center gap-3 mb-8">
           {countChoices.map((choice) => {
             const value = resolveChoice(choice, maxCount);
-            const label = choice === "all" ? `Semua (${maxCount})` : `${value} soal`;
+            const label =
+              choice === "all" ? `Semua (${maxCount})` : `${value} soal`;
             const active = questionCount === value;
             return (
               <button
@@ -269,9 +291,20 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                     : "border-slate-200 bg-white hover:border-violet-300"
                 }`}
               >
-                <Image src={hero.assets.idle} alt={hero.name} width={480} height={480} unoptimized className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20" />
-                <span className="block font-extrabold text-slate-700">{hero.name}</span>
-                <span className="block text-xs font-semibold text-slate-400">{hero.tagline}</span>
+                <Image
+                  src={hero.assets.idle}
+                  alt={hero.name}
+                  width={480}
+                  height={480}
+                  unoptimized
+                  className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20"
+                />
+                <span className="block font-extrabold text-slate-700">
+                  {hero.name}
+                </span>
+                <span className="block text-xs font-semibold text-slate-400">
+                  {hero.tagline}
+                </span>
               </button>
             );
           })}
@@ -288,9 +321,13 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                 : "border-slate-200 bg-white hover:border-violet-300"
             }`}
           >
-            <span className="flex h-16 items-center justify-center text-4xl sm:h-20">🎲</span>
+            <span className="flex h-16 items-center justify-center text-4xl sm:h-20">
+              🎲
+            </span>
             <span className="block font-extrabold text-slate-700">Acak</span>
-            <span className="block text-xs font-semibold text-slate-400">Ikuti bab ini</span>
+            <span className="block text-xs font-semibold text-slate-400">
+              Ikuti bab ini
+            </span>
           </button>
           {MONSTERS.map((monster) => {
             const active = monsterChoice === monster.id;
@@ -305,26 +342,37 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                     : "border-slate-200 bg-white hover:border-violet-300"
                 }`}
               >
-                <Image src={monster.assets.idle} alt={monster.name} width={480} height={480} unoptimized className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20" />
-                <span className="block font-extrabold text-slate-700">{monster.name}</span>
-                <span className="block text-xs font-semibold text-slate-400">{monster.tagline}</span>
+                <Image
+                  src={monster.assets.idle}
+                  alt={monster.name}
+                  width={480}
+                  height={480}
+                  unoptimized
+                  className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20"
+                />
+                <span className="block font-extrabold text-slate-700">
+                  {monster.name}
+                </span>
+                <span className="block text-xs font-semibold text-slate-400">
+                  {monster.tagline}
+                </span>
               </button>
             );
           })}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
+          {/* <button
             onClick={() => startRound(questionCount)}
             className="rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 py-3 shadow-md transition-colors"
           >
             ▶️ Mulai Kuis
-          </button>
+          </button> */}
           <Link
             href={`/adventure/${chapter.id}?count=${questionCount}&hero=${selectedHeroId}`}
             className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 shadow-md transition-colors"
           >
-            🌲 Adventure Mode
+            🌲 Ayo Berpetualang!
           </Link>
           <Link
             href={`/materi/${chapter.id}`}

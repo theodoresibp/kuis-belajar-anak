@@ -18,7 +18,10 @@ export type SoundName =
   | "powerup"
   | "combo"
   | "victory"
-  | "finish";
+  | "finish"
+  | "heroAttack"
+  | "monsterAttack"
+  | "bossAttack";
 
 const MUTE_KEY = "kuis-battle-muted";
 
@@ -57,6 +60,8 @@ interface Tone {
   dur: number;
   type?: OscillatorType;
   gain?: number;
+  /** Optional pitch slide (Hz) reached by the end of the tone. */
+  slideTo?: number;
 }
 
 function playTones(tones: Tone[]): void {
@@ -68,7 +73,10 @@ function playTones(tones: Tone[]): void {
     const osc = audio.createOscillator();
     const amp = audio.createGain();
     osc.type = tone.type ?? "sine";
-    osc.frequency.value = tone.freq;
+    osc.frequency.setValueAtTime(tone.freq, start + tone.at);
+    if (tone.slideTo) {
+      osc.frequency.exponentialRampToValueAtTime(tone.slideTo, start + tone.at + tone.dur);
+    }
     const peak = tone.gain ?? 0.12;
     amp.gain.setValueAtTime(0.0001, start + tone.at);
     amp.gain.exponentialRampToValueAtTime(peak, start + tone.at + 0.02);
@@ -76,6 +84,51 @@ function playTones(tones: Tone[]): void {
     osc.connect(amp).connect(audio.destination);
     osc.start(start + tone.at);
     osc.stop(start + tone.at + tone.dur + 0.05);
+  }
+}
+
+interface NoiseBurst {
+  at: number;
+  dur: number;
+  from: number; // bandpass centre (Hz) at start
+  to: number; // bandpass centre (Hz) at end
+  gain?: number;
+}
+
+let noiseBuffer: AudioBuffer | null = null;
+
+function getNoiseBuffer(audio: AudioContext): AudioBuffer {
+  if (!noiseBuffer) {
+    noiseBuffer = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuffer;
+}
+
+/** Filtered-noise whooshes/thuds — the "air" part of attack sounds. */
+function playNoises(bursts: NoiseBurst[]): void {
+  if (isSoundMuted()) return;
+  const audio = getContext();
+  if (!audio) return;
+  const start = audio.currentTime;
+  for (const burst of bursts) {
+    const source = audio.createBufferSource();
+    source.buffer = getNoiseBuffer(audio);
+    source.loop = true;
+    const filter = audio.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.Q.value = 1.1;
+    filter.frequency.setValueAtTime(burst.from, start + burst.at);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(40, burst.to), start + burst.at + burst.dur);
+    const amp = audio.createGain();
+    const peak = burst.gain ?? 0.1;
+    amp.gain.setValueAtTime(0.0001, start + burst.at);
+    amp.gain.exponentialRampToValueAtTime(peak, start + burst.at + 0.02);
+    amp.gain.exponentialRampToValueAtTime(0.0001, start + burst.at + burst.dur);
+    source.connect(filter).connect(amp).connect(audio.destination);
+    source.start(start + burst.at);
+    source.stop(start + burst.at + burst.dur + 0.05);
   }
 }
 
@@ -134,11 +187,46 @@ const SOUNDS: Record<SoundName, Tone[]> = {
     { freq: 659, at: 0.14, dur: 0.14 },
     { freq: 784, at: 0.28, dur: 0.3 },
   ],
+  // Attack sounds live in ATTACK_TONES / ATTACK_NOISES below (they need
+  // pitch slides and filtered noise, not fixed tones).
+  heroAttack: [],
+  monsterAttack: [],
+  bossAttack: [],
+};
+
+/**
+ * Attack sounds layer a pitch slide over a filtered-noise sweep, so a
+ * hero slash whooshes and a boss strike lands with a heavy thud.
+ */
+const ATTACK_TONES: Partial<Record<SoundName, Tone[]>> = {
+  heroAttack: [
+    { freq: 540, at: 0, dur: 0.1, type: "square", gain: 0.045, slideTo: 180 },
+    { freq: 1240, at: 0.02, dur: 0.07, type: "triangle", gain: 0.05, slideTo: 880 },
+  ],
+  monsterAttack: [
+    { freq: 160, at: 0, dur: 0.22, type: "sawtooth", gain: 0.11, slideTo: 60 },
+    { freq: 90, at: 0, dur: 0.2, gain: 0.13, slideTo: 45 },
+  ],
+  bossAttack: [
+    { freq: 110, at: 0, dur: 0.4, type: "sawtooth", gain: 0.15, slideTo: 40 },
+    { freq: 70, at: 0, dur: 0.45, gain: 0.17, slideTo: 35 },
+    { freq: 220, at: 0.05, dur: 0.3, type: "square", gain: 0.05, slideTo: 55 },
+  ],
+};
+
+const ATTACK_NOISES: Partial<Record<SoundName, NoiseBurst[]>> = {
+  heroAttack: [{ at: 0, dur: 0.14, from: 2600, to: 500, gain: 0.11 }],
+  monsterAttack: [{ at: 0, dur: 0.18, from: 320, to: 120, gain: 0.1 }],
+  bossAttack: [{ at: 0, dur: 0.35, from: 520, to: 90, gain: 0.13 }],
 };
 
 export function playSound(name: SoundName): void {
   try {
     playTones(SOUNDS[name]);
+    const attackTones = ATTACK_TONES[name];
+    if (attackTones) playTones(attackTones);
+    const attackNoises = ATTACK_NOISES[name];
+    if (attackNoises) playNoises(attackNoises);
   } catch {
     // Audio must never break the quiz.
   }

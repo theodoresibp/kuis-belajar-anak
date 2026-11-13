@@ -18,6 +18,10 @@ interface Props {
   lastWrongWasBlocked?: boolean;
   status: "active" | "correct";
   explanation?: string;
+  /** Hide the inline explanation box (e.g. when the parent shows the
+   *  explanation in its own popup). Defaults to false — Quiz Mode keeps
+   *  the original inline behaviour. */
+  hideExplanation?: boolean;
   onSelect: (optionId: string) => void;
 }
 
@@ -36,6 +40,7 @@ export default function QuestionCard({
   lastWrongWasBlocked = false,
   status,
   explanation,
+  hideExplanation = false,
   onSelect,
 }: Props) {
   const resolved = status !== "active";
@@ -127,7 +132,7 @@ export default function QuestionCard({
         </div>
       )}
 
-      {resolved && explanation && (
+      {resolved && explanation && !hideExplanation && (
         <div className="mt-5 rounded-2xl bg-yellow-50 border-2 border-yellow-200 px-4 py-3 text-sm sm:text-base text-yellow-900">
           <span className="font-bold">💡 Tahukah kamu? </span>
           {explanation}

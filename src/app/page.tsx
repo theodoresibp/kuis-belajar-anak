@@ -3,25 +3,31 @@ import { subjects } from "@/data/subjects";
 
 export default function HomePage() {
   return (
-    <main className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-violet-500 via-fuchsia-500 to-orange-400 px-4 py-10">
-      <div className="text-center mb-10">
-        <div className="text-6xl mb-3">📚✨🚀</div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-md mb-2">
-          Kuis Belajar Anak
+    <main className="flex-1 flex flex-col items-center justify-end px-4 py-10 bg-[url('/assets/gamification/backgrounds/bg_game.jpg')] bg-cover bg-center bg-no-repeat">
+      <div className="text-center mb-20">
+        {/* <div className="text-6xl mb-3">📚✨🚀</div> */}
+        {/* <h1 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] mb-2">
+          Petualangan Velo & Sera
         </h1>
+        */}
+      </div>
+      <div className="mt-5 mb-2">
         <p className="text-white/90 font-semibold">
-          Pilih mata pelajaran, lalu ayo main kuis!
+          Pilih mata pelajaran, lalu ayo main game!
         </p>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-3xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 w-full max-w-5xl">
         {subjects.map((subject) => {
           const totalQuestions = subject.chapters.reduce(
             (sum, c) => sum + c.questions.length,
-            0
+            0,
           );
           const babCount = subject.chapters.filter((c) => !c.category).length;
-          const categories = [...new Set(subject.chapters.flatMap((c) => (c.category ? [c.category] : [])))];
+          const categories = [
+            ...new Set(
+              subject.chapters.flatMap((c) => (c.category ? [c.category] : [])),
+            ),
+          ];
           return (
             <Link
               key={subject.id}
@@ -39,14 +45,15 @@ export default function HomePage() {
                 Lihat Bab ▶️
               </div>
               <p className="mt-3 text-xs font-semibold text-slate-900/70">
-                {[`${babCount} bab`, ...categories].join(" + ")} · {totalQuestions} soal
+                {[`${babCount} bab`, ...categories].join(" + ")} ·{" "}
+                {totalQuestions} soal
               </p>
             </Link>
           );
         })}
       </div>
 
-      <p className="mt-10 text-white/80 text-sm font-semibold text-center">
+      <p className="mt-2 text-sm font-semibold text-center text-white">
         Lebih banyak mata pelajaran akan segera hadir! 🚀
       </p>
     </main>

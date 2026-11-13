@@ -9,11 +9,14 @@ import {
 } from "react";
 
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
+import type { PlannedEncounter } from "@/features/adventure/encounter-generator";
 
 type VirtualDirection = "left" | "right" | "jump";
 
 interface Props {
-  encounterCount: number;
+  /** The run plan from the encounter generator (Sprint C); the scene
+   *  builds its whole world from it. */
+  plan: PlannedEncounter[];
   heroId: string;
   heroHp: number;
   score: number;
@@ -42,7 +45,7 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
 };
 
 export default function AdventureGameCanvas({
-  encounterCount,
+  plan,
   heroId,
   heroHp,
   score,
@@ -118,14 +121,14 @@ export default function AdventureGameCanvas({
             antialias: true,
             pixelArt: false,
           },
-          scene: [new AdventureScene(encounterCount, heroId)],
+          scene: [new AdventureScene(plan, heroId)],
         });
 
         gameRef.current = game;
 
         const handleEncounter = (encounter: AdventureEncounter) => {
           onEncounterRef.current(encounter, () => {
-            game.events.emit("resolve-encounter", encounter.id);
+            game.events.emit("resolve-encounter", encounter.index);
           });
         };
         const handleAdventureComplete = () => {
@@ -182,7 +185,7 @@ export default function AdventureGameCanvas({
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [encounterCount, heroId]);
+  }, [plan, heroId]);
 
   useEffect(() => {
     if (isDefeated) {
@@ -259,7 +262,7 @@ export default function AdventureGameCanvas({
             </div>
             <div className="px-1 text-center">
               <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">MONSTER</div>
-              <div className="text-base font-black leading-tight sm:text-xl">👾 {monsterProgress}/{encounterCount}</div>
+              <div className="text-base font-black leading-tight sm:text-xl">👾 {monsterProgress}/{plan.length}</div>
             </div>
           </div>
           <button

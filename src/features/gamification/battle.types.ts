@@ -33,6 +33,9 @@ export interface BattleState {
   correctStreak: number;
   heroHp: number;
   monsterHp: number;
+  /** Full HP of this monster. Quiz Battle always uses the config default
+   *  (100); Adventure Mode passes its per-tier HP (100-200). */
+  monsterMaxHp?: number;
   /** True once the current question has already dealt monster damage — guards against duplicates. */
   currentQuestionDamaged: boolean;
   heroAnimation: HeroAnimation;

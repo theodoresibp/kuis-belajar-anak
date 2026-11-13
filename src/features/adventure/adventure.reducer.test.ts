@@ -132,3 +132,44 @@ describe("adventureReducer", () => {
     expect(state.status).toBe("defeat");
   });
 });
+
+describe("adventureReducer — per-encounter monsterMaxHp (Sprint C)", () => {
+  it("starts the run with the first encounter's max HP", () => {
+    const state = createInitialAdventureRunState(200);
+    expect(state.monsterHp).toBe(200);
+    expect(state.monsterMaxHp).toBe(200);
+  });
+
+  it("NEXT_ENCOUNTER adopts the next monster's max HP", () => {
+    let state = createInitialAdventureRunState(100);
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: 100 });
+    state = adventureReducer(state, {
+      type: "NEXT_ENCOUNTER",
+      monsterMaxHp: 125,
+    });
+    expect(state.monsterHp).toBe(125);
+    expect(state.monsterMaxHp).toBe(125);
+  });
+
+  it("BOSS_ATTACK uses the payload damage (mini-boss 12)", () => {
+    let state = createInitialAdventureRunState(150);
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "BOSS_ATTACK", damage: 12 });
+    expect(state.heroHp).toBe(88);
+  });
+
+  it("fractional per-question damage still guarantees the kill on the last question", () => {
+    // Elite: 125 HP over 5 questions = 25 each; boss: 200 over 10 = 20.
+    let state = createInitialAdventureRunState(125);
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    for (let i = 0; i < 4; i += 1) {
+      state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: 25 });
+      state = adventureReducer(state, { type: "NEXT_QUESTION" });
+    }
+    expect(state.monsterHp).toBe(25);
+    // The caller deals the remaining HP as the final question's damage.
+    state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: state.monsterHp });
+    expect(state.monsterHp).toBe(0);
+  });
+});

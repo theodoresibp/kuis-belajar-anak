@@ -12,6 +12,10 @@ export interface AdventureRunState {
   currentQuestionIndex: number;
   encounterIndex: number;
   monsterHp: number;
+  /** HP of the current encounter's monster at full health. Varies per
+   *  monster tier since Sprint C (normal 100, elite 125, mini-boss 150,
+   *  final boss 200); correct-answer damage is maxHp / questions. */
+  monsterMaxHp: number;
   shieldCharges: number;
   status: AdventureRunStatus;
 }
@@ -21,21 +25,24 @@ export type AdventureRunAction =
   | { type: "WRONG_ANSWER" }
   | { type: "CORRECT_ANSWER"; damage: number }
   | { type: "NEXT_QUESTION" }
-  | { type: "NEXT_ENCOUNTER" }
+  | { type: "NEXT_ENCOUNTER"; monsterMaxHp?: number }
   | { type: "VICTORY" }
   | { type: "DEFEAT" }
   | { type: "HAZARD" }
-  | { type: "BOSS_ATTACK" }
+  | { type: "BOSS_ATTACK"; damage?: number }
   | { type: "COLLECT_HEART" }
   | { type: "COLLECT_SHIELD" };
 
-export function createInitialAdventureRunState(): AdventureRunState {
+export function createInitialAdventureRunState(
+  firstMonsterMaxHp: number = BATTLE_CONFIG.initialMonsterHp,
+): AdventureRunState {
   return {
     heroHp: BATTLE_CONFIG.initialHeroHp,
     score: 0,
     currentQuestionIndex: 0,
     encounterIndex: 0,
-    monsterHp: BATTLE_CONFIG.initialMonsterHp,
+    monsterHp: firstMonsterMaxHp,
+    monsterMaxHp: firstMonsterMaxHp,
     shieldCharges: 0,
     status: "exploring",
   };
@@ -72,15 +79,18 @@ export function adventureReducer(
       if (state.status !== "encounter" || state.monsterHp <= 0) return state;
       return { ...state, currentQuestionIndex: state.currentQuestionIndex + 1 };
 
-    case "NEXT_ENCOUNTER":
+    case "NEXT_ENCOUNTER": {
       if (state.status !== "encounter" || state.monsterHp > 0) return state;
+      const monsterMaxHp = action.monsterMaxHp ?? BATTLE_CONFIG.initialMonsterHp;
       return {
         ...state,
         encounterIndex: state.encounterIndex + 1,
         currentQuestionIndex: state.currentQuestionIndex + 1,
-        monsterHp: BATTLE_CONFIG.initialMonsterHp,
+        monsterHp: monsterMaxHp,
+        monsterMaxHp,
         status: "exploring",
       };
+    }
 
     case "VICTORY":
       return { ...state, status: "victory" };
@@ -99,7 +109,8 @@ export function adventureReducer(
       if (state.shieldCharges > 0) {
         return { ...state, shieldCharges: state.shieldCharges - 1 };
       }
-      const heroHp = Math.max(0, state.heroHp - 15);
+      // Default 15 = the final boss; mini-bosses pass their own damage.
+      const heroHp = Math.max(0, state.heroHp - (action.damage ?? 15));
       return { ...state, heroHp, status: heroHp <= 0 ? "defeat" : "encounter" };
     }
 
