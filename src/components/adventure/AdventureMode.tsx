@@ -195,6 +195,11 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             <AdventureGameCanvas
               encounterCount={encounterCount}
               heroId={heroId}
+              heroHp={heroHpPercent}
+              score={run.score}
+              totalQuestions={questions.length}
+              monsterProgress={Math.min(run.encounterIndex + (run.status === "victory" ? 1 : 0), encounterCount)}
+              shieldCharges={run.shieldCharges}
               isDefeated={run.status === "defeat"}
               onEncounter={handleEncounter}
               onAdventureComplete={() => dispatch({ type: "VICTORY" })}
@@ -208,43 +213,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">❤️</span>
-              <strong className="text-sm font-extrabold text-emerald-950">HP Petualang</strong>
-              <span className="ml-auto text-sm font-black text-emerald-800">{heroHpPercent}/100</span>
-            </div>
-            <p className="mb-2 text-xs font-bold text-sky-700">🛡️ Perisai: {run.shieldCharges} · 💗 Kristal hati memulihkan 15 HP</p>
-            <div className="h-3 overflow-hidden rounded-full bg-emerald-100">
-              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${heroHpPercent}%` }} />
-            </div>
-          </div>
 
-          <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">⭐</span>
-              <strong className="text-sm font-extrabold text-emerald-950">Jawaban Benar</strong>
-              <span className="ml-auto text-sm font-black text-emerald-800">{run.score}/{questions.length}</span>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-600">
-              Setiap jawaban benar mengurangi HP monster.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">👾</span>
-              <strong className="text-sm font-extrabold text-emerald-950">Monster</strong>
-              <span className="ml-auto text-sm font-black text-emerald-800">
-                {Math.min(run.encounterIndex + (run.status === "victory" ? 1 : 0), encounterCount)}/{encounterCount}
-              </span>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-600">
-              {activeEncounter ? activeEncounter.name : "Terus berjalan untuk menemukan lawan."}
-            </p>
-          </div>
-        </section>
 
         {activeEncounter && run.status === "encounter" && (
           <div
