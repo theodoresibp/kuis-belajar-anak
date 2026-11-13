@@ -450,6 +450,17 @@ export default class AdventureScene extends Phaser.Scene {
     graphic.fillCircle(60, 45, 3);
     graphic.fillStyle(0x7f1d1d, 1);
     graphic.fillRoundedRect(39, 60, 18, 5, 2);
+
+    if (key === "monster-guardian") {
+      graphic.fillStyle(0xfbbf24, 1);
+      graphic.fillTriangle(24, 25, 34, 0, 44, 25);
+      graphic.fillTriangle(42, 22, 54, 4, 64, 22);
+      graphic.fillTriangle(62, 25, 73, 0, 82, 25);
+      graphic.fillStyle(0xfef3c7, 1);
+      graphic.fillCircle(34, 14, 3);
+      graphic.fillCircle(54, 12, 3);
+      graphic.fillCircle(73, 14, 3);
+    }
     graphic.generateTexture(key, 96, 90);
     graphic.destroy();
   }
