@@ -118,6 +118,22 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     });
   }
 
+  function handleBossAttack() {
+    const blocked = run.shieldCharges > 0;
+    dispatch({ type: "BOSS_ATTACK" });
+    damageEventId.current += 1;
+    setBattleVisual({
+      hero: "hurt",
+      monster: "attack",
+      lastDamage: {
+        id: damageEventId.current,
+        target: "hero",
+        amount: blocked ? 0 : 15,
+        kind: blocked ? "blocked" : "damage",
+      },
+    });
+  }
+
   function handleContinue() {
     if (run.monsterHp > 0 || !resolveActiveEncounter) return;
 
@@ -187,7 +203,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                 dispatch({ type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD" })
               }
               onBossWarning={setBossWarning}
-              onBossAttack={() => dispatch({ type: "BOSS_ATTACK" })}
+              onBossAttack={handleBossAttack}
             />
           </div>
         </section>
