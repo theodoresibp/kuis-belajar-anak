@@ -31,6 +31,7 @@ export default class AdventureScene extends Phaser.Scene {
   private bossAttackTimer: Phaser.Time.TimerEvent | null = null;
   private bossAttackWarningTimer: Phaser.Time.TimerEvent | null = null;
   private audioContext: AudioContext | null = null;
+  private soundEnabled = true;
 
   private virtual: Record<VirtualDirection, boolean> = {
     left: false,
@@ -106,6 +107,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.input.on("pointerdown", this.unlockAudio, this);
     this.input.keyboard?.on("keydown", this.unlockAudio, this);
     this.game.events.on("resolve-encounter", this.handleResolveEncounter, this);
+    this.game.events.on("toggle-sound", this.handleToggleSound, this);
     this.game.events.on("stop-adventure", this.handleStopAdventure, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -119,11 +121,16 @@ export default class AdventureScene extends Phaser.Scene {
       void this.audioContext?.close();
       this.audioContext = null;
       this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
+      this.game.events.off("toggle-sound", this.handleToggleSound, this);
       this.game.events.off("stop-adventure", this.handleStopAdventure, this);
     });
 
     this.createHud();
     this.player.play("hero-idle");
+  }
+
+  private handleToggleSound(enabled: boolean) {
+    this.soundEnabled = enabled;
   }
 
   private handleVirtualControl(
@@ -154,7 +161,7 @@ export default class AdventureScene extends Phaser.Scene {
     volume = 0.045,
   ) {
     const context = this.audioContext;
-    if (!context || context.state !== "running") return;
+    if (!this.soundEnabled || !context || context.state !== "running") return;
 
     const oscillator = context.createOscillator();
     const gain = context.createGain();
