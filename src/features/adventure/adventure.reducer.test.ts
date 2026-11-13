@@ -90,4 +90,32 @@ describe("adventureReducer", () => {
     expect(state.heroHp).toBe(0);
     expect(state.status).toBe("defeat");
   });
+
+  it("lets the boss damage the hero during combat", () => {
+    let state = createInitialAdventureRunState();
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "BOSS_ATTACK" });
+    expect(state.heroHp).toBe(85);
+    expect(state.status).toBe("encounter");
+  });
+
+  it("uses one shield charge to block a boss attack", () => {
+    let state = createInitialAdventureRunState();
+    state = adventureReducer(state, { type: "COLLECT_SHIELD" });
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "BOSS_ATTACK" });
+    expect(state.heroHp).toBe(100);
+    expect(state.shieldCharges).toBe(0);
+  });
+
+  it("ends the run when a boss attack removes the last HP", () => {
+    let state = {
+      ...createInitialAdventureRunState(),
+      heroHp: 15,
+      status: "encounter" as const,
+    };
+    state = adventureReducer(state, { type: "BOSS_ATTACK" });
+    expect(state.heroHp).toBe(0);
+    expect(state.status).toBe("defeat");
+  });
 });
