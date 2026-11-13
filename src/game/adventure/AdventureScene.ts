@@ -30,6 +30,7 @@ export default class AdventureScene extends Phaser.Scene {
   private nextEncounterIndex = 0;
   private bossAttackTimer: Phaser.Time.TimerEvent | null = null;
   private bossAttackWarningTimer: Phaser.Time.TimerEvent | null = null;
+  private audioContext: AudioContext | null = null;
 
   private virtual: Record<VirtualDirection, boolean> = {
     left: false,
@@ -102,6 +103,8 @@ export default class AdventureScene extends Phaser.Scene {
       this.handleVirtualControl,
       this,
     );
+    this.input.on("pointerdown", this.unlockAudio, this);
+    this.input.keyboard?.on("keydown", this.unlockAudio, this);
     this.game.events.on("resolve-encounter", this.handleResolveEncounter, this);
     this.game.events.on("stop-adventure", this.handleStopAdventure, this);
 
@@ -111,6 +114,10 @@ export default class AdventureScene extends Phaser.Scene {
         this.handleVirtualControl,
         this,
       );
+      this.input.off("pointerdown", this.unlockAudio, this);
+      this.input.keyboard?.off("keydown", this.unlockAudio, this);
+      void this.audioContext?.close();
+      this.audioContext = null;
       this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
       this.game.events.off("stop-adventure", this.handleStopAdventure, this);
     });
@@ -123,7 +130,51 @@ export default class AdventureScene extends Phaser.Scene {
     direction: VirtualDirection,
     pressed: boolean,
   ) {
+    if (pressed) this.unlockAudio();
     this.virtual[direction] = pressed;
+  }
+
+  private unlockAudio() {
+    if (typeof window === "undefined" || !("AudioContext" in window)) return;
+
+    try {
+      this.audioContext ??= new AudioContext();
+      if (this.audioContext.state === "suspended") {
+        void this.audioContext.resume();
+      }
+    } catch {
+      // Audio is an enhancement; gameplay remains available if it is unsupported.
+    }
+  }
+
+  private playTone(
+    frequency: number,
+    duration: number,
+    waveform: OscillatorType = "sine",
+    volume = 0.045,
+  ) {
+    const context = this.audioContext;
+    if (!context || context.state !== "running") return;
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime;
+
+    oscillator.type = waveform;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration);
+  }
+
+  private playPickupSound() {
+    this.playTone(660, 0.1, "sine");
+    this.time.delayedCall(85, () => this.playTone(880, 0.13, "sine"));
   }
 
   private createTextures() {
@@ -508,6 +559,18 @@ export default class AdventureScene extends Phaser.Scene {
         repeat: -1,
         ease: "Sine.easeInOut",
       });
+
+      const idleScaleX = monster.scaleX;
+      const idleScaleY = monster.scaleY;
+      this.tweens.add({
+        targets: monster,
+        scaleX: idleScaleX * 1.045,
+        scaleY: idleScaleY * 0.96,
+        duration: 620 + index * 90,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
     });
   }
 
@@ -529,6 +592,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.player.play("hero-idle", true);
     this.virtual = { left: false, right: false, jump: false };
     this.physics.world.pause();
+    this.playTone(encounter.kind === "boss" ? 180 : 420, 0.16, "triangle");
     this.game.events.emit("monster-encounter", encounter);
   };
 
@@ -539,9 +603,40 @@ export default class AdventureScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
+        const boss = this.encounterSprites[2];
+        boss?.setTint(0xfca5a5);
+        if (boss) {
+          this.tweens.add({
+            targets: boss,
+            scaleX: boss.scaleX * 1.1,
+            scaleY: boss.scaleY * 1.1,
+            duration: 450,
+            yoyo: true,
+            ease: "Quad.easeOut",
+          });
+        }
+        this.playTone(240, 0.24, "square", 0.035);
         this.game.events.emit("boss-attack-warning");
         this.bossAttackWarningTimer = this.time.delayedCall(1200, () => {
           if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
+          const boss = this.encounterSprites[2];
+          if (boss?.active) {
+            this.tweens.killTweensOf(boss);
+            boss.setTint(0xf87171);
+            this.tweens.add({
+              targets: boss,
+              x: boss.x - 15,
+              angle: -9,
+              duration: 90,
+              yoyo: true,
+              repeat: 1,
+              onComplete: () => {
+                boss.setAngle(0);
+                boss.clearTint();
+              },
+            });
+          }
+          this.playTone(115, 0.32, "sawtooth", 0.06);
           this.game.events.emit("boss-attack");
         });
       },
@@ -553,6 +648,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.bossAttackWarningTimer?.remove(false);
     this.bossAttackTimer = null;
     this.bossAttackWarningTimer = null;
+    this.encounterSprites[2]?.clearTint();
     this.game.events.emit("boss-attack-warning-clear");
   }
 
@@ -568,7 +664,29 @@ export default class AdventureScene extends Phaser.Scene {
     this.stopBossAttackCycle();
 
     const index = ENCOUNTERS.findIndex((encounter) => encounter.id === encounterId);
-    this.encounterSprites[index]?.destroy();
+    const defeatedMonster = this.encounterSprites[index];
+    if (defeatedMonster?.active) {
+      this.playTone(660, 0.13, "sine");
+      this.time.delayedCall(100, () => this.playTone(880, 0.16, "sine"));
+      for (let particleIndex = 0; particleIndex < 12; particleIndex += 1) {
+        const sparkle = this.add.circle(
+          defeatedMonster.x,
+          defeatedMonster.y,
+          Phaser.Math.Between(3, 6),
+          [0xfde047, 0x86efac, 0xc4b5fd][particleIndex % 3],
+        ).setDepth(15);
+        this.tweens.add({
+          targets: sparkle,
+          x: sparkle.x + Phaser.Math.Between(-70, 70),
+          y: sparkle.y + Phaser.Math.Between(-65, 20),
+          alpha: 0,
+          scale: 0.2,
+          duration: 500 + Phaser.Math.Between(0, 220),
+          onComplete: () => sparkle.destroy(),
+        });
+      }
+    }
+    defeatedMonster?.destroy();
     this.encounterLabels[index]?.destroy();
     this.nextEncounterIndex += 1;
     this.activeEncounterId = null;
@@ -629,6 +747,7 @@ export default class AdventureScene extends Phaser.Scene {
     const hazard = hazardObject as Phaser.Physics.Arcade.Sprite;
     if (!hazard.active) return;
     hazard.destroy();
+    this.playTone(165, 0.22, "sawtooth", 0.05);
     this.game.events.emit("adventure-hazard");
   };
 
@@ -640,6 +759,7 @@ export default class AdventureScene extends Phaser.Scene {
     const kind = item.getData("pickup-kind");
     if (kind !== "heart" && kind !== "shield") return;
     item.destroy();
+    this.playPickupSound();
     this.game.events.emit("adventure-pickup", kind);
   }
 
@@ -705,6 +825,7 @@ export default class AdventureScene extends Phaser.Scene {
 
     if (jump && body.blocked.down) {
       this.player.setVelocityY(this.jumpVelocity);
+      this.playTone(480, 0.09, "triangle", 0.035);
     }
 
     if (jump) {
