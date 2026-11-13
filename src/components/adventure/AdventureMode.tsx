@@ -147,6 +147,10 @@ export default function AdventureMode({ chapter }: Props) {
               encounterCount={encounterCount}
               onEncounter={handleEncounter}
               onAdventureComplete={() => dispatch({ type: "VICTORY" })}
+              onHazard={() => dispatch({ type: "HAZARD" })}
+              onPickup={(kind) =>
+                dispatch({ type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD" })
+              }
             />
           </div>
         </section>
@@ -158,6 +162,7 @@ export default function AdventureMode({ chapter }: Props) {
               <strong className="text-sm font-extrabold text-emerald-950">HP Petualang</strong>
               <span className="ml-auto text-sm font-black text-emerald-800">{heroHpPercent}/100</span>
             </div>
+            <p className="mb-2 text-xs font-bold text-sky-700">🛡️ Perisai: {run.shieldCharges} · 💗 Kristal hati memulihkan 15 HP</p>
             <div className="h-3 overflow-hidden rounded-full bg-emerald-100">
               <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${heroHpPercent}%` }} />
             </div>
@@ -284,7 +289,7 @@ export default function AdventureMode({ chapter }: Props) {
 
         <footer className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-center">
           <p className="text-xs font-semibold text-emerald-800">
-            Sprint 2 — monster muncul di jalur, pertarungan menggunakan soal dari bab {chapter.title}.
+            Sprint 3 — hindari rintangan, kumpulkan power-up, dan kalahkan monster dengan menjawab soal bab {chapter.title}.
           </p>
         </footer>
       </div>
