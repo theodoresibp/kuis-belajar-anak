@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG } from "@/features/gamification/battle.config";
+import { BATTLE_CONFIG } from "../gamification/battle.config";
 
 export type AdventureRunStatus =
   | "exploring"
