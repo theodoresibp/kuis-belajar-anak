@@ -23,6 +23,9 @@ export default class AdventureScene extends Phaser.Scene {
   private wasd!: Record<VirtualDirection, Phaser.Input.Keyboard.Key>;
 
   private encounterCount: number;
+  private heroId: string;
+  private heroIdleTexture = "hero-idle-1";
+  private heroMoveTexture = "hero-walk-1";
   private encounterSprites: Phaser.Physics.Arcade.Sprite[] = [];
   private encounterLabels: Phaser.GameObjects.Text[] = [];
   private activeEncounterId: string | null = null;
@@ -44,23 +47,37 @@ export default class AdventureScene extends Phaser.Scene {
   private readonly moveSpeed = 230;
   private readonly jumpVelocity = -470;
 
-  constructor(encounterCount = ENCOUNTERS.length) {
+  constructor(encounterCount = ENCOUNTERS.length, heroId = "bimo") {
     super("AdventureScene");
     this.encounterCount = Phaser.Math.Clamp(encounterCount, 1, ENCOUNTERS.length);
+    this.heroId = ["rara", "bimo", "tari"].includes(heroId) ? heroId : "bimo";
+  }
+
+  preload() {
+    const heroFolder = this.heroId === "bimo" || this.heroId === "tari"
+      ? this.heroId
+      : "hero";
+    this.load.image("adventure-hero-idle", `/assets/gamification/hero/${heroFolder}/idle.webp`);
+    this.load.image("adventure-hero-attack", `/assets/gamification/hero/${heroFolder}/attack.webp`);
+    this.load.image("adventure-monster-slime", "/assets/gamification/monsters/slime/idle.webp");
+    this.load.image("adventure-monster-fox", "/assets/gamification/monsters/fox/idle.webp");
+    this.load.image("adventure-monster-guardian", "/assets/gamification/monsters/purple-dragon/idle.webp");
   }
 
   create() {
     this.createTextures();
+    this.heroIdleTexture = this.textures.exists("adventure-hero-idle")
+      ? "adventure-hero-idle"
+      : "hero-idle-1";
+    this.heroMoveTexture = this.textures.exists("adventure-hero-attack")
+      ? "adventure-hero-attack"
+      : "hero-walk-1";
     this.createAnimations();
     this.createWorld();
 
-    this.player = this.physics.add.sprite(
-      120,
-      430,
-      "hero-idle-1",
-    );
+    this.player = this.physics.add.sprite(120, 430, this.heroIdleTexture);
 
-    this.player.setDisplaySize(48, 66);
+    this.player.setDisplaySize(76, 88);
     this.player.setCollideWorldBounds(true);
     this.player.setBounce(0.02);
     this.player.setDepth(10);
@@ -126,7 +143,7 @@ export default class AdventureScene extends Phaser.Scene {
     });
 
     this.createHud();
-    this.player.play("hero-idle");
+    this.player.setTexture(this.heroIdleTexture);
   }
 
   private handleToggleSound(enabled: boolean) {
@@ -525,15 +542,16 @@ export default class AdventureScene extends Phaser.Scene {
 
   private createEncounters() {
     const positions = [760, 1510, 2320];
-    const textureKeys = ["monster-slime", "monster-fox", "monster-guardian"];
+    const fallbackTextureKeys = ["monster-slime", "monster-fox", "monster-guardian"];
+    const textureKeys = ["adventure-monster-slime", "adventure-monster-fox", "adventure-monster-guardian"];
 
     ENCOUNTERS.slice(0, this.encounterCount).forEach((encounter, index) => {
       const monster = this.physics.add.sprite(
         positions[index],
         510,
-        textureKeys[index],
+        this.textures.exists(textureKeys[index]) ? textureKeys[index] : fallbackTextureKeys[index],
       );
-      monster.setDisplaySize(index === 2 ? 104 : 82, index === 2 ? 98 : 78);
+      monster.setDisplaySize(index === 2 ? 138 : 104, index === 2 ? 128 : 100);
       monster.setImmovable(true);
       monster.body.allowGravity = false;
       monster.setDepth(9);
@@ -596,7 +614,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.activeEncounterId = encounter.id;
     if (encounter.kind === "boss") this.startBossAttackCycle();
     this.player.setVelocity(0, 0);
-    this.player.play("hero-idle", true);
+    this.player.setTexture(this.heroIdleTexture);
     this.virtual = { left: false, right: false, jump: false };
     this.physics.world.pause();
     this.playTone(encounter.kind === "boss" ? 180 : 420, 0.16, "triangle");
@@ -841,15 +859,11 @@ export default class AdventureScene extends Phaser.Scene {
 
     // Character animation state
     if (!body.blocked.down) {
-      if (this.player.anims.currentAnim?.key !== "hero-jump") {
-        this.player.play("hero-jump", true);
-      }
+      this.player.setTexture(this.heroMoveTexture);
     } else if (left !== right) {
-      if (this.player.anims.currentAnim?.key !== "hero-walk") {
-        this.player.play("hero-walk", true);
-      }
-    } else if (this.player.anims.currentAnim?.key !== "hero-idle") {
-      this.player.play("hero-idle", true);
+      this.player.setTexture(this.heroMoveTexture);
+    } else {
+      this.player.setTexture(this.heroIdleTexture);
     }
   }
 }
