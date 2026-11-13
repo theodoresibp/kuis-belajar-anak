@@ -3,11 +3,31 @@ import * as Phaser from "phaser";
 
 type VirtualDirection = "left" | "right" | "jump";
 
+export interface AdventureEncounter {
+  id: string;
+  name: string;
+  kind: "normal" | "elite" | "boss";
+  emoji: string;
+}
+
+const ENCOUNTERS: AdventureEncounter[] = [
+  { id: "forest-slime", name: "Slime Hutan", kind: "normal", emoji: "🌱" },
+  { id: "forest-fox", name: "Rubah Penjaga", kind: "elite", emoji: "🦊" },
+  { id: "forest-guardian", name: "Penjaga Hutan", kind: "boss", emoji: "🐻" },
+];
+
 export default class AdventureScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<VirtualDirection, Phaser.Input.Keyboard.Key>;
+
+  private encounterCount: number;
+  private encounterSprites: Phaser.Physics.Arcade.Sprite[] = [];
+  private encounterLabels: Phaser.GameObjects.Text[] = [];
+  private activeEncounterId: string | null = null;
+  private encounterPaused = false;
+  private nextEncounterIndex = 0;
 
   private virtual: Record<VirtualDirection, boolean> = {
     left: false,
@@ -20,8 +40,9 @@ export default class AdventureScene extends Phaser.Scene {
   private readonly moveSpeed = 230;
   private readonly jumpVelocity = -470;
 
-  constructor() {
+  constructor(encounterCount = ENCOUNTERS.length) {
     super("AdventureScene");
+    this.encounterCount = Phaser.Math.Clamp(encounterCount, 1, ENCOUNTERS.length);
   }
 
   create() {
@@ -41,6 +62,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.player.setDepth(10);
 
     this.physics.add.collider(this.player, this.platforms);
+    this.createEncounters();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -77,6 +99,7 @@ export default class AdventureScene extends Phaser.Scene {
       this.handleVirtualControl,
       this,
     );
+    this.game.events.on("resolve-encounter", this.handleResolveEncounter, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -84,6 +107,7 @@ export default class AdventureScene extends Phaser.Scene {
         this.handleVirtualControl,
         this,
       );
+      this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
     });
 
     this.createHud();
@@ -117,6 +141,10 @@ export default class AdventureScene extends Phaser.Scene {
 
     platform.generateTexture("forest-platform", 180, 28);
     platform.destroy();
+
+    this.createMonsterTexture("monster-slime", 0x65a30d);
+    this.createMonsterTexture("monster-fox", 0xea580c);
+    this.createMonsterTexture("monster-guardian", 0x7c3aed);
   }
 
   private createHeroFrame(
@@ -370,6 +398,111 @@ export default class AdventureScene extends Phaser.Scene {
     }
   }
 
+
+  private createMonsterTexture(key: string, color: number) {
+    const graphic = this.make.graphics({ x: 0, y: 0 });
+    graphic.fillStyle(0x1f2937, 0.18);
+    graphic.fillEllipse(48, 82, 76, 13);
+    graphic.fillStyle(color, 1);
+    graphic.fillRoundedRect(15, 24, 66, 54, 24);
+    graphic.fillCircle(30, 24, 17);
+    graphic.fillCircle(66, 24, 17);
+    graphic.fillStyle(0xffffff, 1);
+    graphic.fillCircle(34, 44, 7);
+    graphic.fillCircle(62, 44, 7);
+    graphic.fillStyle(0x172554, 1);
+    graphic.fillCircle(36, 45, 3);
+    graphic.fillCircle(60, 45, 3);
+    graphic.fillStyle(0x7f1d1d, 1);
+    graphic.fillRoundedRect(39, 60, 18, 5, 2);
+    graphic.generateTexture(key, 96, 90);
+    graphic.destroy();
+  }
+
+  private createEncounters() {
+    const positions = [760, 1510, 2320];
+    const textureKeys = ["monster-slime", "monster-fox", "monster-guardian"];
+
+    ENCOUNTERS.slice(0, this.encounterCount).forEach((encounter, index) => {
+      const monster = this.physics.add.sprite(
+        positions[index],
+        510,
+        textureKeys[index],
+      );
+      monster.setDisplaySize(index === 2 ? 104 : 82, index === 2 ? 98 : 78);
+      monster.setImmovable(true);
+      monster.setAllowGravity(false);
+      monster.setDepth(9);
+      monster.setData("encounter", encounter);
+      this.encounterSprites.push(monster);
+
+      const label = this.add.text(positions[index], 445, encounter.name, {
+        fontFamily: "Arial",
+        fontSize: "15px",
+        fontStyle: "bold",
+        color: "#ffffff",
+        stroke: "#24452d",
+        strokeThickness: 4,
+      }).setOrigin(0.5).setDepth(11);
+      this.encounterLabels.push(label);
+
+      this.physics.add.overlap(
+        this.player,
+        monster,
+        this.triggerEncounter,
+        undefined,
+        this,
+      );
+
+      this.tweens.add({
+        targets: monster,
+        y: 500,
+        duration: 850 + index * 100,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    });
+  }
+
+  private triggerEncounter(
+    _player: Phaser.GameObjects.GameObject,
+    monsterObject: Phaser.GameObjects.GameObject,
+  ) {
+    if (this.encounterPaused) return;
+
+    const monster = monsterObject as Phaser.Physics.Arcade.Sprite;
+    const encounter = monster.getData("encounter") as AdventureEncounter | undefined;
+    if (!encounter || encounter.id !== ENCOUNTERS[this.nextEncounterIndex]?.id) return;
+
+    this.encounterPaused = true;
+    this.activeEncounterId = encounter.id;
+    this.player.setVelocity(0, 0);
+    this.player.play("hero-idle", true);
+    this.virtual = { left: false, right: false, jump: false };
+    this.physics.world.pause();
+    this.game.events.emit("monster-encounter", encounter);
+  }
+
+  private handleResolveEncounter(encounterId: string) {
+    if (!this.encounterPaused || encounterId !== this.activeEncounterId) return;
+
+    const index = ENCOUNTERS.findIndex((encounter) => encounter.id === encounterId);
+    this.encounterSprites[index]?.destroy();
+    this.encounterLabels[index]?.destroy();
+    this.nextEncounterIndex += 1;
+    this.activeEncounterId = null;
+    this.encounterPaused = false;
+
+    if (this.nextEncounterIndex >= this.encounterCount) {
+      this.game.events.emit("adventure-complete");
+      return;
+    }
+
+    this.player.setX(Math.min(this.player.x + 90, this.worldWidth - 80));
+    this.physics.world.resume();
+  }
+
   private createHud() {
     this.add
       .text(24, 22, "ENCHANTED FOREST", {
@@ -396,6 +529,11 @@ export default class AdventureScene extends Phaser.Scene {
   }
 
   update() {
+    if (this.encounterPaused) {
+      this.player?.setVelocityX(0);
+      return;
+    }
+
     if (!this.player?.body || !this.cursors || !this.wasd) {
       return;
     }
