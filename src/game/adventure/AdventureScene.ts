@@ -63,6 +63,7 @@ export default class AdventureScene extends Phaser.Scene {
 
     this.physics.add.collider(this.player, this.platforms);
     this.createEncounters();
+    this.createHazardsAndPowerUps();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -145,6 +146,36 @@ export default class AdventureScene extends Phaser.Scene {
     this.createMonsterTexture("monster-slime", 0x65a30d);
     this.createMonsterTexture("monster-fox", 0xea580c);
     this.createMonsterTexture("monster-guardian", 0x7c3aed);
+
+    const hazard = this.make.graphics({ x: 0, y: 0 });
+    hazard.fillStyle(0x7f1d1d, 1);
+    hazard.fillTriangle(4, 38, 24, 0, 44, 38);
+    hazard.fillStyle(0xfca5a5, 1);
+    hazard.fillTriangle(17, 30, 24, 12, 31, 30);
+    hazard.generateTexture("forest-hazard", 48, 40);
+    hazard.destroy();
+
+    const heart = this.make.graphics({ x: 0, y: 0 });
+    heart.fillStyle(0xec4899, 1);
+    heart.fillCircle(13, 13, 12);
+    heart.fillCircle(31, 13, 12);
+    heart.fillTriangle(2, 18, 42, 18, 22, 42);
+    heart.generateTexture("pickup-heart", 44, 44);
+    heart.destroy();
+
+    const shield = this.make.graphics({ x: 0, y: 0 });
+    shield.fillStyle(0x2563eb, 1);
+    shield.fillPoints([
+      { x: 22, y: 0 }, { x: 42, y: 7 }, { x: 38, y: 29 },
+      { x: 22, y: 43 }, { x: 6, y: 29 }, { x: 2, y: 7 },
+    ], true);
+    shield.lineStyle(3, 0xbfdbfe, 1);
+    shield.strokePoints([
+      { x: 22, y: 5 }, { x: 36, y: 10 }, { x: 33, y: 27 },
+      { x: 22, y: 37 }, { x: 11, y: 27 }, { x: 8, y: 10 },
+    ], true);
+    shield.generateTexture("pickup-shield", 44, 44);
+    shield.destroy();
   }
 
   private createHeroFrame(
@@ -502,6 +533,66 @@ export default class AdventureScene extends Phaser.Scene {
 
     this.player.setX(Math.min(this.player.x + 90, this.worldWidth - 80));
     this.physics.world.resume();
+  }
+
+  private createHazardsAndPowerUps() {
+    const hazards = [480, 1260, 2040];
+    hazards.forEach((x) => {
+      const obstacle = this.physics.add.sprite(x, 535, "forest-hazard");
+      obstacle.setDisplaySize(42, 36);
+      obstacle.setImmovable(true);
+      obstacle.body.allowGravity = false;
+      obstacle.setDepth(8);
+      this.physics.add.overlap(this.player, obstacle, this.triggerHazard, undefined, this);
+    });
+
+    const pickups: Array<{ x: number; kind: "heart" | "shield" }> = [
+      { x: 1040, kind: "heart" },
+      { x: 1810, kind: "shield" },
+      { x: 2180, kind: "heart" },
+    ];
+
+    pickups.forEach(({ x, kind }) => {
+      const item = this.physics.add.sprite(
+        x,
+        510,
+        kind === "heart" ? "pickup-heart" : "pickup-shield",
+      );
+      item.setDisplaySize(36, 36);
+      item.setImmovable(true);
+      item.body.allowGravity = false;
+      item.setDepth(8);
+      item.setData("pickup-kind", kind);
+      this.tweens.add({
+        targets: item,
+        y: 495,
+        duration: 750,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      this.physics.add.overlap(this.player, item, this.collectPowerUp, undefined, this);
+    });
+  }
+
+  private triggerHazard = (_player: unknown, hazardObject: unknown) => {
+    if (this.encounterPaused) return;
+    if (!(hazardObject instanceof Phaser.GameObjects.GameObject)) return;
+    const hazard = hazardObject as Phaser.Physics.Arcade.Sprite;
+    if (!hazard.active) return;
+    hazard.destroy();
+    this.game.events.emit("adventure-hazard");
+  };
+
+  private collectPowerUp = (_player: unknown, itemObject: unknown) => {
+    if (this.encounterPaused) return;
+    if (!(itemObject instanceof Phaser.GameObjects.GameObject)) return;
+    const item = itemObject as Phaser.Physics.Arcade.Sprite;
+    if (!item.active) return;
+    const kind = item.getData("pickup-kind");
+    if (kind !== "heart" && kind !== "shield") return;
+    item.destroy();
+    this.game.events.emit("adventure-pickup", kind);
   }
 
   private createHud() {
