@@ -14,6 +14,7 @@ type VirtualDirection = "left" | "right" | "jump";
 
 interface Props {
   encounterCount: number;
+  heroId: string;
   isDefeated: boolean;
   onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
   onAdventureComplete: () => void;
@@ -37,6 +38,7 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
 
 export default function AdventureGameCanvas({
   encounterCount,
+  heroId,
   isDefeated,
   onEncounter,
   onAdventureComplete,
@@ -106,7 +108,7 @@ export default function AdventureGameCanvas({
             antialias: true,
             pixelArt: false,
           },
-          scene: [new AdventureScene(encounterCount)],
+          scene: [new AdventureScene(encounterCount, heroId)],
         });
 
         gameRef.current = game;
@@ -170,7 +172,7 @@ export default function AdventureGameCanvas({
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [encounterCount]);
+  }, [encounterCount, heroId]);
 
   useEffect(() => {
     if (isDefeated) {
