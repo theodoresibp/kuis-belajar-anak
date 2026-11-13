@@ -38,6 +38,7 @@ export default function AdventureMode({ chapter }: Props) {
   const [resolveActiveEncounter, setResolveActiveEncounter] = useState<(() => void) | null>(null);
   const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
   const [questionStatus, setQuestionStatus] = useState<"active" | "correct">("active");
+  const [bossWarning, setBossWarning] = useState(false);
 
   const questionStart = encounterQuestionCounts
     .slice(0, run.encounterIndex)
@@ -122,7 +123,7 @@ export default function AdventureMode({ chapter }: Props) {
                 Adventure Mode
               </span>
               <span className="rounded-full border border-emerald-300 bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">
-                Sprint 3 • Obstacles & Power-ups
+                Sprint 4 • Boss Fight
               </span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
@@ -152,6 +153,8 @@ export default function AdventureMode({ chapter }: Props) {
               onPickup={(kind) =>
                 dispatch({ type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD" })
               }
+              onBossWarning={setBossWarning}
+              onBossAttack={() => dispatch({ type: "BOSS_ATTACK" })}
             />
           </div>
         </section>
@@ -207,6 +210,17 @@ export default function AdventureMode({ chapter }: Props) {
                 <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${monsterHpPercent}%` }} />
               </div>
             </div>
+
+            {activeEncounter.kind === "boss" && (
+              <div className={`w-full rounded-2xl border-2 px-4 py-3 text-center transition-colors ${bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800"}`}>
+                <p className="font-black">
+                  {bossWarning ? "⚠️ PENJAGA HUTAN SEDANG MENYIAPKAN SERANGAN!" : "👑 BOSS FINAL — PENJAGA HUTAN"}
+                </p>
+                <p className="mt-1 text-xs font-semibold">
+                  {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : "Jawab soal secepat mungkin. Boss menyerang secara berkala!"}
+                </p>
+              </div>
+            )}
 
             {currentQuestion && (
               <QuestionCard
