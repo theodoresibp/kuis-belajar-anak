@@ -33,6 +33,19 @@ describe("adventureReducer", () => {
     expect(state.currentQuestionIndex).toBe(1);
   });
 
+  it("advances exactly one question when moving to the next encounter", () => {
+    let state = createInitialAdventureRunState();
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: 50 });
+    state = adventureReducer(state, { type: "NEXT_QUESTION" });
+    state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: 100 });
+    state = adventureReducer(state, { type: "NEXT_ENCOUNTER" });
+
+    expect(state.currentQuestionIndex).toBe(2);
+    expect(state.encounterIndex).toBe(1);
+    expect(state.status).toBe("exploring");
+  });
+
   it("stops the run when hero HP reaches zero", () => {
     let state = createInitialAdventureRunState();
     state = adventureReducer(state, { type: "START_ENCOUNTER" });
