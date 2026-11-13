@@ -12,6 +12,7 @@ export interface AdventureRunState {
   currentQuestionIndex: number;
   encounterIndex: number;
   monsterHp: number;
+  shieldCharges: number;
   status: AdventureRunStatus;
 }
 
@@ -22,7 +23,10 @@ export type AdventureRunAction =
   | { type: "NEXT_QUESTION" }
   | { type: "NEXT_ENCOUNTER" }
   | { type: "VICTORY" }
-  | { type: "DEFEAT" };
+  | { type: "DEFEAT" }
+  | { type: "HAZARD" }
+  | { type: "COLLECT_HEART" }
+  | { type: "COLLECT_SHIELD" };
 
 export function createInitialAdventureRunState(): AdventureRunState {
   return {
@@ -31,6 +35,7 @@ export function createInitialAdventureRunState(): AdventureRunState {
     currentQuestionIndex: 0,
     encounterIndex: 0,
     monsterHp: BATTLE_CONFIG.initialMonsterHp,
+    shieldCharges: 0,
     status: "exploring",
   };
 }
@@ -78,6 +83,26 @@ export function adventureReducer(
 
     case "VICTORY":
       return { ...state, status: "victory" };
+
+    case "HAZARD": {
+      if (state.status !== "exploring") return state;
+      if (state.shieldCharges > 0) {
+        return { ...state, shieldCharges: state.shieldCharges - 1 };
+      }
+      const heroHp = Math.max(0, state.heroHp - 10);
+      return { ...state, heroHp, status: heroHp <= 0 ? "defeat" : "exploring" };
+    }
+
+    case "COLLECT_HEART":
+      if (state.status !== "exploring" || state.heroHp <= 0) return state;
+      return {
+        ...state,
+        heroHp: Math.min(BATTLE_CONFIG.initialHeroHp, state.heroHp + 15),
+      };
+
+    case "COLLECT_SHIELD":
+      if (state.status !== "exploring") return state;
+      return { ...state, shieldCharges: state.shieldCharges + 1 };
 
     case "DEFEAT":
       return { ...state, heroHp: 0, status: "defeat" };
