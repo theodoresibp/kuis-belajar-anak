@@ -114,6 +114,9 @@ export default class AdventureScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(120, 430, this.heroIdleTexture);
 
     this.player.setDisplaySize(76, 88);
+    // Anchor the artwork at its feet so transparent padding in character sprites
+    // does not make Velo appear to float above the platform.
+    this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
     this.player.setBounce(0.02);
     this.player.setDepth(10);
@@ -664,7 +667,7 @@ export default class AdventureScene extends Phaser.Scene {
   private startBossAttackCycle() {
     this.stopBossAttackCycle();
     this.bossAttackTimer = this.time.addEvent({
-      delay: 6500,
+      delay: 12000,
       loop: true,
       callback: () => {
         if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
@@ -685,7 +688,7 @@ export default class AdventureScene extends Phaser.Scene {
         }
         this.playTone(240, 0.24, "square", 0.035);
         this.game.events.emit("boss-attack-warning");
-        this.bossAttackWarningTimer = this.time.delayedCall(1200, () => {
+        this.bossAttackWarningTimer = this.time.delayedCall(2500, () => {
           if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
           const boss = this.encounterSprites[2];
           if (boss?.active) {
