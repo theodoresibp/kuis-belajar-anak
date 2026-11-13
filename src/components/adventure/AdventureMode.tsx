@@ -123,14 +123,14 @@ export default function AdventureMode({ chapter }: Props) {
                 Adventure Mode
               </span>
               <span className="rounded-full border border-emerald-300 bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">
-                Sprint 4 • Boss Fight
+                Sprint 5 • Visual, Audio & Mobile Polish
               </span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
               Enchanted Forest
             </h1>
             <p className="mt-1 max-w-xl text-sm font-medium text-emerald-800 sm:text-base">
-              Jelajahi hutan, temui monster, dan jawab soal untuk mengalahkan mereka.
+              Jelajahi hutan, hindari rintangan, dan kalahkan monster dengan menjawab soal.
             </p>
           </div>
 
@@ -298,13 +298,13 @@ export default function AdventureMode({ chapter }: Props) {
 
         {!activeEncounter && run.status === "exploring" && (
           <p className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-center text-sm font-semibold text-emerald-800">
-            Hindari duri merah dengan melompat. Ambil kristal hati untuk memulihkan 15 HP dan perisai biru untuk memblokir satu rintangan. Dekati monster untuk memulai kuis!
+            Hindari duri merah dengan melompat. Ambil kristal hati untuk memulihkan 15 HP dan perisai biru untuk memblokir satu serangan. Dekati monster untuk memulai kuis. Efek suara aktif setelah kamu menyentuh layar atau menekan keyboard.
           </p>
         )}
 
         <footer className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-center">
           <p className="text-xs font-semibold text-emerald-800">
-            Sprint 4 — hadapi serangan Penjaga Hutan, gunakan shield dengan tepat, dan menangkan pertarungan final pada bab {chapter.title}.
+            Sprint 5 — nikmati animasi monster, efek suara, dan kontrol sentuh yang lebih nyaman pada bab {chapter.title}.
           </p>
         </footer>
       </div>
