@@ -58,4 +58,36 @@ describe("adventureReducer", () => {
       adventureReducer(state, { type: "START_ENCOUNTER" }),
     ).toEqual(state);
   });
+
+  it("damages the hero when hitting a hazard and consumes a shield first", () => {
+    let state = createInitialAdventureRunState();
+    state = adventureReducer(state, { type: "COLLECT_SHIELD" });
+    state = adventureReducer(state, { type: "HAZARD" });
+    expect(state.heroHp).toBe(100);
+    expect(state.shieldCharges).toBe(0);
+
+    state = adventureReducer(state, { type: "HAZARD" });
+    expect(state.heroHp).toBe(90);
+  });
+
+  it("collecting a heart restores HP but never exceeds the maximum", () => {
+    let state = {
+      ...createInitialAdventureRunState(),
+      heroHp: 90,
+    };
+    state = adventureReducer(state, { type: "COLLECT_HEART" });
+    expect(state.heroHp).toBe(100);
+    state = adventureReducer(state, { type: "COLLECT_HEART" });
+    expect(state.heroHp).toBe(100);
+  });
+
+  it("ends the run when an unblocked hazard removes the last HP", () => {
+    let state = {
+      ...createInitialAdventureRunState(),
+      heroHp: 10,
+    };
+    state = adventureReducer(state, { type: "HAZARD" });
+    expect(state.heroHp).toBe(0);
+    expect(state.status).toBe("defeat");
+  });
 });
