@@ -28,6 +28,8 @@ export default class AdventureScene extends Phaser.Scene {
   private activeEncounterId: string | null = null;
   private encounterPaused = false;
   private nextEncounterIndex = 0;
+  private bossAttackTimer: Phaser.Time.TimerEvent | null = null;
+  private bossAttackWarningTimer: Phaser.Time.TimerEvent | null = null;
 
   private virtual: Record<VirtualDirection, boolean> = {
     left: false,
@@ -511,6 +513,7 @@ export default class AdventureScene extends Phaser.Scene {
 
     this.encounterPaused = true;
     this.activeEncounterId = encounter.id;
+    if (encounter.kind === "boss") this.startBossAttackCycle();
     this.player.setVelocity(0, 0);
     this.player.play("hero-idle", true);
     this.virtual = { left: false, right: false, jump: false };
@@ -518,7 +521,32 @@ export default class AdventureScene extends Phaser.Scene {
     this.game.events.emit("monster-encounter", encounter);
   };
 
+  private startBossAttackCycle() {
+    this.stopBossAttackCycle();
+    this.bossAttackTimer = this.time.addEvent({
+      delay: 6500,
+      loop: true,
+      callback: () => {
+        if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
+        this.game.events.emit("boss-attack-warning");
+        this.bossAttackWarningTimer = this.time.delayedCall(1200, () => {
+          if (!this.encounterPaused || this.activeEncounterId !== "forest-guardian") return;
+          this.game.events.emit("boss-attack");
+        });
+      },
+    });
+  }
+
+  private stopBossAttackCycle() {
+    this.bossAttackTimer?.remove(false);
+    this.bossAttackWarningTimer?.remove(false);
+    this.bossAttackTimer = null;
+    this.bossAttackWarningTimer = null;
+    this.game.events.emit("boss-attack-warning-clear");
+  }
+
   private handleStopAdventure = () => {
+    this.stopBossAttackCycle();
     this.encounterPaused = true;
     this.player?.setVelocity(0, 0);
     this.physics.world.pause();
@@ -526,6 +554,7 @@ export default class AdventureScene extends Phaser.Scene {
 
   private handleResolveEncounter(encounterId: string) {
     if (!this.encounterPaused || encounterId !== this.activeEncounterId) return;
+    this.stopBossAttackCycle();
 
     const index = ENCOUNTERS.findIndex((encounter) => encounter.id === encounterId);
     this.encounterSprites[index]?.destroy();
