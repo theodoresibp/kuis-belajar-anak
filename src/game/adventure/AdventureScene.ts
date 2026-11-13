@@ -643,6 +643,8 @@ export default class AdventureScene extends Phaser.Scene {
     if (!encounter || encounter.id !== ENCOUNTERS[this.nextEncounterIndex]?.id) return;
 
     this.encounterPaused = true;
+    this.heroPoseTimer?.remove(false);
+    this.heroPoseTimer = null;
     this.activeEncounterId = encounter.id;
     if (encounter.kind === "boss") this.startBossAttackCycle();
     this.player.setVelocity(0, 0);
@@ -735,6 +737,8 @@ export default class AdventureScene extends Phaser.Scene {
   private handleResolveEncounter(encounterId: string) {
     if (!this.encounterPaused || encounterId !== this.activeEncounterId) return;
     this.stopBossAttackCycle();
+    this.heroPoseTimer?.remove(false);
+    this.heroPoseTimer = null;
 
     const index = ENCOUNTERS.findIndex((encounter) => encounter.id === encounterId);
     const defeatedMonster = this.encounterSprites[index];
@@ -864,6 +868,11 @@ export default class AdventureScene extends Phaser.Scene {
   }
 
   update() {
+    if (this.isAdventureStopped) {
+      this.player?.setVelocity(0, 0);
+      return;
+    }
+
     if (this.encounterPaused) {
       this.player?.setVelocityX(0);
       return;
