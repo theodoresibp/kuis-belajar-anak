@@ -95,7 +95,7 @@ export function adventureReducer(
     }
 
     case "BOSS_ATTACK": {
-      if (state.status !== "encounter") return state;
+      if (state.status !== "encounter" || state.monsterHp <= 0) return state;
       if (state.shieldCharges > 0) {
         return { ...state, shieldCharges: state.shieldCharges - 1 };
       }
