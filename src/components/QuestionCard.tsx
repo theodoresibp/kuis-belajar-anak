@@ -12,11 +12,9 @@ interface Props {
   options: QuizOption[];
   correctOptionId: string;
   triedOptionIds: string[];
-  /** Options removed by a hint power-up: shown greyed out, not selectable, and NOT counted as a wrong try. */
+  /** Options removed by a hint power-up. */
   eliminatedOptionIds?: string[];
-  status: "active" | "correct" | "failed";
-  livesLeft: number;
-  maxLives: number;
+  status: "active" | "correct";
   explanation?: string;
   onSelect: (optionId: string) => void;
 }
@@ -34,8 +32,6 @@ export default function QuestionCard({
   triedOptionIds,
   eliminatedOptionIds = [],
   status,
-  livesLeft,
-  maxLives,
   explanation,
   onSelect,
 }: Props) {
@@ -43,14 +39,9 @@ export default function QuestionCard({
 
   return (
     <div className="w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 text-violet-700 font-bold px-4 py-1 text-sm">
           Soal {questionNumber} / {totalQuestions}
-        </span>
-        <span className="inline-flex items-center gap-1 text-lg" aria-label={`${livesLeft} kesempatan tersisa`}>
-          {Array.from({ length: maxLives }, (_, i) => (
-            <span key={i}>{i < livesLeft ? "❤️" : "🤍"}</span>
-          ))}
         </span>
       </div>
 
@@ -80,12 +71,15 @@ export default function QuestionCard({
 
           let styles =
             "border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300";
+
           if (isTried) {
             styles = "border-red-400 bg-red-50 text-red-800 opacity-70";
           }
+
           if (isEliminated) {
             styles = "border-slate-200 bg-slate-100 text-slate-400 opacity-50";
           }
+
           if (resolved) {
             if (isCorrect) {
               styles = "border-green-400 bg-green-50 text-green-800";
@@ -105,10 +99,18 @@ export default function QuestionCard({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white border-2 border-current font-black text-sm">
                 {LETTER[idx] ?? idx + 1}
               </span>
-              <span className={isEliminated ? "line-through" : undefined}>{opt.text}</span>
-              {resolved && isCorrect && <span className="ml-auto text-xl">✅</span>}
+
+              <span className={isEliminated ? "line-through" : undefined}>
+                {opt.text}
+              </span>
+
+              {resolved && isCorrect && (
+                <span className="ml-auto text-xl">✅</span>
+              )}
               {isTried && <span className="ml-auto text-xl">❌</span>}
-              {!isTried && isEliminated && <span className="ml-auto text-xl">💡</span>}
+              {!isTried && isEliminated && (
+                <span className="ml-auto text-xl">💡</span>
+              )}
             </button>
           );
         })}
@@ -116,7 +118,7 @@ export default function QuestionCard({
 
       {!resolved && triedOptionIds.length > 0 && (
         <div className="mt-5 rounded-2xl bg-red-50 border-2 border-red-200 px-4 py-3 text-sm sm:text-base text-red-800 font-semibold">
-          ❌ Belum tepat, coba lagi! Kesempatan tersisa: {livesLeft}
+          ❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang.
         </div>
       )}
 

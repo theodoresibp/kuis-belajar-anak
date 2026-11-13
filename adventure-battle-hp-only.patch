@@ -1,0 +1,137 @@
+diff --git a/src/components/QuizGame.tsx b/src/components/QuizGame.tsx
+--- a/src/components/QuizGame.tsx
++++ b/src/components/QuizGame.tsx
+@@ -23,10 +23,9 @@ interface PreparedQuestion extends QuizQuestion {
+
+ type Phase = "settings" | "playing" | "result";
+-type QuestionStatus = "active" | "correct" | "failed";
++type QuestionStatus = "active" | "correct";
+ type CountChoice = number | "all";
+
+-const MAX_LIVES = 3;
+ const COUNT_STEPS = [5, 10, 20, 30, 50, 75, 100];
+
+ /** Picks up to 3 round-number steps smaller than the bank size, plus "all". Scales with however many questions the chapter has. */
+@@ -58,12 +57,10 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+   const [round, setRound] = useState<PreparedQuestion[]>([]);
+   const [currentIndex, setCurrentIndex] = useState(0);
+   const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
+   const [status, setStatus] = useState<QuestionStatus>("active");
+-  const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
+   const [score, setScore] = useState(0);
+   // Adventure Battle character/opponent choices (settings screen).
+   const [selectedHeroId, setSelectedHeroId] = useState(HEROES[0].id);
+@@ -72,8 +69,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+   const [hintedOptionIds, setHintedOptionIds] = useState<string[]>([]);
+
+   // Adventure Battle state: cumulative for the whole session. It is separate
+-  // from the per-question `livesLeft` above (which still resets per question,
+-  // exactly as before) — battle HP never resets on question navigation.
++  // from question navigation — battle HP never resets during a session.
+   const [battle, dispatchBattle] = useReducer(battleReducer, createInitialBattleState(0));
+   const animationTimer = useRef<number | null>(null);
+
+@@ -111,12 +108,14 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+     setCurrentIndex(0);
+     setTriedOptionIds([]);
+     setHintedOptionIds([]);
+     setStatus("active");
+-    setLivesLeft(MAX_LIVES);
+     setScore(0);
+     // A new quiz session is the only moment battle state (and HP) resets.
+     // Each session also gets fresh randomised damage: the monster schedule
+     // always totals exactly 100, the hero pattern averages exactly 5 per miss.
+     const monster = monsterChoice === "auto" ? pickMonsterForChapter(chapter.id) : getMonsterById(monsterChoice);
++    const maxWrongAttempts = prepared.reduce(
++      (sum, question) => sum + Math.max(0, question.options.length - 1),
++      0
++    );
+     dispatchBattle({
+       type: "START",
+       totalQuestions: prepared.length,
+       heroId: selectedHeroId,
+       monsterId: monster.id,
+       monsterDamageSchedule: generateMonsterDamageSchedule(prepared.length),
+-      heroDamagePattern: generateHeroDamagePattern(prepared.length * MAX_LIVES),
++      heroDamagePattern: generateHeroDamagePattern(maxWrongAttempts),
+     });
+     setPhase("playing");
+   }
+@@ -142,13 +141,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+     dispatchBattle({ type: "WRONG_ANSWER" });
+     scheduleAnimationDone();
+
+-    const remaining = livesLeft - 1;
+-    setLivesLeft(remaining);
+     setTriedOptionIds((prev) => [...prev, optionId]);
+-    if (remaining <= 0) {
+-      setStatus("failed");
+-    }
+   }
+
+   /** Wrong options on the current question that a hint could still eliminate. */
+@@ -198,7 +192,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+     setTriedOptionIds([]);
+     setHintedOptionIds([]);
+     setStatus("active");
+-    setLivesLeft(MAX_LIVES);
+     if (isLastQuestion) {
+       dispatchBattle({ type: "COMPLETE" });
+       setPhase("result");
+@@ -343,8 +336,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
+         correctOptionId={currentQuestion.correctOptionId}
+         triedOptionIds={triedOptionIds}
+         eliminatedOptionIds={hintedOptionIds}
+         status={status}
+-        livesLeft={livesLeft}
+-        maxLives={MAX_LIVES}
+         explanation={currentQuestion.explanation}
+         onSelect={handleSelect}
+       />
+diff --git a/src/components/QuestionCard.tsx b/src/components/QuestionCard.tsx
+--- a/src/components/QuestionCard.tsx
++++ b/src/components/QuestionCard.tsx
+@@ -17,9 +17,7 @@ interface Props {
+   /** Options removed by a hint power-up: shown greyed out, not selectable, and NOT counted as a wrong try. */
+   eliminatedOptionIds?: string[];
+-  status: "active" | "correct" | "failed";
+-  livesLeft: number;
+-  maxLives: number;
++  status: "active" | "correct";
+   explanation?: string;
+   onSelect: (optionId: string) => void;
+ }
+@@ -37,8 +35,6 @@ export default function QuestionCard({
+   correctOptionId,
+   triedOptionIds,
+   eliminatedOptionIds = [],
+   status,
+-  livesLeft,
+-  maxLives,
+   explanation,
+   onSelect,
+ }: Props) {
+@@ -48,9 +44,6 @@ export default function QuestionCard({
+     <div className="w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white">
+       <div className="flex items-center justify-between mb-4">
+         <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 text-violet-700 font-bold px-4 py-1 text-sm">
+           Soal {questionNumber} / {totalQuestions}
+         </span>
+-        <span className="inline-flex items-center gap-1 text-lg" aria-label={`${livesLeft} kesempatan tersisa`}>
+-          {Array.from({ length: maxLives }, (_, i) => (
+-            <span key={i}>{i < livesLeft ? "❤️" : "🤍"}</span>
+-          ))}
+-        </span>
+       </div>
+
+       <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 leading-snug mb-4">
+@@ -111,9 +104,9 @@ export default function QuestionCard({
+       </div>
+
+       {!resolved && triedOptionIds.length > 0 && (
+-        <div className="mt-5 rounded-2xl bg-red-50 border-2 border-red-200 px-4 py-3 text-sm sm:text-base text-red-800 font-semibold">
+-          ❌ Belum tepat, coba lagi! Kesempatan tersisa: {livesLeft}
++        <div className="mt-5 rounded-2xl bg-amber-50 border-2 border-amber-200 px-4 py-3 text-sm sm:text-base text-amber-800 font-semibold">
++          ❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang.
+         </div>
+       )}

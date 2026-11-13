@@ -29,10 +29,9 @@ interface PreparedQuestion extends QuizQuestion {
 }
 
 type Phase = "settings" | "playing" | "result";
-type QuestionStatus = "active" | "correct" | "failed";
+type QuestionStatus = "active" | "correct";
 type CountChoice = number | "all";
 
-const MAX_LIVES = 3;
 const COUNT_STEPS = [5, 10, 20, 30, 50, 75, 100];
 
 /** Picks up to 3 round-number steps smaller than the bank size, plus "all". Scales with however many questions the chapter has. */
@@ -62,7 +61,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
   const [status, setStatus] = useState<QuestionStatus>("active");
-  const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [score, setScore] = useState(0);
   // Adventure Battle character/opponent choices (settings screen).
   const [selectedHeroId, setSelectedHeroId] = useState(HEROES[0].id);
@@ -70,9 +68,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
   // Answer options removed by the hint power-up on the current question.
   const [hintedOptionIds, setHintedOptionIds] = useState<string[]>([]);
 
-  // Adventure Battle state: cumulative for the whole session. It is separate
-  // from the per-question `livesLeft` above (which still resets per question,
-  // exactly as before) — battle HP never resets on question navigation.
+  // Adventure Battle HP is cumulative for the whole session and never resets
+  // when moving to the next question.
   const [battle, dispatchBattle] = useReducer(battleReducer, createInitialBattleState(0));
   const animationTimer = useRef<number | null>(null);
 
@@ -113,11 +110,14 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setTriedOptionIds([]);
     setHintedOptionIds([]);
     setStatus("active");
-    setLivesLeft(MAX_LIVES);
     setScore(0);
     // A new quiz session is the only moment battle state (and HP) resets.
-    // Each session also gets fresh randomised damage: the monster schedule
-    // always totals exactly 100, the hero pattern averages exactly 5 per miss.
+    // The monster damage schedule totals exactly 100. The hero damage pattern
+    // covers every distinct wrong option that can be attempted in this round.
+    const maxWrongAttempts = prepared.reduce(
+      (total, question) => total + Math.max(0, question.shuffledOptions.length - 1),
+      0,
+    );
     const monster = monsterChoice === "auto" ? pickMonsterForChapter(chapter.id) : getMonsterById(monsterChoice);
     dispatchBattle({
       type: "START",
@@ -125,7 +125,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
       heroId: selectedHeroId,
       monsterId: monster.id,
       monsterDamageSchedule: generateMonsterDamageSchedule(prepared.length),
-      heroDamagePattern: generateHeroDamagePattern(prepared.length * MAX_LIVES),
+      heroDamagePattern: generateHeroDamagePattern(maxWrongAttempts),
     });
     setPhase("playing");
   }
@@ -145,9 +145,8 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
       return;
     }
 
-    // Every incorrect attempt — including repeated tries on the same question —
-    // costs the hero HP in the battle layer (existing lives behaviour unchanged),
-    // unless an equipped shield blocks it.
+    // Every distinct incorrect option costs hero HP unless an active shield
+    // blocks the attack. The player can keep trying until the answer is correct.
     if (battle.shieldActive) playSound("blocked");
     else {
       playSound("wrong");
@@ -156,12 +155,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     dispatchBattle({ type: "WRONG_ANSWER" });
     scheduleAnimationDone();
 
-    const remaining = livesLeft - 1;
-    setLivesLeft(remaining);
     setTriedOptionIds((prev) => [...prev, optionId]);
-    if (remaining <= 0) {
-      setStatus("failed");
-    }
   }
 
   /** Wrong options on the current question that a hint could still eliminate. */
@@ -210,7 +204,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
     setTriedOptionIds([]);
     setHintedOptionIds([]);
     setStatus("active");
-    setLivesLeft(MAX_LIVES);
     if (isLastQuestion) {
       dispatchBattle({ type: "COMPLETE" });
       setPhase("result");
@@ -394,8 +387,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
         triedOptionIds={triedOptionIds}
         eliminatedOptionIds={hintedOptionIds}
         status={status}
-        livesLeft={livesLeft}
-        maxLives={MAX_LIVES}
         explanation={currentQuestion.explanation}
         onSelect={handleSelect}
       />
