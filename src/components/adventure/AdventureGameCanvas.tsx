@@ -68,6 +68,7 @@ export default function AdventureGameCanvas({
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     let disposed = false;
@@ -249,9 +250,23 @@ export default function AdventureGameCanvas({
         </div>
 
         <div
-          className="flex shrink-0 items-center justify-center gap-2"
+          className="flex shrink-0 flex-wrap items-center justify-center gap-2"
           aria-label="Kontrol permainan"
         >
+          <button
+            type="button"
+            aria-pressed={soundEnabled}
+            aria-label={soundEnabled ? "Matikan efek suara" : "Nyalakan efek suara"}
+            disabled={!ready}
+            onClick={() => {
+              const nextEnabled = !soundEnabled;
+              setSoundEnabled(nextEnabled);
+              gameRef.current?.events.emit("toggle-sound", nextEnabled);
+            }}
+            className="h-14 rounded-xl border-2 border-violet-200 bg-white px-3 text-sm font-bold text-violet-800 shadow-sm transition hover:bg-violet-50 disabled:opacity-50"
+          >
+            {soundEnabled ? "🔊 Suara" : "🔇 Senyap"}
+          </button>
           {directions.map((direction) => (
             <button
               key={direction}
