@@ -19,6 +19,8 @@ interface Props {
   onAdventureComplete: () => void;
   onHazard: () => void;
   onPickup: (kind: "heart" | "shield") => void;
+  onBossWarning: (active: boolean) => void;
+  onBossAttack: () => void;
 }
 
 const CONTROL_LABELS: Record<VirtualDirection, string> = {
@@ -40,6 +42,8 @@ export default function AdventureGameCanvas({
   onAdventureComplete,
   onHazard,
   onPickup,
+  onBossWarning,
+  onBossAttack,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<import("phaser").Game | null>(null);
@@ -50,13 +54,17 @@ export default function AdventureGameCanvas({
   const onAdventureCompleteRef = useRef(onAdventureComplete);
   const onHazardRef = useRef(onHazard);
   const onPickupRef = useRef(onPickup);
+  const onBossWarningRef = useRef(onBossWarning);
+  const onBossAttackRef = useRef(onBossAttack);
 
   useEffect(() => {
     onEncounterRef.current = onEncounter;
     onAdventureCompleteRef.current = onAdventureComplete;
     onHazardRef.current = onHazard;
     onPickupRef.current = onPickup;
-  }, [onEncounter, onAdventureComplete, onHazard, onPickup]);
+    onBossWarningRef.current = onBossWarning;
+    onBossAttackRef.current = onBossAttack;
+  }, [onEncounter, onAdventureComplete, onHazard, onPickup, onBossWarning, onBossAttack]);
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -112,17 +120,29 @@ export default function AdventureGameCanvas({
         };
         const handleHazard = () => onHazardRef.current();
         const handlePickup = (kind: "heart" | "shield") => onPickupRef.current(kind);
+        const handleBossWarning = () => onBossWarningRef.current(true);
+        const handleBossWarningClear = () => onBossWarningRef.current(false);
+        const handleBossAttack = () => {
+          onBossWarningRef.current(false);
+          onBossAttackRef.current();
+        };
 
         game.events.on("monster-encounter", handleEncounter);
         game.events.on("adventure-complete", handleAdventureComplete);
         game.events.on("adventure-hazard", handleHazard);
         game.events.on("adventure-pickup", handlePickup);
+        game.events.on("boss-attack-warning", handleBossWarning);
+        game.events.on("boss-attack-warning-clear", handleBossWarningClear);
+        game.events.on("boss-attack", handleBossAttack);
 
         game.events.once(Phaser.Core.Events.DESTROY, () => {
           game.events.off("monster-encounter", handleEncounter);
           game.events.off("adventure-complete", handleAdventureComplete);
           game.events.off("adventure-hazard", handleHazard);
           game.events.off("adventure-pickup", handlePickup);
+          game.events.off("boss-attack-warning", handleBossWarning);
+          game.events.off("boss-attack-warning-clear", handleBossWarningClear);
+          game.events.off("boss-attack", handleBossAttack);
         });
 
         if (!disposed) {
