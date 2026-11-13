@@ -714,6 +714,9 @@ export default class AdventureScene extends Phaser.Scene {
               onComplete: () => {
                 boss.setAngle(0);
                 boss.clearTint();
+                if (boss.active && this.textures.exists("adventure-monster-guardian")) {
+                  boss.setTexture("adventure-monster-guardian");
+                }
               },
             });
           }
