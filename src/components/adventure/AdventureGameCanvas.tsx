@@ -16,6 +16,8 @@ interface Props {
   encounterCount: number;
   onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
   onAdventureComplete: () => void;
+  onHazard: () => void;
+  onPickup: (kind: "heart" | "shield") => void;
 }
 
 const CONTROL_LABELS: Record<VirtualDirection, string> = {
@@ -34,6 +36,8 @@ export default function AdventureGameCanvas({
   encounterCount,
   onEncounter,
   onAdventureComplete,
+  onHazard,
+  onPickup,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<import("phaser").Game | null>(null);
@@ -42,11 +46,15 @@ export default function AdventureGameCanvas({
   const activePointers = useRef<Map<number, VirtualDirection>>(new Map());
   const onEncounterRef = useRef(onEncounter);
   const onAdventureCompleteRef = useRef(onAdventureComplete);
+  const onHazardRef = useRef(onHazard);
+  const onPickupRef = useRef(onPickup);
 
   useEffect(() => {
     onEncounterRef.current = onEncounter;
     onAdventureCompleteRef.current = onAdventureComplete;
-  }, [onEncounter, onAdventureComplete]);
+    onHazardRef.current = onHazard;
+    onPickupRef.current = onPickup;
+  }, [onEncounter, onAdventureComplete, onHazard, onPickup]);
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -100,13 +108,19 @@ export default function AdventureGameCanvas({
         const handleAdventureComplete = () => {
           onAdventureCompleteRef.current();
         };
+        const handleHazard = () => onHazardRef.current();
+        const handlePickup = (kind: "heart" | "shield") => onPickupRef.current(kind);
 
         game.events.on("monster-encounter", handleEncounter);
         game.events.on("adventure-complete", handleAdventureComplete);
+        game.events.on("adventure-hazard", handleHazard);
+        game.events.on("adventure-pickup", handlePickup);
 
         game.events.once(Phaser.Core.Events.DESTROY, () => {
           game.events.off("monster-encounter", handleEncounter);
           game.events.off("adventure-complete", handleAdventureComplete);
+          game.events.off("adventure-hazard", handleHazard);
+          game.events.off("adventure-pickup", handlePickup);
         });
 
         if (!disposed) {
