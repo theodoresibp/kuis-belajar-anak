@@ -42,8 +42,11 @@ export default function AdventureGameCanvas({
   const activePointers = useRef<Map<number, VirtualDirection>>(new Map());
   const onEncounterRef = useRef(onEncounter);
   const onAdventureCompleteRef = useRef(onAdventureComplete);
-  onEncounterRef.current = onEncounter;
-  onAdventureCompleteRef.current = onAdventureComplete;
+
+  useEffect(() => {
+    onEncounterRef.current = onEncounter;
+    onAdventureCompleteRef.current = onAdventureComplete;
+  }, [onEncounter, onAdventureComplete]);
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
