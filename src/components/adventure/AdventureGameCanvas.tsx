@@ -14,6 +14,7 @@ type VirtualDirection = "left" | "right" | "jump";
 
 interface Props {
   encounterCount: number;
+  isDefeated: boolean;
   onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
   onAdventureComplete: () => void;
   onHazard: () => void;
@@ -34,6 +35,7 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
 
 export default function AdventureGameCanvas({
   encounterCount,
+  isDefeated,
   onEncounter,
   onAdventureComplete,
   onHazard,
@@ -148,6 +150,12 @@ export default function AdventureGameCanvas({
       gameRef.current = null;
     };
   }, [encounterCount]);
+
+  useEffect(() => {
+    if (isDefeated) {
+      gameRef.current?.events.emit("stop-adventure");
+    }
+  }, [isDefeated]);
 
   const sendControl = useCallback(
     (direction: VirtualDirection, pressed: boolean) => {
