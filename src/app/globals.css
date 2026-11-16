@@ -138,3 +138,49 @@ body {
   }
   .battle-damage-float { opacity: 1; }
 }
+
+
+/* Sprint 8 — immersive Adventure Mode and touch-safe game controls. */
+.adventure-immersive {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adventure-immersive,
+.adventure-immersive * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.adventure-game-surface {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.adventure-game-host,
+.adventure-game-host canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+.adventure-hud {
+  top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.adventure-controls {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@media (orientation: portrait) {
+  .adventure-immersive .adventure-hud {
+    gap: 0.35rem;
+  }
+}
