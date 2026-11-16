@@ -78,7 +78,7 @@ export default function BattleStage({ battle, hero, monster, canUseHint = false,
   return (
     <section
       aria-label="Pertarungan petualangan"
-      className="relative w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-xl"
+      className="adventure-battle-stage relative w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-xl"
     >
       {/* Arena backdrop for the current monster (decorative; the stage works without it too). */}
       <div
