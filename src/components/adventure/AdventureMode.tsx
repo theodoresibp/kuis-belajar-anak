@@ -313,7 +313,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   return (
     <main ref={fullscreenRef} className="adventure-immersive fixed inset-0 z-40 h-[100dvh] w-screen overflow-hidden bg-slate-950" onContextMenu={(event) => event.preventDefault()}>
       <div className="h-full w-full">
-        {hasStarted && isLandscape && <AdventureGameCanvas
+        {hasStarted && <AdventureGameCanvas
               plan={plan}
               isFullscreen={isFullscreen}
               onToggleFullscreen={toggleFullscreen}
@@ -358,7 +358,6 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             <div className="text-7xl" aria-hidden>📱</div>
             <h2 className="text-2xl font-black sm:text-3xl">Putar Perangkatmu</h2>
             <p className="max-w-sm text-sm font-semibold text-white/75">Petualangan ini dirancang untuk layar mendatar. Putar HP atau tablet ke posisi landscape untuk melanjutkan.</p>
-            <button type="button" onClick={() => void toggleFullscreen()} className="rounded-full bg-emerald-500 px-6 py-3 font-black text-white">Coba Fullscreen</button>
           </section>
         )}
 
