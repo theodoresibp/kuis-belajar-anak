@@ -277,7 +277,7 @@ export default function AdventureGameCanvas({
               onClick={() => void onToggleFullscreen()}
               className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-lg font-black text-white shadow-lg backdrop-blur-sm"
             >
-              {isFullscreen ? "↙" : "⛶"}
+              {isFullscreen ? "⤡" : "⤢"}
             </button>
           </div>
           <button
