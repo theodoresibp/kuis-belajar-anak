@@ -435,3 +435,15 @@ body {
     overflow: hidden;
   }
 }
+
+
+/* Landscape learning navigation: swipeable, snap-aligned horizontal rails. */
+.landscape-carousel{display:flex;width:100%;gap:1rem;overflow-x:auto;overflow-y:hidden;padding:.5rem max(1rem,calc((100vw - 72rem)/2)) 1rem;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:1rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x pan-y}
+.landscape-carousel>*{flex:0 0 clamp(15rem,34vw,24rem);min-width:0;scroll-snap-align:start}
+.landscape-carousel--chapters>*{flex-basis:clamp(17rem,42vw,27rem)}
+.material-view{height:100%;min-height:0}
+.material-shell{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;overflow:hidden}
+.material-carousel{display:flex;flex:1 1 auto;min-height:0;width:100%;gap:1rem;overflow-x:auto;overflow-y:hidden;padding:.25rem .15rem .75rem;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:.15rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x pan-y}
+.material-slide-track{display:contents}
+.material-slide{flex:0 0 min(82vw,52rem);min-width:0;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;padding:.5rem .75rem 1rem;border-radius:1rem;background:rgb(248 250 252 / .72);scroll-snap-align:start;-webkit-overflow-scrolling:touch}
+@media(orientation:landscape){.landscape-carousel>*{flex-basis:clamp(17rem,32vw,25rem)}.landscape-carousel--chapters>*{flex-basis:clamp(19rem,38vw,29rem)}.material-shell{max-height:calc(100dvh - 7.5rem)}.material-slide{flex-basis:min(76vw,58rem)}}
