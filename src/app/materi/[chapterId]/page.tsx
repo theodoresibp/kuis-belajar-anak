@@ -21,7 +21,7 @@ export default async function MaterialPage({
 
   return (
     <main
-      className={`h-full min-h-0 w-full flex-1 overflow-hidden flex flex-col items-center justify-start gap-3 bg-gradient-to-br ${chapter.gradient} px-4 py-8 sm:py-10`}
+      className={`h-full min-h-0 w-full flex-1 overflow-hidden flex flex-col items-center justify-start gap-3 bg-gradient-to-br ${chapter.gradient} px-3 py-2`}
     >
       <MaterialView chapter={chapter} subjectId={subject.id} />
     </main>
