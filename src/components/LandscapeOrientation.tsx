@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+type ScreenOrientationWithLock = ScreenOrientation & {
+  lock?: (orientation: "landscape") => Promise<void>;
+};
+
 export default function LandscapeOrientation({ children }: { children: React.ReactNode }) {
   const [isLandscape, setIsLandscape] = useState(true);
 
@@ -23,7 +27,10 @@ export default function LandscapeOrientation({ children }: { children: React.Rea
     }
 
     try {
-      await window.screen.orientation.lock("landscape");
+      const orientation = window.screen.orientation as ScreenOrientationWithLock;
+      if (typeof orientation.lock === "function") {
+        await orientation.lock("landscape");
+      }
     } catch {
       // The user can still rotate manually; the guard remains until landscape.
     }
