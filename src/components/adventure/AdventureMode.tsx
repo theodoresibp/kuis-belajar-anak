@@ -370,88 +370,87 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             aria-label={"Pertarungan melawan " + activeEncounter.name}
           >
             <section className="adventure-battle-dialog max-h-[96dvh] w-full max-w-5xl overflow-hidden rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-3 shadow-2xl sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-700">Monster Encounter</p>
-                  <h2 className="text-xl font-black text-slate-900 sm:text-2xl">⚔️ {activeEncounter.name}</h2>
+              <div className="adventure-battle-side">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-700">Monster Encounter</p>
+                    <h2 className="text-xl font-black text-slate-900 sm:text-2xl">⚔️ {activeEncounter.name}</h2>
+                  </div>
+                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-black text-red-700">HP {monsterHpPercent}/{run.monsterMaxHp}</span>
                 </div>
-                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-black text-red-700">HP {monsterHpPercent}/{run.monsterMaxHp}</span>
+
+                {activeEncounter.attackDamage > 0 && (
+                  <div className={"mb-3 rounded-2xl border-2 px-4 py-3 text-center transition-colors " + (bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800")}>
+                    <p className="font-black">
+                      {bossWarning
+                        ? `⚠️ ${activeEncounter.name.toUpperCase()} SEDANG MENYIAPKAN SERANGAN!`
+                        : activeEncounter.tier === "final-boss"
+                          ? `👑 BOSS FINAL — ${activeEncounter.name.toUpperCase()}`
+                          : `🔥 MINI-BOSS — ${activeEncounter.name.toUpperCase()}`}
+                    </p>
+                    <p className="mt-1 text-xs font-semibold">
+                      {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : `Jawab soal secepat mungkin. Boss menyerang secara berkala dengan ${activeEncounter.attackDamage} damage!`}
+                    </p>
+                  </div>
+                )}
+
+                <BattleStage
+                  battle={{
+                    totalQuestions: questions.length,
+                    currentQuestionIndex: run.currentQuestionIndex,
+                    correctAnswers: run.score,
+                    wrongAttempts: 0,
+                    correctStreak: 0,
+                    heroHp: run.heroHp,
+                    monsterHp: run.monsterHp,
+                    monsterMaxHp: run.monsterMaxHp,
+                    currentQuestionDamaged: questionStatus === "correct",
+                    heroAnimation: battleVisual.hero,
+                    monsterAnimation: run.monsterHp <= 0 ? "defeat" : battleVisual.monster,
+                    battleStatus: run.heroHp <= 0 ? "hero_exhausted" : run.monsterHp <= 0 ? "monster_defeated" : "playing",
+                    lastDamage: battleVisual.lastDamage,
+                    items: { potion: 0, shield: 0, hint: 0 },
+                    powerUpChoices: 0,
+                    shieldActive: false,
+                    heroId,
+                    monsterId: battleMonsterIdFor(activeEncounter),
+                    monsterDamageSchedule: [],
+                    heroDamagePattern: [],
+                  } satisfies BattleState}
+                  hero={getHeroById(heroId)}
+                  monster={{
+                    ...getMonsterById(battleMonsterIdFor(activeEncounter)),
+                    name: activeEncounter.name,
+                    fallbackEmoji: activeEncounter.emoji,
+                    assets: getAdventureMonsterById(activeEncounter.monsterId).assets,
+                  }}
+                />
               </div>
 
-              {activeEncounter.attackDamage > 0 && (
-                <div className={"mb-3 rounded-2xl border-2 px-4 py-3 text-center transition-colors " + (bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800")}>
-                  <p className="font-black">
-                    {bossWarning
-                      ? `⚠️ ${activeEncounter.name.toUpperCase()} SEDANG MENYIAPKAN SERANGAN!`
-                      : activeEncounter.tier === "final-boss"
-                        ? `👑 BOSS FINAL — ${activeEncounter.name.toUpperCase()}`
-                        : `🔥 MINI-BOSS — ${activeEncounter.name.toUpperCase()}`}
-                  </p>
-                  <p className="mt-1 text-xs font-semibold">
-                    {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : `Jawab soal secepat mungkin. Boss menyerang secara berkala dengan ${activeEncounter.attackDamage} damage!`}
-                  </p>
-                </div>
-              )}
-
-              <BattleStage
-                battle={{
-                  totalQuestions: questions.length,
-                  currentQuestionIndex: run.currentQuestionIndex,
-                  correctAnswers: run.score,
-                  wrongAttempts: 0,
-                  correctStreak: 0,
-                  heroHp: run.heroHp,
-                  monsterHp: run.monsterHp,
-                  monsterMaxHp: run.monsterMaxHp,
-                  currentQuestionDamaged: questionStatus === "correct",
-                  heroAnimation: battleVisual.hero,
-                  monsterAnimation: run.monsterHp <= 0 ? "defeat" : battleVisual.monster,
-                  battleStatus: run.heroHp <= 0 ? "hero_exhausted" : run.monsterHp <= 0 ? "monster_defeated" : "playing",
-                  lastDamage: battleVisual.lastDamage,
-                  items: { potion: 0, shield: 0, hint: 0 },
-                  powerUpChoices: 0,
-                  shieldActive: false,
-                  heroId,
-                  monsterId: battleMonsterIdFor(activeEncounter),
-                  monsterDamageSchedule: [],
-                  heroDamagePattern: [],
-                } satisfies BattleState}
-                hero={getHeroById(heroId)}
-                monster={{
-                  // Arena background + dialogue identity come from the
-                  // gamification counterpart; the artwork, name and emoji
-                  // are the adventure monster the player actually met
-                  // (Sprint D — all eleven have their own poses now).
-                  ...getMonsterById(battleMonsterIdFor(activeEncounter)),
-                  name: activeEncounter.name,
-                  fallbackEmoji: activeEncounter.emoji,
-                  assets: getAdventureMonsterById(activeEncounter.monsterId).assets,
-                }}
-              />
-
-              {currentQuestion && (
-                <div className="mt-3 rounded-3xl border-2 border-violet-200 bg-white p-3 shadow-lg sm:p-4">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-sm font-black text-violet-800">🧠 Jawab untuk menyerang!</p>
-                    <span className="text-xs font-bold text-slate-500">Soal {run.currentQuestionIndex + 1}/{questions.length}</span>
+              <div className="adventure-battle-question min-w-0">
+                {currentQuestion && (
+                  <div className="rounded-3xl border-2 border-violet-200 bg-white p-3 shadow-lg sm:p-4">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-sm font-black text-violet-800">🧠 Jawab untuk menyerang!</p>
+                      <span className="text-xs font-bold text-slate-500">Soal {run.currentQuestionIndex + 1}/{questions.length}</span>
+                    </div>
+                    <QuestionCard
+                      questionNumber={run.currentQuestionIndex + 1}
+                      totalQuestions={questions.length}
+                      question={currentQuestion.question}
+                      image={currentQuestion.image}
+                      imageAlt={currentQuestion.imageAlt}
+                      options={currentQuestion.options}
+                      correctOptionId={currentQuestion.correctOptionId}
+                      triedOptionIds={triedOptionIds}
+                      status={questionStatus}
+                      explanation={currentQuestion.explanation}
+                      hideExplanation
+                      onSelect={handleAnswer}
+                    />
                   </div>
-                  <QuestionCard
-                    questionNumber={run.currentQuestionIndex + 1}
-                    totalQuestions={questions.length}
-                    question={currentQuestion.question}
-                    image={currentQuestion.image}
-                    imageAlt={currentQuestion.imageAlt}
-                    options={currentQuestion.options}
-                    correctOptionId={currentQuestion.correctOptionId}
-                    triedOptionIds={triedOptionIds}
-                    status={questionStatus}
-                    explanation={currentQuestion.explanation}
-                    hideExplanation
-                    onSelect={handleAnswer}
-                  />
-                </div>
-              )}
-
+                )}
+              </div>
             </section>
           </div>
         )}
