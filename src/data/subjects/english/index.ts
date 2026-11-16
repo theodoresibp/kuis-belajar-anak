@@ -5,6 +5,7 @@ import unit1 from "./unit-1-in-my-classroom";
 // import unit2 from "./unit-2-nama-unit";
 const subject: Subject = {
   id: "english",
+  grade: 2,
   title: "English",
   description: "Classroom activities, grammar, and numbers",
   emoji: "🌍",
