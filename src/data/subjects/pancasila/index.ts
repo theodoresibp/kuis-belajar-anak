@@ -5,6 +5,7 @@ import pstsBab1 from "./psts-bab-1-garuda-pancasila-lambang-negaraku";
 
 const subject: Subject = {
   id: "pancasila",
+  grade: 2,
   title: "Pendidikan Pancasila",
   description: "Lambang negara, sila-sila Pancasila, dan aturan di rumah",
   emoji: "🦅",
