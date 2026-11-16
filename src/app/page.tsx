@@ -8,13 +8,13 @@ export default function HomePage() {
     <main className="min-h-full flex-1 overflow-y-auto bg-[url('/assets/gamification/backgrounds/bg_game.jpg')] bg-cover bg-center bg-fixed px-5 py-8 sm:px-8">
       <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col justify-center">
         <header className="mb-8 text-center">
-          <div className="mb-2 text-6xl" aria-hidden>📚✨🚀</div>
+          {/* <div className="mb-2 text-6xl" aria-hidden>📚✨🚀</div>
           <h1 className="text-3xl font-extrabold text-white drop-shadow-lg sm:text-4xl">
             Petualangan Belajar
           </h1>
           <p className="mt-2 text-base font-semibold text-white/90">
             Pilih kelasmu untuk mulai belajar dan bermain!
-          </p>
+          </p> */}
         </header>
 
         <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
