@@ -30,13 +30,14 @@ export default async function SubjectPage({
       className={`flex-1 flex flex-col items-center justify-center bg-gradient-to-br ${subject.gradient} px-4 py-10`}
     >
       <Link
-        href="/"
+        href={`/kelas/${subject.grade ?? 2}`}
         className="mb-6 self-start sm:self-auto sm:mb-6 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 font-bold text-slate-800 text-sm hover:bg-white"
       >
-        ◀️ Mata Pelajaran
+        ◀️ Kelas {subject.grade ?? 2}
       </Link>
 
       <div className="text-center mb-10">
+        <p className="mb-3 inline-flex rounded-full bg-white/85 px-4 py-1.5 text-sm font-extrabold text-slate-800 shadow-sm">Kelas {subject.grade ?? 2} SD</p>
         <div className="text-6xl mb-3">{subject.emoji}</div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 drop-shadow-sm mb-2">
           {subject.title}
