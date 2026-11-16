@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${baloo.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-baloo)]">
+    <html lang="id" className={`${baloo.variable} h-full overflow-hidden antialiased`}>
+      <body className="h-dvh min-h-0 overflow-hidden flex flex-col font-[family-name:var(--font-baloo)]">
         <LandscapeOrientation>{children}</LandscapeOrientation>
       </body>
     </html>
