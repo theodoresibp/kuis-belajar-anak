@@ -5,9 +5,9 @@ export default function HomePage() {
   const grades = getAvailableGrades();
 
   return (
-    <main className="min-h-full flex-1 overflow-y-auto bg-[url('/assets/gamification/backgrounds/bg_game.jpg')] bg-cover bg-center bg-fixed px-5 py-8 sm:px-8">
-      <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col justify-center">
-        <header className="mb-8 text-center">
+    <main className="h-full min-h-0 flex-1 overflow-hidden bg-[url('/assets/gamification/backgrounds/bg_game.jpg')] bg-cover bg-center bg-fixed flex items-center px-3 py-3 sm:px-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-col justify-center">
+        <header className="mb-2 shrink-0 text-center">
           {/* <div className="mb-2 text-6xl" aria-hidden>📚✨🚀</div>
           <h1 className="text-3xl font-extrabold text-white drop-shadow-lg sm:text-4xl">
             Petualangan Belajar
@@ -41,7 +41,7 @@ export default function HomePage() {
           })}
         </section>
 
-        <p className="mt-8 text-center text-sm font-semibold text-white drop-shadow">
+        <p className="mt-2 shrink-0 text-center text-xs font-semibold text-white drop-shadow">
           Kelas lainnya akan segera hadir! 🌟
         </p>
       </div>
