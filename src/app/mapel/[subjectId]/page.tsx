@@ -27,36 +27,36 @@ export default async function SubjectPage({
 
   return (
     <main
-      className={`min-h-full w-full flex-1 overflow-y-auto overscroll-y-contain flex flex-col items-center justify-start bg-gradient-to-br ${subject.gradient} px-4 py-8 sm:py-10`}
+      className={`h-full min-h-0 w-full flex-1 overflow-hidden flex flex-col items-stretch justify-start bg-gradient-to-br ${subject.gradient} px-3 py-2`}
     >
       <Link
         href={`/kelas/${subject.grade ?? 2}`}
-        className="mb-6 self-start sm:self-auto sm:mb-6 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 font-bold text-slate-800 text-sm hover:bg-white"
+        className="mb-2 shrink-0 self-start sm:self-auto sm:mb-2 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 font-bold text-slate-800 text-sm hover:bg-white"
       >
         ◀️ Kelas {subject.grade ?? 2}
       </Link>
 
-      <div className="text-center mb-10">
-        <p className="mb-3 inline-flex rounded-full bg-white/85 px-4 py-1.5 text-sm font-extrabold text-slate-800 shadow-sm">Kelas {subject.grade ?? 2} SD</p>
-        <div className="text-6xl mb-3">{subject.emoji}</div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 drop-shadow-sm mb-2">
+      <div className="shrink-0 text-center mb-3">
+        <p className="mb-1 inline-flex rounded-full bg-white/85 px-4 py-1.5 text-sm font-extrabold text-slate-800 shadow-sm">Kelas {subject.grade ?? 2} SD</p>
+        <div className="text-4xl mb-1">{subject.emoji}</div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 drop-shadow-sm mb-2">
           {subject.title}
         </h1>
         <p className="text-slate-900/80 font-semibold">{subject.description}</p>
       </div>
 
       {sections.map((section) => (
-        <section key={section.label ?? "bab"} className="w-full max-w-none mb-8 last:mb-0">
+        <section key={section.label ?? "bab"} className="flex min-h-0 flex-1 flex-col w-full max-w-none mb-2 last:mb-0">
           {section.label && (
-            <h2 className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-2 text-lg font-extrabold text-slate-900">
+            <h2 className="mb-1 shrink-0 inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-2 text-lg font-extrabold text-slate-900">
               📝 {section.label}
             </h2>
           )}
-          <div className="landscape-carousel landscape-carousel--chapters" aria-label="Daftar bab">
+          <div className="landscape-carousel landscape-carousel--chapters min-h-0 flex-1 items-stretch" aria-label="Daftar bab">
             {section.chapters.map((chapter) => (
               <div
                 key={chapter.id}
-                className="rounded-3xl border-4 border-white/60 bg-white/90 p-6 shadow-xl transition-transform hover:scale-[1.02]"
+                className="h-full rounded-3xl border-4 border-white/60 bg-white/90 p-4 shadow-xl transition-transform hover:scale-[1.02]"
               >
                 <div className="text-5xl mb-3">{chapter.emoji}</div>
                 <h2 className="text-xl font-extrabold text-slate-900 mb-1">
