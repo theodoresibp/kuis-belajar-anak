@@ -80,6 +80,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const [bossWarning, setBossWarning] = useState(false);
   const [battleVisual, setBattleVisual] = useState<{ hero: HeroAnimation; monster: MonsterAnimation; lastDamage: DamageEvent | null }>({ hero: "idle", monster: "idle", lastDamage: null });
   const damageEventId = useRef(0);
+  const feedbackTimer = useRef<number | null>(null);
+  const [showCorrectFeedback, setShowCorrectFeedback] = useState(false);
   const fullscreenRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -225,6 +227,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     }
 
     if (optionId === currentQuestion.correctOptionId) {
+      setShowCorrectFeedback(false);
+      if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
       // Per-question damage scales with this monster's HP; the encounter's
       // last question always deals exactly the remaining HP.
       const damage = isLastQuestionOfEncounter
@@ -241,6 +245,11 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
         lastDamage: { id: damageEventId.current, target: "monster", amount: damage, kind: "damage" },
       });
       setQuestionStatus("correct");
+      // Let the complete attack, projectile, and damage animation play before
+      // placing the learning feedback over the battle scene.
+      feedbackTimer.current = window.setTimeout(() => {
+        setShowCorrectFeedback(true);
+      }, BATTLE_CONFIG.animationDurationMs + 120);
       return;
     }
 
@@ -280,6 +289,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
 
   function handleContinue() {
     if (run.monsterHp > 0 || !resolveActiveEncounter) return;
+    setShowCorrectFeedback(false);
+    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
 
     resolveActiveEncounter();
     setActiveEncounter(null);
@@ -302,6 +313,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   }
 
   function handleNextQuestion() {
+    setShowCorrectFeedback(false);
+    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
     dispatch({ type: "NEXT_QUESTION" });
     setTriedOptionIds([]);
     setQuestionStatus("active");
@@ -459,7 +472,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
 
         {/* Popup hasil jawaban: penjelasan + tombol lanjut jadi satu,
             supaya pemain tidak perlu scroll di dalam popup pertarungan. */}
-        {activeEncounter && run.status === "encounter" && questionStatus === "correct" && (
+        {activeEncounter && run.status === "encounter" && questionStatus === "correct" && showCorrectFeedback && (
           <div
             className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
             role="dialog"
