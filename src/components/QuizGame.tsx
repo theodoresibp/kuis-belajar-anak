@@ -241,7 +241,7 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
 
   if (phase === "settings") {
     return (
-      <div className="w-full max-w-xl rounded-3xl bg-white/95 shadow-xl p-8 border-4 border-white text-center">
+      <div className="quiz-settings-screen w-full max-w-5xl rounded-3xl bg-white/95 shadow-xl p-4 sm:p-6 border-4 border-white text-center">
         <div className="text-5xl mb-2">{chapter.emoji}</div>
         <h2 className="text-2xl font-extrabold text-slate-800 mb-1">
           {chapter.title}
