@@ -46,13 +46,13 @@ export default async function SubjectPage({
       </div>
 
       {sections.map((section) => (
-        <section key={section.label ?? "bab"} className="w-full max-w-3xl mb-10 last:mb-0">
+        <section key={section.label ?? "bab"} className="w-full max-w-none mb-8 last:mb-0">
           {section.label && (
             <h2 className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-2 text-lg font-extrabold text-slate-900">
               📝 {section.label}
             </h2>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="landscape-carousel landscape-carousel--chapters" aria-label="Daftar bab">
             {section.chapters.map((chapter) => (
               <div
                 key={chapter.id}
