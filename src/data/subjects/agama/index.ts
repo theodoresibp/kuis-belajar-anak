@@ -7,6 +7,7 @@ import pstsNuhAbraham from "./psts-kisah-nuh-dan-abraham";
 // import bab2 from "./bab-2-nama-bab";
 const subject: Subject = {
   id: "agama",
+  grade: 2,
   title: "Agama",
   description: "Kasih sayang dalam keluarga dan kisah-kisah Alkitab",
   emoji: "🙏",
