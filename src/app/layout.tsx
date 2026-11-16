@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Baloo_2 } from "next/font/google";
+import LandscapeOrientation from "@/components/LandscapeOrientation";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -9,8 +10,8 @@ const baloo = Baloo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Kuis Belajar Anak - Kelas 2",
-  description: "Game kuis interaktif berbagai mata pelajaran untuk anak kelas 2 SD",
+  title: "Kuis Belajar Anak",
+  description: "Game kuis interaktif berbagai mata pelajaran untuk anak SD",
 };
 
 export default function RootLayout({
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-baloo)]">
-        {children}
+        <LandscapeOrientation>{children}</LandscapeOrientation>
       </body>
     </html>
   );
