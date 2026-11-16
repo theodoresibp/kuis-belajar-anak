@@ -22,6 +22,8 @@ interface Props {
    *  explanation in its own popup). Defaults to false — Quiz Mode keeps
    *  the original inline behaviour. */
   hideExplanation?: boolean;
+  /** Use the compact sizing rules for Adventure Mode battle layouts. */
+  compactLayout?: boolean;
   onSelect: (optionId: string) => void;
 }
 
@@ -41,12 +43,13 @@ export default function QuestionCard({
   status,
   explanation,
   hideExplanation = false,
+  compactLayout = false,
   onSelect,
 }: Props) {
   const resolved = status !== "active";
 
   return (
-    <div className="adventure-question-card w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white">
+    <div className={`${compactLayout ? "adventure-question-card" : ""} w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white`}>
       <div className="flex items-center mb-4">
         <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 text-violet-700 font-bold px-4 py-1 text-sm">
           Soal {questionNumber} / {totalQuestions}
