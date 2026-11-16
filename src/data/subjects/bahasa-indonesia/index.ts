@@ -6,6 +6,7 @@ import pstsBab3 from "./psts-bab-3-tanda-seru-rambu-dan-kata-di";
 
 const subject: Subject = {
   id: "bahasa-indonesia",
+  grade: 2,
   title: "Bahasa Indonesia",
   description: "Ungkapan perasaan, tata bahasa, dan cerita",
   emoji: "📖",
