@@ -297,7 +297,7 @@ body {
 @media (orientation: landscape) and (max-height: 599px) {
   .adventure-battle-dialog {
     display: grid;
-    grid-template-columns: minmax(8.5rem, 31%) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
     gap: 0.55rem;
@@ -357,8 +357,8 @@ body {
   }
 
   .adventure-battle-stage img {
-    width: clamp(2.8rem, 12vh, 4.5rem);
-    height: clamp(2.8rem, 12vh, 4.5rem);
+    width: clamp(3.5rem, 14vh, 5rem);
+    height: clamp(3.5rem, 14vh, 5rem);
   }
 
   .adventure-battle-stage .battle-vs {
