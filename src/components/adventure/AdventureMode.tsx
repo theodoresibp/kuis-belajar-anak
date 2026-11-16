@@ -445,6 +445,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                       status={questionStatus}
                       explanation={currentQuestion.explanation}
                       hideExplanation
+                      compactLayout
                       onSelect={handleAnswer}
                     />
                   </div>
