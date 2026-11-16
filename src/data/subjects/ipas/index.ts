@@ -5,6 +5,7 @@ import pstsBab3 from "./psts-bab-3-matahari-dan-cuaca";
 
 const subject: Subject = {
   id: "ipas",
+  grade: 2,
   title: "IPAS",
   description: "Ciri-ciri, wujud, dan perubahan benda di sekitar kita",
   emoji: "🔬",
