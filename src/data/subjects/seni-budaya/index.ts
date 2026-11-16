@@ -5,6 +5,7 @@ import bab1 from "./bab-1-karya-seni-rupa";
 // import bab2 from "./bab-2-nama-file";
 const subject: Subject = {
   id: "seni-budaya",
+  grade: 2,
   title: "Seni Budaya",
   description: "Karya seni rupa, musik, dan budaya Indonesia",
   emoji: "🎨",
