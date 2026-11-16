@@ -80,6 +80,25 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const [bossWarning, setBossWarning] = useState(false);
   const [battleVisual, setBattleVisual] = useState<{ hero: HeroAnimation; monster: MonsterAnimation; lastDamage: DamageEvent | null }>({ hero: "idle", monster: "idle", lastDamage: null });
   const damageEventId = useRef(0);
+  const fullscreenRef = useRef<HTMLElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === fullscreenRef.current);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  async function toggleFullscreen() {
+    const element = fullscreenRef.current;
+    if (!element) return;
+    try {
+      if (document.fullscreenElement === element) await document.exitFullscreen();
+      else if (!document.fullscreenElement) await element.requestFullscreen();
+    } catch (error) {
+      console.warn("Fullscreen tidak tersedia pada browser ini:", error);
+    }
+  }
 
   useEffect(() => {
     if (battleVisual.hero === "idle" && battleVisual.monster === "idle" && !battleVisual.lastDamage) return;
@@ -251,38 +270,12 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const monsterHpPercent = Math.max(0, run.monsterHp);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-gradient-to-b from-emerald-100 via-lime-50 to-amber-100 px-4 py-6 sm:py-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
-                Adventure Mode
-              </span>
-              <span className="rounded-full border border-emerald-300 bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">
-                Sprint 7 • Character & Monster Artwork
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-emerald-950 sm:text-4xl">
-              Enchanted Forest
-            </h1>
-            <p className="mt-1 max-w-xl text-sm font-medium text-emerald-800 sm:text-base">
-              Jelajahi hutan, hindari rintangan, dan kalahkan monster dengan menjawab soal.
-            </p>
-          </div>
-
-          <Link
-            href="/"
-            className="shrink-0 rounded-full border-2 border-emerald-700 bg-white px-5 py-2.5 text-sm font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
-          >
-            ← Kembali
-          </Link>
-        </header>
-
-        <section className="overflow-hidden rounded-3xl border-4 border-white bg-emerald-900/10 p-2 shadow-xl sm:p-3">
-          <div className="overflow-hidden rounded-2xl">
-            <AdventureGameCanvas
+    <main ref={fullscreenRef} className="adventure-immersive fixed inset-0 z-40 h-[100dvh] w-screen overflow-hidden bg-slate-950" onContextMenu={(event) => event.preventDefault()}>
+      <div className="h-full w-full">
+        <AdventureGameCanvas
               plan={plan}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={toggleFullscreen}
               heroId={heroId}
               heroHp={heroHpPercent}
               score={run.score}
@@ -300,10 +293,6 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
               onBossWarning={setBossWarning}
               onBossAttack={handleBossAttack}
             />
-          </div>
-        </section>
-
-
 
         {activeEncounter && run.status === "encounter" && (
           <div
@@ -496,18 +485,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
           </div>
         )}
 
-        {!activeEncounter && run.status === "exploring" && (
-          <p className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-center text-sm font-semibold text-emerald-800">
-            Hindari duri merah dengan melompat. Ambil kristal hati untuk memulihkan 15 HP dan perisai biru untuk memblokir satu serangan. Dekati monster untuk memulai kuis. Efek suara aktif setelah kamu menyentuh layar atau menekan keyboard.
-          </p>
-        )}
+}
 
-        <footer className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-center">
-          <p className="text-xs font-semibold text-emerald-800">
-            Sprint 7 — gunakan karakter pilihanmu dan hadapi monster hutan pada bab {chapter.title}.
-          </p>
-        </footer>
-      </div>
     </main>
   );
 }
