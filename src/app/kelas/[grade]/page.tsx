@@ -18,18 +18,18 @@ export default async function GradePage({
   const gradeSubjects = getSubjectsByGrade(grade);
 
   return (
-    <main className="min-h-full flex-1 overflow-y-auto bg-gradient-to-br from-sky-300 via-indigo-200 to-violet-300 px-5 py-7 sm:px-8">
-      <div className="mx-auto w-full max-w-6xl">
+    <main className="h-full min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-sky-300 via-indigo-200 to-violet-300 flex items-center px-3 py-3 sm:px-6">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
         <Link href="/" className="inline-flex rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-800 shadow hover:bg-white">
           ◀️ Pilih Kelas
         </Link>
 
-        <header className="my-7 text-center">
-          <div className="text-5xl" aria-hidden>🎒📚</div>
-          <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl">
+        <header className="my-3 shrink-0 text-center">
+          <div className="text-3xl" aria-hidden>🎒📚</div>
+          <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-4xl">
             Mata Pelajaran Kelas {grade} SD
           </h1>
-          <p className="mt-2 font-semibold text-slate-700">
+          <p className="mt-1 text-sm font-semibold text-slate-700">
             Pilih pelajaran yang ingin kamu pelajari.
           </p>
         </header>
