@@ -14,6 +14,8 @@ import type { PlannedEncounter } from "@/features/adventure/encounter-generator"
 type VirtualDirection = "left" | "right" | "jump";
 
 interface Props {
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void | Promise<void>;
   /** The run plan from the encounter generator (Sprint C); the scene
    *  builds its whole world from it. */
   plan: PlannedEncounter[];
@@ -46,6 +48,8 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
 
 export default function AdventureGameCanvas({
   plan,
+  isFullscreen,
+  onToggleFullscreen,
   heroId,
   heroHp,
   score,
@@ -240,9 +244,9 @@ export default function AdventureGameCanvas({
   };
 
   return (
-    <div className="w-full">
-      <div className="relative isolate aspect-[16/10] w-full touch-none overflow-hidden rounded-2xl border-4 border-white bg-sky-200 shadow-xl" aria-label="Game petualangan Enchanted Forest">
-        <div ref={hostRef} className="absolute inset-0" />
+    <div className="adventure-game-surface h-full w-full" onContextMenu={(event) => event.preventDefault()}>
+      <div className="relative isolate h-full min-h-0 w-full touch-none select-none overflow-hidden bg-sky-200" aria-label="Game petualangan Enchanted Forest">
+        <div ref={hostRef} className="adventure-game-host absolute inset-0" />
 
         {/* HUD ringkas di dalam scene */}
         <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2 sm:inset-x-5 sm:top-4">
@@ -264,6 +268,17 @@ export default function AdventureGameCanvas({
               <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">MONSTER</div>
               <div className="text-base font-black leading-tight sm:text-xl">👾 {monsterProgress}/{plan.length}</div>
             </div>
+          </div>
+          <div className="pointer-events-auto flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              aria-label={isFullscreen ? "Keluar dari fullscreen" : "Masuk fullscreen"}
+              aria-pressed={isFullscreen}
+              onClick={() => void onToggleFullscreen()}
+              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-lg font-black text-white shadow-lg backdrop-blur-sm"
+            >
+              {isFullscreen ? "⛶" : "⛶"}
+            </button>
           </div>
           <button
             type="button"
@@ -317,9 +332,6 @@ export default function AdventureGameCanvas({
         {error && <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/70 p-4 text-center text-sm font-bold text-white">Game gagal dimuat. Silakan refresh halaman.</div>}
         {!ready && !error && <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 text-sm font-bold text-white">Menyiapkan dunia petualangan...</div>}
       </div>
-      <p className="mt-2 text-center text-[11px] font-semibold text-slate-500 sm:text-xs">
-        Tahan tombol ← → untuk bergerak, dan tahan ↑ untuk melompat. Bisa juga memakai keyboard.
-      </p>
     </div>
   );
 }
