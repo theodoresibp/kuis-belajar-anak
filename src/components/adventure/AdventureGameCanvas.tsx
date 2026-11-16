@@ -249,7 +249,7 @@ export default function AdventureGameCanvas({
         <div ref={hostRef} className="adventure-game-host absolute inset-0" />
 
         {/* HUD ringkas di dalam scene */}
-        <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2 sm:inset-x-5 sm:top-4">
+        <div className="pointer-events-none adventure-hud absolute inset-x-3 z-20 flex items-start justify-between gap-2 sm:inset-x-5 sm:top-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-white/60 bg-slate-950/55 px-3 py-2 text-white shadow-lg backdrop-blur-sm sm:gap-4 sm:px-4">
             <div className="min-w-[112px] flex-1">
               <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-extrabold sm:text-xs">
@@ -277,7 +277,7 @@ export default function AdventureGameCanvas({
               onClick={() => void onToggleFullscreen()}
               className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-lg font-black text-white shadow-lg backdrop-blur-sm"
             >
-              {isFullscreen ? "⛶" : "⛶"}
+              {isFullscreen ? "↙" : "⛶"}
             </button>
           </div>
           <button
@@ -297,7 +297,7 @@ export default function AdventureGameCanvas({
         </div>
 
         {/* Kontrol sentuh: arah di kiri, lompat di kanan */}
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5" aria-label="Kontrol permainan">
+        <div className="pointer-events-none adventure-controls absolute inset-x-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5" aria-label="Kontrol permainan">
           <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
             {(["left", "right"] as const).map((direction) => (
               <button
