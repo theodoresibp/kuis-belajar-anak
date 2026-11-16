@@ -5,6 +5,7 @@ import pstsBab3 from "./psts-bab-3-bangun-datar-dan-bangun-ruang";
 
 const subject: Subject = {
   id: "matematika",
+  grade: 2,
   title: "Matematika",
   description: "Bilangan, nilai tempat, bangun datar, dan bangun ruang",
   emoji: "🔢",
