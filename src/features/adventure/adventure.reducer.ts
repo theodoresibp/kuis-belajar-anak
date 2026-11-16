@@ -22,7 +22,7 @@ export interface AdventureRunState {
 
 export type AdventureRunAction =
   | { type: "START_ENCOUNTER" }
-  | { type: "WRONG_ANSWER" }
+  | { type: "WRONG_ANSWER"; damage?: number }
   | { type: "CORRECT_ANSWER"; damage: number }
   | { type: "NEXT_QUESTION" }
   | { type: "NEXT_ENCOUNTER"; monsterMaxHp?: number }
@@ -59,7 +59,10 @@ export function adventureReducer(
 
     case "WRONG_ANSWER": {
       if (state.status !== "encounter") return state;
-      const heroHp = Math.max(0, state.heroHp - BATTLE_CONFIG.heroDamagePerWrongAnswer);
+      const heroHp = Math.max(
+        0,
+        state.heroHp - (action.damage ?? BATTLE_CONFIG.heroDamagePerWrongAnswer),
+      );
       return {
         ...state,
         heroHp,

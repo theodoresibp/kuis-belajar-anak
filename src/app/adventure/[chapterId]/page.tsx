@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import AdventureMode from "@/components/adventure/AdventureMode";
 import { getChapterById, subjects } from "@/data/subjects";
+import { DIFFICULTIES, DEFAULT_DIFFICULTY, type Difficulty } from "@/features/adventure/difficulty";
 
 export function generateStaticParams() {
   return subjects.flatMap((subject) =>
@@ -13,7 +14,7 @@ export default async function AdventurePage({
   searchParams,
 }: {
   params: Promise<{ chapterId: string }>;
-  searchParams: Promise<{ count?: string; hero?: string }>;
+  searchParams: Promise<{ count?: string; hero?: string; difficulty?: string }>;
 }) {
   const [{ chapterId }, query] = await Promise.all([params, searchParams]);
   const chapter = getChapterById(chapterId);
@@ -30,5 +31,17 @@ export default async function AdventurePage({
   const allowedHeroIds = new Set(["rara", "bimo", "tari"]);
   const heroId = allowedHeroIds.has(query.hero ?? "") ? query.hero! : "bimo";
 
-  return <AdventureMode chapter={chapter} questionCount={questionCount} heroId={heroId} />;
+  const allowedDifficulties = new Set(DIFFICULTIES.map((d) => d.id));
+  const difficulty: Difficulty = allowedDifficulties.has(query.difficulty as Difficulty)
+    ? (query.difficulty as Difficulty)
+    : DEFAULT_DIFFICULTY;
+
+  return (
+    <AdventureMode
+      chapter={chapter}
+      questionCount={questionCount}
+      heroId={heroId}
+      difficulty={difficulty}
+    />
+  );
 }

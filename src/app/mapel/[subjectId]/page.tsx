@@ -18,54 +18,62 @@ export default async function SubjectPage({
     notFound();
   }
 
-  const sections: { label?: string; chapters: typeof subject.chapters }[] = [];
-  const regular = subject.chapters.filter((c) => !c.category);
-  if (regular.length > 0) sections.push({ chapters: regular });
-  for (const label of new Set(subject.chapters.flatMap((c) => (c.category ? [c.category] : [])))) {
-    sections.push({ label, chapters: subject.chapters.filter((c) => c.category === label) });
-  }
-
   return (
     <main
       className={`h-full min-h-0 w-full flex-1 overflow-hidden flex flex-col items-stretch justify-start bg-gradient-to-br ${subject.gradient} px-3 py-2`}
     >
-      <Link
-        href={`/kelas/${subject.grade ?? 2}`}
-        className="mb-2 shrink-0 self-start sm:self-auto sm:mb-2 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 font-bold text-slate-800 text-sm hover:bg-white"
-      >
-        ◀️ Kelas {subject.grade ?? 2}
-      </Link>
+      <div className="shrink-0 flex items-center gap-3 mb-4">
+        <Link
+          href={`/kelas/${subject.grade ?? 2}`}
+          className="shrink-0 inline-flex rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-800 shadow hover:bg-white"
+        >
+          ◀️ Kembali
+        </Link>
 
-      <div className="shrink-0 text-center mb-3">
-        <p className="mb-1 inline-flex rounded-full bg-white/85 px-4 py-1.5 text-sm font-extrabold text-slate-800 shadow-sm">Kelas {subject.grade ?? 2} SD</p>
-        <div className="text-4xl mb-1">{subject.emoji}</div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 drop-shadow-sm mb-2">
-          {subject.title}
-        </h1>
-        <p className="text-slate-900/80 font-semibold">{subject.description}</p>
+        <div className="flex-1 text-center">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 drop-shadow-sm leading-tight">
+            {subject.title}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-900/80 font-semibold leading-tight">
+            {subject.description}
+          </p>
+        </div>
+
+        <div className="w-24 shrink-0" aria-hidden />
       </div>
 
-      {sections.map((section) => (
-        <section key={section.label ?? "bab"} className="flex min-h-0 flex-1 flex-col w-full max-w-none mb-2 last:mb-0">
-          {section.label && (
-            <h2 className="mb-1 shrink-0 inline-flex items-center gap-2 rounded-full bg-white/90 px-5 py-2 text-lg font-extrabold text-slate-900">
-              📝 {section.label}
-            </h2>
-          )}
-          <div className="landscape-carousel landscape-carousel--chapters min-h-0 flex-1 items-stretch" aria-label="Daftar bab">
-            {section.chapters.map((chapter) => (
-              <div
-                key={chapter.id}
-                className="h-full rounded-3xl border-4 border-white/60 bg-white/90 p-4 shadow-xl transition-transform hover:scale-[1.02]"
-              >
-                <div className="text-5xl mb-3">{chapter.emoji}</div>
+      <section className="flex min-h-0 flex-1 flex-col w-full max-w-none items-center">
+        <div
+          className="landscape-carousel landscape-carousel--chapters min-h-0 flex-1 items-stretch"
+          aria-label="Daftar bab"
+        >
+          {subject.chapters.map((chapter) => (
+            <div
+              key={chapter.id}
+              className={`min-h-60 max-h-60 min-w-[400px] max-w-[400px] flex flex-col rounded-3xl border-2 p-4 pb-2 shadow-xl transition-transform hover:scale-[1.02] ${
+                chapter.category
+                  ? "border-amber-400 bg-amber-100/95"
+                  : "border-white/60 bg-white/90"
+              }`}
+            >
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  {chapter.category && (
+                    <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-extrabold text-amber-950">
+                      📝 {chapter.category}
+                    </span>
+                  )}
+                  <div className="text-3xl">{chapter.emoji}</div>
+                </div>
                 <h2 className="text-xl font-extrabold text-slate-900 mb-1">
                   {chapter.title}
                 </h2>
-                <p className="text-slate-800/80 font-semibold text-sm mb-4">
+                <p className="text-slate-800/80 font-semibold text-sm mb-3">
                   {chapter.subtitle}
                 </p>
-                <div className="flex flex-wrap items-center gap-3">
+              </div>
+              <div className="shrink-0 flex flex-col items-center">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <Link
                     href={`/materi/${chapter.id}`}
                     className="inline-flex items-center gap-2 rounded-full bg-white border-2 border-slate-900 px-4 py-2 font-bold text-slate-900 text-sm hover:bg-slate-100 active:scale-95 transition-transform"
@@ -79,14 +87,14 @@ export default async function SubjectPage({
                     Main Sekarang ▶️
                   </Link>
                 </div>
-                <p className="mt-3 text-xs font-semibold text-slate-900/70">
+                <p className="mt-2 text-xs font-semibold text-slate-900/70">
                   {chapter.questions.length} soal tersedia
                 </p>
               </div>
-            ))}
-          </div>
-        </section>
-      ))}
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

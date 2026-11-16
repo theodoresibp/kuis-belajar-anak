@@ -18,9 +18,9 @@ export default function BattleHealthBar({ label, hp, maxHp, fillClassName }: Pro
   const pct = maxHp > 0 ? Math.min(100, Math.max(0, (hp / maxHp) * 100)) : 0;
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex items-center justify-between gap-2 text-xs font-extrabold text-slate-700 sm:text-sm">
+      <div className="battle-hp-row mb-1 flex items-center justify-between gap-2 text-xs font-extrabold text-slate-700 sm:text-sm">
         <span className="truncate">{label}</span>
-        <span>
+        <span className="battle-hp-value shrink-0">
           HP {displayHp(hp)} / {maxHp}
         </span>
       </div>

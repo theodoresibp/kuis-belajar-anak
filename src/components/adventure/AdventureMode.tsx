@@ -5,8 +5,17 @@ import Link from "next/link";
 import type { QuizChapter, QuizQuestion } from "@/types/quiz";
 import QuestionCard from "@/components/QuestionCard";
 import BattleStage from "@/components/gamification/BattleStage";
-import { BATTLE_CONFIG, getHeroById, getMonsterById } from "@/features/gamification/battle.config";
-import type { BattleState, DamageEvent, HeroAnimation, MonsterAnimation } from "@/features/gamification/battle.types";
+import {
+  BATTLE_CONFIG,
+  getHeroById,
+  getMonsterById,
+} from "@/features/gamification/battle.config";
+import type {
+  BattleState,
+  DamageEvent,
+  HeroAnimation,
+  MonsterAnimation,
+} from "@/features/gamification/battle.types";
 import AdventureGameCanvas from "./AdventureGameCanvas";
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
 import {
@@ -15,14 +24,24 @@ import {
 } from "@/features/adventure/adventure.reducer";
 import { generateEncounterPlan } from "@/features/adventure/encounter-generator";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
-import { setMusicTrack, startMusic, stopMusic, trackForTier } from "@/features/adventure/music";
+import {
+  setMusicTrack,
+  startMusic,
+  stopMusic,
+  trackForTier,
+} from "@/features/adventure/music";
 import { playSound } from "@/features/gamification/sound";
 import { shuffle } from "@/lib/shuffle";
+import {
+  getDifficulty,
+  type Difficulty,
+} from "@/features/adventure/difficulty";
 
 interface Props {
   chapter: QuizChapter;
   questionCount?: number;
   heroId?: string;
+  difficulty?: Difficulty;
 }
 
 /** Battle popup artwork lives in the gamification monster set; until
@@ -39,11 +58,20 @@ function battleMonsterIdFor(encounter: AdventureEncounter): string {
       : "purple-dragon";
 }
 
-export default function AdventureMode({ chapter, questionCount, heroId = "bimo" }: Props) {
+export default function AdventureMode({
+  chapter,
+  questionCount,
+  heroId = "bimo",
+  difficulty,
+}: Props) {
+  const difficultySettings = getDifficulty(difficulty);
   // Keep question selection deterministic so server and client render identically.
   const selectedCount = Math.max(
     1,
-    Math.min(questionCount ?? chapter.questions.length, chapter.questions.length),
+    Math.min(
+      questionCount ?? chapter.questions.length,
+      chapter.questions.length,
+    ),
   );
   const questions = chapter.questions.slice(0, selectedCount);
 
@@ -54,7 +82,9 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   // setup. Doing it at encounter time (an event, not an effect/render)
   // keeps the server-rendered HTML identical to the first client render:
   // options only ever appear inside the battle dialog.
-  const [shuffledQuestions, setShuffledQuestions] = useState<QuizQuestion[] | null>(null);
+  const [shuffledQuestions, setShuffledQuestions] = useState<
+    QuizQuestion[] | null
+  >(null);
   const activeQuestions = shuffledQuestions ?? questions;
 
   // The whole run — monsters, order, question split, HP — comes from the
@@ -66,31 +96,44 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     [chapter.id, questions.length],
   );
   const encounterCount = plan.length;
-  const encounterQuestionCounts = plan.map((encounter) => encounter.questionCount);
+  const encounterQuestionCounts = plan.map(
+    (encounter) => encounter.questionCount,
+  );
 
   const [run, dispatch] = useReducer(
     adventureReducer,
     plan[0]?.monsterMaxHp ?? BATTLE_CONFIG.initialMonsterHp,
     createInitialAdventureRunState,
   );
-  const [activeEncounter, setActiveEncounter] = useState<AdventureEncounter | null>(null);
-  const [resolveActiveEncounter, setResolveActiveEncounter] = useState<(() => void) | null>(null);
+  const [activeEncounter, setActiveEncounter] =
+    useState<AdventureEncounter | null>(null);
+  const [resolveActiveEncounter, setResolveActiveEncounter] = useState<
+    (() => void) | null
+  >(null);
   const [triedOptionIds, setTriedOptionIds] = useState<string[]>([]);
-  const [questionStatus, setQuestionStatus] = useState<"active" | "correct">("active");
+  const [questionStatus, setQuestionStatus] = useState<"active" | "correct">(
+    "active",
+  );
   const [bossWarning, setBossWarning] = useState(false);
-  const [battleVisual, setBattleVisual] = useState<{ hero: HeroAnimation; monster: MonsterAnimation; lastDamage: DamageEvent | null }>({ hero: "idle", monster: "idle", lastDamage: null });
+  const [battleVisual, setBattleVisual] = useState<{
+    hero: HeroAnimation;
+    monster: MonsterAnimation;
+    lastDamage: DamageEvent | null;
+  }>({ hero: "idle", monster: "idle", lastDamage: null });
   const damageEventId = useRef(0);
   const feedbackTimer = useRef<number | null>(null);
   const [showCorrectFeedback, setShowCorrectFeedback] = useState(false);
   useEffect(() => {
     return () => {
-      if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+      if (feedbackTimer.current !== null)
+        window.clearTimeout(feedbackTimer.current);
     };
   }, []);
   const fullscreenRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(orientation: landscape)");
@@ -112,9 +155,11 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   }, []);
 
   useEffect(() => {
-    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === fullscreenRef.current);
+    const syncFullscreen = () =>
+      setIsFullscreen(document.fullscreenElement === fullscreenRef.current);
     document.addEventListener("fullscreenchange", syncFullscreen);
-    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+    return () =>
+      document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
 
   async function startAdventure() {
@@ -127,11 +172,16 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
       console.warn("Fullscreen tidak tersedia pada browser ini:", error);
     }
     try {
-      const orientation = window.screen.orientation as ScreenOrientation & { lock?: (value: string) => Promise<void> };
+      const orientation = window.screen.orientation as ScreenOrientation & {
+        lock?: (value: string) => Promise<void>;
+      };
       await orientation.lock?.("landscape");
     } catch (error) {
       // Sebagian browser/dispositif hanya mengizinkan orientasi dikunci dari PWA.
-      console.info("Penguncian landscape tidak didukung; tampilkan instruksi rotasi jika diperlukan.", error);
+      console.info(
+        "Penguncian landscape tidak didukung; tampilkan instruksi rotasi jika diperlukan.",
+        error,
+      );
     }
     startMusic();
     setHasStarted(true);
@@ -141,7 +191,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     const element = fullscreenRef.current;
     if (!element) return;
     try {
-      if (document.fullscreenElement === element) await document.exitFullscreen();
+      if (document.fullscreenElement === element)
+        await document.exitFullscreen();
       else if (!document.fullscreenElement) await element.requestFullscreen();
     } catch (error) {
       console.warn("Fullscreen tidak tersedia pada browser ini:", error);
@@ -149,7 +200,12 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   }
 
   useEffect(() => {
-    if (battleVisual.hero === "idle" && battleVisual.monster === "idle" && !battleVisual.lastDamage) return;
+    if (
+      battleVisual.hero === "idle" &&
+      battleVisual.monster === "idle" &&
+      !battleVisual.lastDamage
+    )
+      return;
     const timer = window.setTimeout(() => {
       setBattleVisual({ hero: "idle", monster: "idle", lastDamage: null });
     }, BATTLE_CONFIG.animationDurationMs);
@@ -201,10 +257,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
     localQuestionIndex === currentEncounterQuestionCount - 1;
   const isFinalEncounter = run.encounterIndex === encounterCount - 1;
 
-  function handleEncounter(
-    encounter: AdventureEncounter,
-    resolve: () => void,
-  ) {
+  function handleEncounter(encounter: AdventureEncounter, resolve: () => void) {
     if (!shuffledQuestions) {
       setShuffledQuestions(
         questions.map((question) => ({
@@ -233,12 +286,14 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
 
     if (optionId === currentQuestion.correctOptionId) {
       setShowCorrectFeedback(false);
-      if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+      if (feedbackTimer.current !== null)
+        window.clearTimeout(feedbackTimer.current);
       // Per-question damage scales with this monster's HP; the encounter's
       // last question always deals exactly the remaining HP.
       const damage = isLastQuestionOfEncounter
         ? run.monsterHp
-        : Math.round((run.monsterMaxHp / currentEncounterQuestionCount) * 100) / 100;
+        : Math.round((run.monsterMaxHp / currentEncounterQuestionCount) * 100) /
+          100;
 
       dispatch({ type: "CORRECT_ANSWER", damage });
       damageEventId.current += 1;
@@ -247,7 +302,12 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
       setBattleVisual({
         hero: "attack",
         monster: damage >= run.monsterHp ? "defeat" : "hurt",
-        lastDamage: { id: damageEventId.current, target: "monster", amount: damage, kind: "damage" },
+        lastDamage: {
+          id: damageEventId.current,
+          target: "monster",
+          amount: damage,
+          kind: "damage",
+        },
       });
       setQuestionStatus("correct");
       // Let the complete attack, projectile, and damage animation play before
@@ -258,24 +318,42 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
       return;
     }
 
+    const wrongAnswerDamage = Math.max(
+      1,
+      Math.round(
+        BATTLE_CONFIG.heroDamagePerWrongAnswer *
+          difficultySettings.damageMultiplier,
+      ),
+    );
     setTriedOptionIds((previous) => [...previous, optionId]);
-    dispatch({ type: "WRONG_ANSWER" });
+    dispatch({ type: "WRONG_ANSWER", damage: wrongAnswerDamage });
     playSound("wrong");
     playSound(
-      activeEncounter && (activeEncounter.tier === "mini-boss" || activeEncounter.tier === "final-boss")
+      activeEncounter &&
+        (activeEncounter.tier === "mini-boss" ||
+          activeEncounter.tier === "final-boss")
         ? "bossAttack"
         : "monsterAttack",
     );
     damageEventId.current += 1;
     setBattleVisual({
-      hero: run.heroHp <= BATTLE_CONFIG.heroDamagePerWrongAnswer ? "exhausted" : "hurt",
+      hero: run.heroHp <= wrongAnswerDamage ? "exhausted" : "hurt",
       monster: "attack",
-      lastDamage: { id: damageEventId.current, target: "hero", amount: BATTLE_CONFIG.heroDamagePerWrongAnswer, kind: "damage" },
+      lastDamage: {
+        id: damageEventId.current,
+        target: "hero",
+        amount: wrongAnswerDamage,
+        kind: "damage",
+      },
     });
   }
 
   function handleBossAttack() {
-    const damage = activeEncounter?.attackDamage ?? 15;
+    const baseDamage = activeEncounter?.attackDamage ?? 15;
+    const damage = Math.max(
+      1,
+      Math.round(baseDamage * difficultySettings.damageMultiplier),
+    );
     const blocked = run.shieldCharges > 0;
     playSound(blocked ? "blocked" : "bossAttack");
     dispatch({ type: "BOSS_ATTACK", damage });
@@ -295,7 +373,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   function handleContinue() {
     if (run.monsterHp > 0 || !resolveActiveEncounter) return;
     setShowCorrectFeedback(false);
-    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+    if (feedbackTimer.current !== null)
+      window.clearTimeout(feedbackTimer.current);
 
     resolveActiveEncounter();
     setActiveEncounter(null);
@@ -319,7 +398,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
 
   function handleNextQuestion() {
     setShowCorrectFeedback(false);
-    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+    if (feedbackTimer.current !== null)
+      window.clearTimeout(feedbackTimer.current);
     dispatch({ type: "NEXT_QUESTION" });
     setTriedOptionIds([]);
     setQuestionStatus("active");
@@ -329,53 +409,91 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const monsterHpPercent = Math.max(0, run.monsterHp);
 
   return (
-    <main ref={fullscreenRef} className="adventure-immersive fixed inset-0 z-40 h-[100dvh] w-screen overflow-hidden bg-slate-950" onContextMenu={(event) => event.preventDefault()}>
+    <main
+      ref={fullscreenRef}
+      className="adventure-immersive fixed inset-0 z-40 h-[100dvh] w-screen overflow-hidden bg-slate-950"
+      onContextMenu={(event) => event.preventDefault()}
+    >
       <div className="h-full w-full">
-        {hasStarted && <AdventureGameCanvas
-              plan={plan}
-              isFullscreen={isFullscreen}
-              onToggleFullscreen={toggleFullscreen}
-              heroId={heroId}
-              heroHp={heroHpPercent}
-              score={run.score}
-              totalQuestions={questions.length}
-              monsterProgress={Math.min(run.encounterIndex + (run.status === "victory" ? 1 : 0), encounterCount)}
-              shieldCharges={run.shieldCharges}
-              isDefeated={run.status === "defeat"}
-              onEncounter={handleEncounter}
-              onAdventureComplete={() => dispatch({ type: "VICTORY" })}
-              onHazard={() => dispatch({ type: "HAZARD" })}
-              onPickup={(kind) => {
-                playSound(kind === "heart" ? "heal" : "shield");
-                dispatch({ type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD" });
-              }}
-              onBossWarning={setBossWarning}
-              onBossAttack={handleBossAttack}
-            />}
+        {hasStarted && (
+          <AdventureGameCanvas
+            plan={plan}
+            difficulty={difficultySettings}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
+            heroId={heroId}
+            heroHp={heroHpPercent}
+            score={run.score}
+            totalQuestions={questions.length}
+            monsterProgress={Math.min(
+              run.encounterIndex + (run.status === "victory" ? 1 : 0),
+              encounterCount,
+            )}
+            shieldCharges={run.shieldCharges}
+            isDefeated={run.status === "defeat"}
+            onEncounter={handleEncounter}
+            onAdventureComplete={() => dispatch({ type: "VICTORY" })}
+            onHazard={() => dispatch({ type: "HAZARD" })}
+            onPickup={(kind) => {
+              playSound(kind === "heart" ? "heal" : "shield");
+              dispatch({
+                type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD",
+              });
+            }}
+            onBossWarning={setBossWarning}
+            onBossAttack={handleBossAttack}
+          />
+        )}
 
         {!hasStarted && (
           <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
-            <div className="text-6xl sm:text-7xl" aria-hidden>🌲⚔️🌲</div>
+            <div className="text-6xl sm:text-7xl" aria-hidden>
+              🌲⚔️🌲
+            </div>
             <div className="max-w-xl">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">Enchanted Forest</p>
-              <h1 className="mt-2 text-3xl font-black sm:text-5xl">Petualangan Dimulai!</h1>
-              <p className="mt-3 text-sm font-semibold text-white/80 sm:text-base">Siapkan dirimu, kalahkan monster, dan jawab semua soal untuk menyelamatkan hutan.</p>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">
+                Enchanted Forest
+              </p>
+              <h1 className="mt-2 text-3xl font-black sm:text-5xl">
+                Petualangan Dimulai!
+              </h1>
+              <p className="mt-3 text-sm font-semibold text-white/80 sm:text-base">
+                Siapkan dirimu, kalahkan monster, dan jawab semua soal untuk
+                menyelamatkan hutan.
+              </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-black/20 px-5 py-3 text-sm font-bold text-emerald-100">
               📱 Mainkan dalam posisi landscape untuk pengalaman terbaik
             </div>
-            <button type="button" onClick={() => void startAdventure()} className="rounded-full border-4 border-amber-200 bg-amber-400 px-10 py-4 text-lg font-black text-amber-950 shadow-[0_8px_0_#b45309] transition active:translate-y-1 active:shadow-[0_4px_0_#b45309]">
+            <button
+              type="button"
+              onClick={() => void startAdventure()}
+              className="rounded-full border-4 border-amber-200 bg-amber-400 px-10 py-4 text-lg font-black text-amber-950 shadow-[0_8px_0_#b45309] transition active:translate-y-1 active:shadow-[0_4px_0_#b45309]"
+            >
               MULAI PETUALANGAN ▶
             </button>
-            <p className="text-xs font-medium text-white/60">Fullscreen dan landscape akan diaktifkan jika didukung browser.</p>
+            <p className="text-xs font-medium text-white/60 mt-2">
+              Fullscreen dan landscape akan diaktifkan jika didukung browser.
+            </p>
           </section>
         )}
 
         {hasStarted && !isLandscape && (
-          <section className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center text-white" role="status" aria-live="polite">
-            <div className="text-7xl" aria-hidden>📱</div>
-            <h2 className="text-2xl font-black sm:text-3xl">Putar Perangkatmu</h2>
-            <p className="max-w-sm text-sm font-semibold text-white/75">Petualangan ini dirancang untuk layar mendatar. Putar HP atau tablet ke posisi landscape untuk melanjutkan.</p>
+          <section
+            className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center text-white"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="text-7xl" aria-hidden>
+              📱
+            </div>
+            <h2 className="text-2xl font-black sm:text-3xl">
+              Putar Perangkatmu
+            </h2>
+            <p className="max-w-sm text-sm font-semibold text-white/75">
+              Petualangan ini dirancang untuk layar mendatar. Putar HP atau
+              tablet ke posisi landscape untuk melanjutkan.
+            </p>
           </section>
         )}
 
@@ -390,14 +508,36 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
               <div className="adventure-battle-side">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-amber-700">Monster Encounter</p>
-                    <h2 className="text-xl font-black text-slate-900 sm:text-2xl">⚔️ {activeEncounter.name}</h2>
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-700">
+                      Monster Encounter
+                    </p>
+                    <h2 className="text-xl font-black text-slate-900 sm:text-2xl">
+                      ⚔️ {activeEncounter.name}
+                    </h2>
                   </div>
-                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-black text-red-700">HP {monsterHpPercent}/{run.monsterMaxHp}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRestartConfirm(true)}
+                      className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1 text-xs font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-100 active:scale-95"
+                    >
+                      🔄 Ulang
+                    </button>
+                    {/* <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-black text-red-700">
+                      HP {monsterHpPercent}/{run.monsterMaxHp}
+                    </span> */}
+                  </div>
                 </div>
 
                 {activeEncounter.attackDamage > 0 && (
-                  <div className={"mb-3 rounded-2xl border-2 px-4 py-3 text-center transition-colors " + (bossWarning ? "animate-pulse border-red-500 bg-red-100 text-red-800" : "border-violet-200 bg-violet-50 text-violet-800")}>
+                  <div
+                    className={
+                      "mb-3 rounded-2xl border-2 px-4 py-3 text-center transition-colors " +
+                      (bossWarning
+                        ? "animate-pulse border-red-500 bg-red-100 text-red-800"
+                        : "border-violet-200 bg-violet-50 text-violet-800")
+                    }
+                  >
                     <p className="font-black">
                       {bossWarning
                         ? `⚠️ ${activeEncounter.name.toUpperCase()} SEDANG MENYIAPKAN SERANGAN!`
@@ -406,34 +546,44 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                           : `🔥 MINI-BOSS — ${activeEncounter.name.toUpperCase()}`}
                     </p>
                     <p className="mt-1 text-xs font-semibold">
-                      {bossWarning ? "Bersiap! Serangan datang sebentar lagi." : `Jawab soal secepat mungkin. Boss menyerang secara berkala dengan ${activeEncounter.attackDamage} damage!`}
+                      {bossWarning
+                        ? "Bersiap! Serangan datang sebentar lagi."
+                        : `Jawab soal secepat mungkin. Boss menyerang secara berkala dengan ${Math.max(1, Math.round(activeEncounter.attackDamage * difficultySettings.damageMultiplier))} damage!`}
                     </p>
                   </div>
                 )}
 
                 <BattleStage
-                  battle={{
-                    totalQuestions: questions.length,
-                    currentQuestionIndex: run.currentQuestionIndex,
-                    correctAnswers: run.score,
-                    wrongAttempts: 0,
-                    correctStreak: 0,
-                    heroHp: run.heroHp,
-                    monsterHp: run.monsterHp,
-                    monsterMaxHp: run.monsterMaxHp,
-                    currentQuestionDamaged: questionStatus === "correct",
-                    heroAnimation: battleVisual.hero,
-                    monsterAnimation: run.monsterHp <= 0 ? "defeat" : battleVisual.monster,
-                    battleStatus: run.heroHp <= 0 ? "hero_exhausted" : run.monsterHp <= 0 ? "monster_defeated" : "playing",
-                    lastDamage: battleVisual.lastDamage,
-                    items: { potion: 0, shield: 0, hint: 0 },
-                    powerUpChoices: 0,
-                    shieldActive: false,
-                    heroId,
-                    monsterId: battleMonsterIdFor(activeEncounter),
-                    monsterDamageSchedule: [],
-                    heroDamagePattern: [],
-                  } satisfies BattleState}
+                  battle={
+                    {
+                      totalQuestions: questions.length,
+                      currentQuestionIndex: run.currentQuestionIndex,
+                      correctAnswers: run.score,
+                      wrongAttempts: 0,
+                      correctStreak: 0,
+                      heroHp: run.heroHp,
+                      monsterHp: run.monsterHp,
+                      monsterMaxHp: run.monsterMaxHp,
+                      currentQuestionDamaged: questionStatus === "correct",
+                      heroAnimation: battleVisual.hero,
+                      monsterAnimation:
+                        run.monsterHp <= 0 ? "defeat" : battleVisual.monster,
+                      battleStatus:
+                        run.heroHp <= 0
+                          ? "hero_exhausted"
+                          : run.monsterHp <= 0
+                            ? "monster_defeated"
+                            : "playing",
+                      lastDamage: battleVisual.lastDamage,
+                      items: { potion: 0, shield: 0, hint: 0 },
+                      powerUpChoices: 0,
+                      shieldActive: false,
+                      heroId,
+                      monsterId: battleMonsterIdFor(activeEncounter),
+                      monsterDamageSchedule: [],
+                      heroDamagePattern: [],
+                    } satisfies BattleState
+                  }
                   hero={getHeroById(heroId)}
                   showInventory={false}
                   showComboHint={false}
@@ -441,7 +591,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                     ...getMonsterById(battleMonsterIdFor(activeEncounter)),
                     name: activeEncounter.name,
                     fallbackEmoji: activeEncounter.emoji,
-                    assets: getAdventureMonsterById(activeEncounter.monsterId).assets,
+                    assets: getAdventureMonsterById(activeEncounter.monsterId)
+                      .assets,
                   }}
                 />
               </div>
@@ -450,8 +601,12 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                 {currentQuestion && (
                   <div className="rounded-3xl border-2 border-violet-200 bg-white p-3 shadow-lg sm:p-4">
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className="text-sm font-black text-violet-800">🧠 Jawab untuk menyerang!</p>
-                      <span className="text-xs font-bold text-slate-500">Soal {run.currentQuestionIndex + 1}/{questions.length}</span>
+                      <p className="text-sm font-black text-violet-800">
+                        🧠 Jawab untuk menyerang!
+                      </p>
+                      <span className="text-xs font-bold text-slate-500">
+                        Soal {run.currentQuestionIndex + 1}/{questions.length}
+                      </span>
                     </div>
                     <QuestionCard
                       questionNumber={run.currentQuestionIndex + 1}
@@ -475,50 +630,92 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
           </div>
         )}
 
-        {/* Popup hasil jawaban: penjelasan + tombol lanjut jadi satu,
-            supaya pemain tidak perlu scroll di dalam popup pertarungan. */}
-        {activeEncounter && run.status === "encounter" && questionStatus === "correct" && showCorrectFeedback && (
+        {showRestartConfirm && (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
-            aria-label="Hasil jawaban"
+            aria-label="Konfirmasi ulang petualangan"
           >
-            <section className="w-full max-w-md rounded-3xl border-4 border-amber-200 bg-white p-6 text-center shadow-2xl">
-              <div className="text-5xl">{run.monsterHp <= 0 ? "🏆" : "🎉"}</div>
-              <h2 className="mt-2 text-2xl font-black text-emerald-700">
-                {run.monsterHp <= 0
-                  ? `${activeEncounter.name} berhasil dikalahkan!`
-                  : "Jawaban Benar!"}
+            <section className="w-full max-w-sm rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-6 text-center shadow-2xl">
+              <div className="text-5xl">🔄</div>
+              <h2 className="mt-2 text-xl font-black text-slate-900">
+                Ulang dari awal?
               </h2>
-
-              {currentQuestion?.explanation && (
-                <div className="mt-4 rounded-2xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-left text-sm text-yellow-900 sm:text-base">
-                  <span className="font-bold">💡 Tahukah kamu? </span>
-                  {currentQuestion.explanation}
-                </div>
-              )}
-
-              {run.monsterHp > 0 ? (
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                Skor dan HP yang sudah kamu kumpulkan akan direset.
+              </p>
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
                 <button
                   type="button"
-                  onClick={handleNextQuestion}
-                  className="mt-5 w-full rounded-full bg-violet-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-violet-700"
+                  onClick={() => window.location.reload()}
+                  className="flex-1 rounded-full bg-rose-600 px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-rose-700 active:scale-95"
                 >
-                  Soal Berikutnya →
+                  Ya, Ulang
                 </button>
-              ) : (
                 <button
                   type="button"
-                  onClick={handleContinue}
-                  className="mt-5 w-full rounded-full bg-emerald-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-emerald-700"
+                  onClick={() => setShowRestartConfirm(false)}
+                  className="flex-1 rounded-full border-2 border-slate-300 bg-white px-6 py-3 text-sm font-black text-slate-600 shadow-sm transition hover:bg-slate-100 active:scale-95"
                 >
-                  {isFinalEncounter ? "Selesaikan Petualangan 🏆" : "Lanjutkan Perjalanan →"}
+                  Batal
                 </button>
-              )}
+              </div>
             </section>
           </div>
         )}
+
+        {/* Popup hasil jawaban: penjelasan + tombol lanjut jadi satu,
+            supaya pemain tidak perlu scroll di dalam popup pertarungan. */}
+        {activeEncounter &&
+          run.status === "encounter" &&
+          questionStatus === "correct" &&
+          showCorrectFeedback && (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Hasil jawaban"
+            >
+              <section className="w-full max-w-md rounded-3xl border-4 border-amber-200 bg-white p-6 text-center shadow-2xl">
+                <div className="text-5xl">
+                  {run.monsterHp <= 0 ? "🏆" : "🎉"}
+                </div>
+                <h2 className="mt-2 text-2xl font-black text-emerald-700">
+                  {run.monsterHp <= 0
+                    ? `${activeEncounter.name} berhasil dikalahkan!`
+                    : "Jawaban Benar!"}
+                </h2>
+
+                {currentQuestion?.explanation && (
+                  <div className="mt-4 rounded-2xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-left text-sm text-yellow-900 sm:text-base">
+                    <span className="font-bold">💡 Tahukah kamu? </span>
+                    {currentQuestion.explanation}
+                  </div>
+                )}
+
+                {run.monsterHp > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleNextQuestion}
+                    className="mt-5 w-full rounded-full bg-violet-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-violet-700"
+                  >
+                    Soal Berikutnya →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleContinue}
+                    className="mt-5 w-full rounded-full bg-emerald-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-emerald-700"
+                  >
+                    {isFinalEncounter
+                      ? "Selesaikan Petualangan 🏆"
+                      : "Lanjutkan Perjalanan →"}
+                  </button>
+                )}
+              </section>
+            </div>
+          )}
 
         {(run.status === "defeat" || run.status === "victory") && (
           <div
@@ -530,12 +727,18 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             {run.status === "victory" ? (
               <section className="w-full max-w-lg rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-7 text-center shadow-2xl sm:p-9">
                 <div className="text-6xl">🏆</div>
-                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-amber-700">Adventure Completed</p>
-                <h2 id="adventure-result-title" className="mt-2 text-3xl font-black text-emerald-800">
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-amber-700">
+                  Adventure Completed
+                </p>
+                <h2
+                  id="adventure-result-title"
+                  className="mt-2 text-3xl font-black text-emerald-800"
+                >
                   Game Selesai!
                 </h2>
                 <p className="mt-3 text-slate-600">
-                  Hebat! Kamu berhasil melewati {encounterCount} monster dan menjawab {run.score} soal dengan benar.
+                  Hebat! Kamu berhasil melewati {encounterCount} monster dan
+                  menjawab {run.score} soal dengan benar.
                 </p>
                 <Link
                   href="/"
@@ -547,12 +750,18 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             ) : (
               <section className="w-full max-w-lg rounded-3xl border-4 border-red-200 bg-gradient-to-b from-red-50 to-white p-7 text-center shadow-2xl sm:p-9">
                 <div className="text-6xl">💔</div>
-                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-red-700">Adventure Over</p>
-                <h2 id="adventure-result-title" className="mt-2 text-3xl font-black text-red-700">
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-red-700">
+                  Adventure Over
+                </p>
+                <h2
+                  id="adventure-result-title"
+                  className="mt-2 text-3xl font-black text-red-700"
+                >
                   Petualangan Terhenti
                 </h2>
                 <p className="mt-3 text-slate-600">
-                  HP petualang habis. Tidak apa-apa, coba lagi dan pilih jawaban dengan lebih teliti, ya!
+                  HP petualang habis. Tidak apa-apa, coba lagi dan pilih jawaban
+                  dengan lebih teliti, ya!
                 </p>
                 <button
                   type="button"
@@ -571,7 +780,6 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             )}
           </div>
         )}
-
       </div>
     </main>
   );

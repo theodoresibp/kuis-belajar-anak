@@ -19,10 +19,10 @@ export default async function QuizPage({
   }
 
   return (
-    <main
+    <div
       className={`h-full min-h-0 w-full flex-1 overflow-hidden flex flex-col items-center justify-center gap-3 bg-gradient-to-br ${chapter.gradient} px-3 py-2`}
     >
       <QuizGame chapter={chapter} />
-    </main>
+    </div>
   );
 }

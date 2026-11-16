@@ -10,6 +10,7 @@ import {
 
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
 import type { PlannedEncounter } from "@/features/adventure/encounter-generator";
+import type { DifficultySettings } from "@/features/adventure/difficulty";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -19,6 +20,8 @@ interface Props {
   /** The run plan from the encounter generator (Sprint C); the scene
    *  builds its whole world from it. */
   plan: PlannedEncounter[];
+  /** Controls boss timed-attack pacing inside the scene. */
+  difficulty: DifficultySettings;
   heroId: string;
   heroHp: number;
   score: number;
@@ -48,6 +51,7 @@ const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
 
 export default function AdventureGameCanvas({
   plan,
+  difficulty,
   isFullscreen,
   onToggleFullscreen,
   heroId,
@@ -117,7 +121,7 @@ export default function AdventureGameCanvas({
           physics: {
             default: "arcade",
             arcade: {
-              gravity: { x: 0, y: 1100 },
+              gravity: { x: 0, y: 2100 },
               debug: false,
             },
           },
@@ -125,7 +129,7 @@ export default function AdventureGameCanvas({
             antialias: true,
             pixelArt: false,
           },
-          scene: [new AdventureScene(plan, heroId)],
+          scene: [new AdventureScene(plan, heroId, difficulty)],
         });
 
         gameRef.current = game;
@@ -189,7 +193,7 @@ export default function AdventureGameCanvas({
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [plan, heroId]);
+  }, [plan, heroId, difficulty]);
 
   useEffect(() => {
     if (isDefeated) {

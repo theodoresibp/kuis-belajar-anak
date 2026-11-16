@@ -16,7 +16,7 @@ export default function MaterialView({
       <div className="w-full flex items-center justify-between">
         <Link
           href={`/mapel/${subjectId}`}
-          className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 font-bold text-slate-800 text-sm hover:bg-white"
+          className="inline-flex rounded-full max-w-30 bg-white/90 px-4 py-2 text-sm font-bold text-slate-800 shadow hover:bg-white"
         >
           ◀️ Kembali
         </Link>
@@ -41,78 +41,87 @@ export default function MaterialView({
 
         {material ? (
           <>
-            <div className="material-carousel" aria-label="Slide materi"><div className="material-slide"><p className="rounded-2xl bg-violet-50 border-2 border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base">
-              📖 {material.summary}
-            </p></div>
+            <div className="material-carousel" aria-label="Slide materi">
+              <div className="material-slide">
+                <p className="rounded-2xl bg-violet-50 border-2 border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base">
+                  📖 {material.summary}
+                </p>
+              </div>
 
-            <div className="material-slide-track flex flex-col gap-6">
-              {material.sections.map((section, idx) => (
-                <section key={idx} className="material-slide border-t-2 border-slate-100 pt-4">
-                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 mb-3 flex items-center gap-2">
-                    {section.emoji && <span>{section.emoji}</span>}
-                    {section.heading}
-                  </h2>
+              <div className="material-slide-track flex flex-col gap-6">
+                {material.sections.map((section, idx) => (
+                  <section
+                    key={idx}
+                    className="material-slide border-t-2 border-slate-100 pt-4"
+                  >
+                    <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      {section.emoji && <span>{section.emoji}</span>}
+                      {section.heading}
+                    </h2>
 
-                  {section.image && (
-                    <div className="mb-4 overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50">
-                      <Image
-                        src={section.image}
-                        alt={section.imageAlt ?? ""}
-                        width={640}
-                        height={360}
-                        unoptimized
-                        className="w-full h-48 sm:h-56 object-contain bg-white"
-                      />
-                    </div>
-                  )}
+                    {section.image && (
+                      <div className="mb-4 overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50">
+                        <Image
+                          src={section.image}
+                          alt={section.imageAlt ?? ""}
+                          width={640}
+                          height={360}
+                          unoptimized
+                          className="w-full h-48 sm:h-56 object-contain bg-white"
+                        />
+                      </div>
+                    )}
 
-                  {section.paragraphs?.map((p, pIdx) => (
-                    <p key={pIdx} className="text-slate-700 leading-relaxed mb-3 last:mb-0">
-                      {p}
-                    </p>
-                  ))}
+                    {section.paragraphs?.map((p, pIdx) => (
+                      <p
+                        key={pIdx}
+                        className="text-slate-700 leading-relaxed mb-3 last:mb-0"
+                      >
+                        {p}
+                      </p>
+                    ))}
 
-                  {section.images && section.images.length > 0 && (
-                    <div className="mt-2 mb-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {section.images.map((img, imgIdx) => (
-                        <div
-                          key={imgIdx}
-                          className="overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50 flex flex-col"
-                        >
-                          <Image
-                            src={img.src}
-                            alt={img.alt}
-                            width={320}
-                            height={240}
-                            unoptimized
-                            className="w-full h-24 sm:h-28 object-contain bg-white"
-                          />
-                          {img.caption && (
-                            <p className="text-center text-xs font-semibold text-slate-600 px-1 py-1.5 bg-violet-50">
-                              {img.caption}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    {section.images && section.images.length > 0 && (
+                      <div className="mt-2 mb-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {section.images.map((img, imgIdx) => (
+                          <div
+                            key={imgIdx}
+                            className="overflow-hidden rounded-2xl border-4 border-violet-100 bg-slate-50 flex flex-col"
+                          >
+                            <Image
+                              src={img.src}
+                              alt={img.alt}
+                              width={320}
+                              height={240}
+                              unoptimized
+                              className="w-full h-24 sm:h-28 object-contain bg-white"
+                            />
+                            {img.caption && (
+                              <p className="text-center text-xs font-semibold text-slate-600 px-1 py-1.5 bg-violet-50">
+                                {img.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                  {section.bullets && section.bullets.length > 0 && (
-                    <ul className="mt-2 flex flex-col gap-2">
-                      {section.bullets.map((b, bIdx) => (
-                        <li
-                          key={bIdx}
-                          className="flex items-start gap-2 text-slate-700 leading-relaxed"
-                        >
-                          <span className="mt-1 text-violet-500">●</span>
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              ))}
-            </div>
+                    {section.bullets && section.bullets.length > 0 && (
+                      <ul className="mt-2 flex flex-col gap-2">
+                        {section.bullets.map((b, bIdx) => (
+                          <li
+                            key={bIdx}
+                            className="flex items-start gap-2 text-slate-700 leading-relaxed"
+                          >
+                            <span className="mt-1 text-violet-500">●</span>
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
             </div>
           </>
         ) : (

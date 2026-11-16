@@ -18,6 +18,7 @@ import {
   ENVIRONMENT_ASSETS,
   type EnvironmentLayout,
 } from "./EnvironmentFactory";
+import { getDifficulty, type DifficultySettings } from "@/features/adventure/difficulty";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -64,6 +65,7 @@ export default class AdventureScene extends Phaser.Scene {
   private plan: PlannedEncounter[];
   private layout: LevelLayout;
   private heroId: string;
+  private difficulty: DifficultySettings;
   private environment!: EnvironmentFactory;
   private heroShadow?: Phaser.GameObjects.Image;
   private heroIdleTexture = "hero-idle-1";
@@ -94,12 +96,14 @@ export default class AdventureScene extends Phaser.Scene {
   private worldWidth: number;
   private readonly worldHeight = 640;
   private readonly moveSpeed = 230;
-  // Max jump height is about 216px with gravity 1100, enough for the highest 205px platform with a small margin.
-  private readonly jumpVelocity = -690;
+  // Max jump height is about 215px with gravity 2100, enough for the highest 205px platform with a small margin.
+  // Gravity and velocity are scaled up together (vs. 1100/-690) to shorten hang time without losing jump height.
+  private readonly jumpVelocity = -950;
 
   constructor(
     plan: PlannedEncounter[] = generateEncounterPlan(15, { seed: "preview" }),
     heroId = "bimo",
+    difficulty?: DifficultySettings,
   ) {
     super("AdventureScene");
     this.plan =
@@ -107,6 +111,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.layout = generateLevelLayout(this.plan.length);
     this.worldWidth = this.layout.worldWidth;
     this.heroId = ["rara", "bimo", "tari"].includes(heroId) ? heroId : "bimo";
+    this.difficulty = difficulty ?? getDifficulty(undefined);
   }
 
   preload() {
@@ -813,7 +818,7 @@ export default class AdventureScene extends Phaser.Scene {
   private startBossAttackCycle() {
     this.stopBossAttackCycle();
     this.bossAttackTimer = this.time.addEvent({
-      delay: 12000,
+      delay: this.difficulty.bossAttackIntervalMs,
       loop: true,
       callback: () => {
         if (!this.encounterPaused || !this.activeMonster) return;
@@ -833,7 +838,7 @@ export default class AdventureScene extends Phaser.Scene {
         });
         this.playTone(240, 0.24, "square", 0.035);
         this.game.events.emit("boss-attack-warning");
-        this.bossAttackWarningTimer = this.time.delayedCall(2500, () => {
+        this.bossAttackWarningTimer = this.time.delayedCall(this.difficulty.bossAttackWarningMs, () => {
           if (!this.encounterPaused || !this.activeMonster) return;
           const strikingBoss = this.activeMonster;
           if (strikingBoss.active) {
