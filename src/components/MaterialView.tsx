@@ -12,7 +12,7 @@ export default function MaterialView({
   const material = chapter.material;
 
   return (
-    <div className="w-full max-w-2xl flex flex-col items-center gap-4">
+    <div className="material-view w-full max-w-none flex flex-col items-center gap-3">
       <div className="w-full flex items-center justify-between">
         <Link
           href={`/mapel/${subjectId}`}
@@ -28,8 +28,8 @@ export default function MaterialView({
         </Link>
       </div>
 
-      <div className="w-full rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white">
-        <div className="text-center mb-6">
+      <div className="material-shell w-full rounded-3xl bg-white/95 shadow-xl p-4 sm:p-5 border-4 border-white">
+        <div className="text-center mb-3">
           <div className="text-5xl mb-2">{chapter.emoji}</div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">
             {chapter.title}
@@ -41,13 +41,13 @@ export default function MaterialView({
 
         {material ? (
           <>
-            <p className="rounded-2xl bg-violet-50 border-2 border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base mb-6">
+            <div className="material-carousel" aria-label="Slide materi"><div className="material-slide"><p className="rounded-2xl bg-violet-50 border-2 border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base">
               📖 {material.summary}
-            </p>
+            </p></div>
 
-            <div className="flex flex-col gap-6">
+            <div className="material-slide-track flex flex-col gap-6">
               {material.sections.map((section, idx) => (
-                <section key={idx} className="border-t-2 border-slate-100 pt-5 first:border-t-0 first:pt-0">
+                <section key={idx} className="material-slide border-t-2 border-slate-100 pt-4">
                   <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 mb-3 flex items-center gap-2">
                     {section.emoji && <span>{section.emoji}</span>}
                     {section.heading}
@@ -113,6 +113,7 @@ export default function MaterialView({
                 </section>
               ))}
             </div>
+            </div>
           </>
         ) : (
           <p className="text-center text-slate-500 font-semibold">
@@ -120,7 +121,7 @@ export default function MaterialView({
           </p>
         )}
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <Link
             href={`/quiz/${chapter.id}`}
             className="rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 py-3 shadow-md transition-colors"
