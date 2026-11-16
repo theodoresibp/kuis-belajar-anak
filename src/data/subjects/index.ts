@@ -10,6 +10,14 @@ import pancasila from "./pancasila";
 // Tambahkan mata pelajaran baru di sini, contoh:
 export const subjects: Subject[] = [seniBudaya, bahasaIndonesia, english, agama, matematika, ipas, pancasila];
 
+export function getAvailableGrades(): number[] {
+  return [...new Set(subjects.map((subject) => subject.grade ?? 2))].sort((a, b) => a - b);
+}
+
+export function getSubjectsByGrade(grade: number): Subject[] {
+  return subjects.filter((subject) => (subject.grade ?? 2) === grade);
+}
+
 export function getSubjectById(id: string): Subject | undefined {
   return subjects.find((s) => s.id === id);
 }
