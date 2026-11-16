@@ -57,6 +57,8 @@ export interface QuizChapter {
 
 export interface Subject {
   id: string;
+  /** School grade this subject belongs to; defaults to grade 2 for legacy data. */
+  grade?: number;
   title: string;
   description?: string;
   emoji: string;
