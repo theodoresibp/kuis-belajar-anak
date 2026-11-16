@@ -82,6 +82,11 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const damageEventId = useRef(0);
   const feedbackTimer = useRef<number | null>(null);
   const [showCorrectFeedback, setShowCorrectFeedback] = useState(false);
+  useEffect(() => {
+    return () => {
+      if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+    };
+  }, []);
   const fullscreenRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
