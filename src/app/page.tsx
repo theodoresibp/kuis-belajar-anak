@@ -17,7 +17,7 @@ export default function HomePage() {
           </p> */}
         </header>
 
-        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="landscape-carousel landscape-carousel--choices" aria-label="Daftar kelas">
           {grades.map((grade) => {
             const subjectCount = getSubjectsByGrade(grade).length;
             return (
