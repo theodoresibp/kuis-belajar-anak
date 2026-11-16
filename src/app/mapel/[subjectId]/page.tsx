@@ -27,7 +27,7 @@ export default async function SubjectPage({
 
   return (
     <main
-      className={`flex-1 flex flex-col items-center justify-center bg-gradient-to-br ${subject.gradient} px-4 py-10`}
+      className={`min-h-full w-full flex-1 overflow-y-auto overscroll-y-contain flex flex-col items-center justify-start bg-gradient-to-br ${subject.gradient} px-4 py-8 sm:py-10`}
     >
       <Link
         href={`/kelas/${subject.grade ?? 2}`}
