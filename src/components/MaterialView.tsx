@@ -12,7 +12,7 @@ export default function MaterialView({
   const material = chapter.material;
 
   return (
-    <div className="material-view w-full max-w-none flex flex-col items-center gap-3">
+    <div className="material-view w-full max-w-none flex-1 flex flex-col items-center gap-3">
       <div className="w-full flex items-center justify-between">
         <Link
           href={`/mapel/${subjectId}`}
