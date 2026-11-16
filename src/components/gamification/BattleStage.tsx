@@ -23,6 +23,10 @@ interface Props {
   canUseHint?: boolean;
   onUseItem?: (item: PowerUpKind) => void;
   onChooseReward?: (item: PowerUpKind) => void;
+  /** Hide classic quiz inventory when Adventure Mode supplies its own HUD. */
+  showInventory?: boolean;
+  /** Hide the combo hint when power-ups are not enabled in this battle. */
+  showComboHint?: boolean;
 }
 
 const ITEM_KINDS: PowerUpKind[] = ["potion", "shield", "hint"];
@@ -50,7 +54,7 @@ function SpeechBubble({ text, align }: { text: string; align: "left" | "right" }
  * Presentational mostly — HP/animation/inventory state comes from the battle
  * reducer; item uses are reported back through callbacks.
  */
-export default function BattleStage({ battle, hero, monster, canUseHint = false, onUseItem, onChooseReward }: Props) {
+export default function BattleStage({ battle, hero, monster, canUseHint = false, onUseItem, onChooseReward, showInventory = true, showComboHint = true }: Props) {
   const [muted, setMuted] = useState<boolean>(() => isSoundMuted());
   const heroExhausted = battle.heroHp <= 0;
   const monsterDefeated = battle.monsterHp <= 0;
@@ -176,7 +180,7 @@ export default function BattleStage({ battle, hero, monster, canUseHint = false,
       )}
 
       {/* Power-up inventory + sound toggle. */}
-      <div className="relative flex items-center justify-center gap-2 px-3 pb-3">
+      {showInventory && <div className="relative flex items-center justify-center gap-2 px-3 pb-3">
         {ITEM_KINDS.map((kind) => {
           const count = battle.items[kind];
           const disabled = itemDisabled(kind);
@@ -203,8 +207,8 @@ export default function BattleStage({ battle, hero, monster, canUseHint = false,
         >
           {muted ? "🔇" : "🔊"}
         </button>
-      </div>
-      {totalItems === 0 && battle.powerUpChoices === 0 && (
+      </div>}
+      {showComboHint && totalItems === 0 && battle.powerUpChoices === 0 && (
         <p className="relative px-3 pb-3 text-center text-xs font-semibold text-slate-500">
           Jawab benar {BATTLE_CONFIG.comboRewardInterval}× beruntun untuk dapat hadiah power-up 🎁
         </p>
