@@ -302,8 +302,8 @@ body {
     align-items: stretch;
     gap: 0.55rem;
     width: 100%;
-    height: calc(100dvh - 0.75rem);
-    max-height: calc(100dvh - 0.75rem);
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
     padding: 0.55rem;
     border-width: 2px;
     border-radius: 1.1rem;
