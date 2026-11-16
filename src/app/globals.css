@@ -198,15 +198,30 @@ body {
   gap: 0.65rem;
 }
 
-.adventure-battle-dialog > .adventure-battle-stage {
+.adventure-battle-side {
+  display: flex;
+  flex: 1 1 52%;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0.35rem;
+}
+
+.adventure-battle-side > .adventure-battle-stage {
   flex: 1 1 auto;
   min-height: 0;
   max-width: none;
 }
 
-.adventure-battle-dialog > div:last-child {
-  flex: 0 1 auto;
+.adventure-battle-question {
+  flex: 1 1 48%;
   min-height: 0;
+  overflow: hidden;
+}
+
+.adventure-battle-question > div {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1.25rem;
 }
 
 .adventure-question-card {
@@ -239,13 +254,12 @@ body {
     padding: 0.85rem;
   }
 
-  .adventure-battle-dialog > .adventure-battle-stage {
-    flex: 1 1 52%;
+  .adventure-battle-side {
+    flex-basis: 52%;
   }
 
-  .adventure-battle-dialog > div:last-child {
-    flex: 1 1 48%;
-    overflow: hidden;
+  .adventure-battle-question {
+    flex-basis: 48%;
   }
 
   .adventure-battle-stage > div:nth-of-type(2) {
@@ -259,7 +273,7 @@ body {
   }
 }
 
-/* Short landscape viewports are phones: keep the versus strip beside the quiz. */
+/* Short landscape viewports are phones: versus strip at left, quiz at right. */
 @media (orientation: landscape) and (max-height: 599px) {
   .adventure-battle-dialog {
     display: grid;
@@ -275,24 +289,31 @@ body {
     border-radius: 1.1rem;
   }
 
-  .adventure-battle-dialog > :nth-child(1),
-  .adventure-battle-dialog > :nth-child(2),
-  .adventure-battle-dialog > .adventure-battle-stage {
+  .adventure-battle-side {
     grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    gap: 0.3rem;
   }
 
-  .adventure-battle-dialog > :nth-child(1) {
+  .adventure-battle-side > div:first-child {
     margin: 0;
+    gap: 0.35rem;
   }
 
-  .adventure-battle-dialog > :nth-child(2) {
+  .adventure-battle-side > div:first-child h2 {
+    font-size: 0.9rem;
+  }
+
+  .adventure-battle-side > div:nth-child(2) {
     margin: 0;
-    padding: 0.45rem;
-    font-size: 0.68rem;
-    line-height: 1.15;
+    padding: 0.4rem;
+    font-size: 0.65rem;
+    line-height: 1.1;
   }
 
-  .adventure-battle-dialog > .adventure-battle-stage {
+  .adventure-battle-side > .adventure-battle-stage {
+    flex: 1 1 auto;
     min-height: 0;
     align-self: stretch;
     overflow: hidden;
@@ -300,11 +321,11 @@ body {
     border-radius: 0.85rem;
   }
 
-  .adventure-battle-dialog > .adventure-battle-stage > div:first-of-type {
+  .adventure-battle-stage > div:first-of-type {
     padding: 0.35rem 0.45rem 0;
   }
 
-  .adventure-battle-dialog > .adventure-battle-stage > div:nth-of-type(2) {
+  .adventure-battle-stage > div:nth-of-type(2) {
     padding: 0.15rem 0.45rem;
   }
 
@@ -318,13 +339,20 @@ body {
     font-size: 1rem;
   }
 
-  .adventure-battle-dialog > div:last-child {
+  .adventure-battle-question {
     grid-column: 2;
     grid-row: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .adventure-battle-question > div {
+    height: 100%;
+    overflow: hidden;
+    padding: 0.45rem;
+    border-width: 2px;
+    border-radius: 0.9rem;
   }
 
   .adventure-question-card {
