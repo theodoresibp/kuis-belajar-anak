@@ -485,8 +485,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
           </div>
         )}
 
-}
-
+      </div>
     </main>
   );
 }
