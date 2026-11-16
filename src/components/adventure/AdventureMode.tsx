@@ -82,12 +82,53 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   const damageEventId = useRef(0);
   const fullscreenRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(orientation: landscape)");
+    const syncOrientation = () => setIsLandscape(media.matches);
+    syncOrientation();
+    media.addEventListener("change", syncOrientation);
+    return () => media.removeEventListener("change", syncOrientation);
+  }, []);
+
+  useEffect(() => {
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === fullscreenRef.current);
     document.addEventListener("fullscreenchange", syncFullscreen);
     return () => document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
+
+  async function startAdventure() {
+    const element = fullscreenRef.current;
+    try {
+      if (element && !document.fullscreenElement && element.requestFullscreen) {
+        await element.requestFullscreen();
+      }
+    } catch (error) {
+      console.warn("Fullscreen tidak tersedia pada browser ini:", error);
+    }
+    try {
+      const orientation = window.screen.orientation as ScreenOrientation & { lock?: (value: string) => Promise<void> };
+      await orientation.lock?.("landscape");
+    } catch (error) {
+      // Sebagian browser/dispositif hanya mengizinkan orientasi dikunci dari PWA.
+      console.info("Penguncian landscape tidak didukung; tampilkan instruksi rotasi jika diperlukan.", error);
+    }
+    startMusic();
+    setHasStarted(true);
+  }
 
   async function toggleFullscreen() {
     const element = fullscreenRef.current;
@@ -272,7 +313,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
   return (
     <main ref={fullscreenRef} className="adventure-immersive fixed inset-0 z-40 h-[100dvh] w-screen overflow-hidden bg-slate-950" onContextMenu={(event) => event.preventDefault()}>
       <div className="h-full w-full">
-        <AdventureGameCanvas
+        {hasStarted && isLandscape && <AdventureGameCanvas
               plan={plan}
               isFullscreen={isFullscreen}
               onToggleFullscreen={toggleFullscreen}
@@ -292,7 +333,34 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
               }}
               onBossWarning={setBossWarning}
               onBossAttack={handleBossAttack}
-            />
+            />}
+
+        {!hasStarted && (
+          <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
+            <div className="text-6xl sm:text-7xl" aria-hidden>🌲⚔️🌲</div>
+            <div className="max-w-xl">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-200">Enchanted Forest</p>
+              <h1 className="mt-2 text-3xl font-black sm:text-5xl">Petualangan Dimulai!</h1>
+              <p className="mt-3 text-sm font-semibold text-white/80 sm:text-base">Siapkan dirimu, kalahkan monster, dan jawab semua soal untuk menyelamatkan hutan.</p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-black/20 px-5 py-3 text-sm font-bold text-emerald-100">
+              📱 Mainkan dalam posisi landscape untuk pengalaman terbaik
+            </div>
+            <button type="button" onClick={() => void startAdventure()} className="rounded-full border-4 border-amber-200 bg-amber-400 px-10 py-4 text-lg font-black text-amber-950 shadow-[0_8px_0_#b45309] transition active:translate-y-1 active:shadow-[0_4px_0_#b45309]">
+              MULAI PETUALANGAN ▶
+            </button>
+            <p className="text-xs font-medium text-white/60">Fullscreen dan landscape akan diaktifkan jika didukung browser.</p>
+          </section>
+        )}
+
+        {hasStarted && !isLandscape && (
+          <section className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-5 bg-slate-950 px-6 text-center text-white" role="status" aria-live="polite">
+            <div className="text-7xl" aria-hidden>📱</div>
+            <h2 className="text-2xl font-black sm:text-3xl">Putar Perangkatmu</h2>
+            <p className="max-w-sm text-sm font-semibold text-white/75">Petualangan ini dirancang untuk layar mendatar. Putar HP atau tablet ke posisi landscape untuk melanjutkan.</p>
+            <button type="button" onClick={() => void toggleFullscreen()} className="rounded-full bg-emerald-500 px-6 py-3 font-black text-white">Coba Fullscreen</button>
+          </section>
+        )}
 
         {activeEncounter && run.status === "encounter" && (
           <div
@@ -301,7 +369,7 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
             aria-modal="true"
             aria-label={"Pertarungan melawan " + activeEncounter.name}
           >
-            <section className="max-h-[96vh] w-full max-w-3xl overflow-y-auto rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-3 shadow-2xl sm:p-5">
+            <section className="adventure-battle-dialog max-h-[96dvh] w-full max-w-5xl overflow-hidden rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-3 shadow-2xl sm:p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-amber-700">Monster Encounter</p>
