@@ -417,6 +417,8 @@ export default function AdventureMode({ chapter, questionCount, heroId = "bimo" 
                     heroDamagePattern: [],
                   } satisfies BattleState}
                   hero={getHeroById(heroId)}
+                  showInventory={false}
+                  showComboHint={false}
                   monster={{
                     ...getMonsterById(battleMonsterIdFor(activeEncounter)),
                     name: activeEncounter.name,
