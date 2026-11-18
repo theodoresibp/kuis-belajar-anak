@@ -340,7 +340,10 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                       <button
                         key={hero.id}
                         type="button"
-                        onClick={() => setSelectedHeroId(hero.id)}
+                        onClick={() => {
+                          setSelectedHeroId(hero.id);
+                          void goNextStep();
+                        }}
                         aria-pressed={active}
                         className={`rounded-3xl border-2 p-3 sm:p-4 transition-all ${
                           active
@@ -386,7 +389,10 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                       <button
                         key={choice}
                         type="button"
-                        onClick={() => setQuestionCount(value)}
+                        onClick={() => {
+                          setQuestionCount(value);
+                          void goNextStep();
+                        }}
                         className={`rounded-full border-2 px-7 py-3.5 text-lg font-bold transition-colors ${
                           active
                             ? "bg-violet-600 border-violet-600 text-white"
@@ -413,7 +419,10 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
                       <button
                         key={d.id}
                         type="button"
-                        onClick={() => setSelectedDifficulty(d.id)}
+                        onClick={() => {
+                          setSelectedDifficulty(d.id);
+                          void goNextStep();
+                        }}
                         aria-pressed={active}
                         className={`rounded-3xl border-2 p-4 text-center transition-all ${
                           active
@@ -491,15 +500,6 @@ export default function QuizGame({ chapter }: { chapter: QuizChapter }) {
             >
               ⬅️ Kembali
             </button>
-            {settingsStep !== "confirm" && (
-              <button
-                type="button"
-                onClick={() => void goNextStep()}
-                className="rounded-full bg-violet-600 px-8 py-3 text-lg font-bold text-white shadow-md transition-colors hover:bg-violet-700"
-              >
-                Lanjut ➡️
-              </button>
-            )}
           </div>
         </div>
       </main>

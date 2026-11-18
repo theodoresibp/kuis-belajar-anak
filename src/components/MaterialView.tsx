@@ -12,7 +12,7 @@ export default function MaterialView({
   const material = chapter.material;
 
   return (
-    <div className="material-view w-full max-w-none flex-1 flex flex-col items-center gap-3">
+    <div className="material-view w-full max-w-none flex-1 flex flex-col items-center gap-2">
       <div className="w-full flex items-center justify-between">
         <Link
           href={`/mapel/${subjectId}`}
@@ -20,18 +20,18 @@ export default function MaterialView({
         >
           ◀️ Kembali
         </Link>
+
         <Link
           href={`/quiz/${chapter.id}`}
           className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 font-bold text-white text-sm hover:bg-slate-800"
         >
-          Mulai Kuis ▶️
+          ▶️ Sudah paham? Mulai Kuis!
         </Link>
       </div>
 
-      <div className="material-shell w-full rounded-3xl bg-white/95 shadow-xl p-4 sm:p-5 border-4 border-white">
-        <div className="text-center mb-3">
-          <div className="text-5xl mb-2">{chapter.emoji}</div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">
+      <div className="material-shell w-full min-h-full rounded-3xl bg-white/95 shadow-xl p-2 sm:p-2">
+        <div className="text-center mb-2">
+          <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-1">
             {chapter.title}
           </h1>
           {chapter.subtitle && (
@@ -41,14 +41,17 @@ export default function MaterialView({
 
         {material ? (
           <>
-            <div className="material-carousel" aria-label="Slide materi">
-              <div className="material-slide">
-                <p className="rounded-2xl bg-violet-50 border-2 border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base">
+            <div
+              className="material-carousel w-full h-full"
+              aria-label="Slide materi"
+            >
+              <div className="material-slide h-full w-full">
+                <p className="rounded-2xl bg-violet-50 border-2 h-full w-full border-violet-100 px-4 py-3 text-slate-700 font-semibold text-sm sm:text-base">
                   📖 {material.summary}
                 </p>
               </div>
 
-              <div className="material-slide-track flex flex-col gap-6">
+              <div className="material-slide-track flex flex-col gap-6 h-full w-full">
                 {material.sections.map((section, idx) => (
                   <section
                     key={idx}
@@ -129,15 +132,6 @@ export default function MaterialView({
             Materi untuk bab ini belum tersedia. Yuk langsung coba kuisnya!
           </p>
         )}
-
-        <div className="mt-3 flex justify-center">
-          <Link
-            href={`/quiz/${chapter.id}`}
-            className="rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 py-3 shadow-md transition-colors"
-          >
-            ▶️ Sudah paham? Mulai Kuis!
-          </Link>
-        </div>
       </div>
     </div>
   );

@@ -44,6 +44,10 @@ interface Props {
   difficulty?: Difficulty;
 }
 
+/** How long the "Jawaban Benar" popup stays up before auto-advancing —
+ *  long enough to read the explanation without a manual "next" tap. */
+const CORRECT_FEEDBACK_AUTO_ADVANCE_MS = 2600;
+
 /** Battle popup artwork lives in the gamification monster set; until
  *  Sprint D, adventure monsters borrow the closest battle counterpart
  *  (their display name still comes from the plan). */
@@ -122,18 +126,25 @@ export default function AdventureMode({
   }>({ hero: "idle", monster: "idle", lastDamage: null });
   const damageEventId = useRef(0);
   const feedbackTimer = useRef<number | null>(null);
+  const advanceTimer = useRef<number | null>(null);
   const [showCorrectFeedback, setShowCorrectFeedback] = useState(false);
   useEffect(() => {
     return () => {
       if (feedbackTimer.current !== null)
         window.clearTimeout(feedbackTimer.current);
+      if (advanceTimer.current !== null)
+        window.clearTimeout(advanceTimer.current);
     };
   }, []);
   const fullscreenRef = useRef<HTMLElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
-  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  // "encounter" = retry just the monster being fought; "full" = restart
+  // the whole adventure from scratch (reload).
+  const [restartConfirm, setRestartConfirm] = useState<
+    "encounter" | "full" | null
+  >(null);
 
   useEffect(() => {
     const media = window.matchMedia("(orientation: landscape)");
@@ -288,6 +299,8 @@ export default function AdventureMode({
       setShowCorrectFeedback(false);
       if (feedbackTimer.current !== null)
         window.clearTimeout(feedbackTimer.current);
+      if (advanceTimer.current !== null)
+        window.clearTimeout(advanceTimer.current);
       // Per-question damage scales with this monster's HP; the encounter's
       // last question always deals exactly the remaining HP.
       const damage = isLastQuestionOfEncounter
@@ -310,11 +323,13 @@ export default function AdventureMode({
         },
       });
       setQuestionStatus("correct");
-      // Let the complete attack, projectile, and damage animation play before
-      // placing the learning feedback over the battle scene.
+      // Let the complete attack, projectile, and damage-float animation
+      // (the longest-running piece, ~900ms) finish before placing the
+      // learning feedback over the battle scene, so it doesn't pop in
+      // mid-animation.
       feedbackTimer.current = window.setTimeout(() => {
         setShowCorrectFeedback(true);
-      }, BATTLE_CONFIG.animationDurationMs + 120);
+      }, BATTLE_CONFIG.animationDurationMs + 500);
       return;
     }
 
@@ -405,6 +420,48 @@ export default function AdventureMode({
     setQuestionStatus("active");
   }
 
+  // "🔄 Ulang" retries only the monster currently being fought — full
+  // monster HP, hero HP back to what it was when this fight started, and
+  // back to this encounter's first question — instead of reloading the
+  // whole page and losing the run.
+  function handleRetryEncounter() {
+    setRestartConfirm(null);
+    setShowCorrectFeedback(false);
+    if (feedbackTimer.current !== null)
+      window.clearTimeout(feedbackTimer.current);
+    if (advanceTimer.current !== null)
+      window.clearTimeout(advanceTimer.current);
+    dispatch({ type: "RETRY_ENCOUNTER", questionStart });
+    setTriedOptionIds([]);
+    setQuestionStatus("active");
+    setBattleVisual({ hero: "idle", monster: "idle", lastDamage: null });
+  }
+
+  // Auto-advance the "Jawaban Benar" popup — the child already made the
+  // only decision that mattered (picking the answer), so no extra tap is
+  // needed to move to the next question or resume the run. The final
+  // boss keeps its manual "Selesaikan Petualangan" button since that one
+  // ends the adventure rather than continuing it.
+  useEffect(() => {
+    if (!showCorrectFeedback) return;
+    if (run.monsterHp > 0) {
+      advanceTimer.current = window.setTimeout(() => {
+        handleNextQuestion();
+      }, CORRECT_FEEDBACK_AUTO_ADVANCE_MS);
+    } else if (!isFinalEncounter) {
+      advanceTimer.current = window.setTimeout(() => {
+        handleContinue();
+      }, CORRECT_FEEDBACK_AUTO_ADVANCE_MS);
+    }
+    return () => {
+      if (advanceTimer.current !== null) {
+        window.clearTimeout(advanceTimer.current);
+        advanceTimer.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCorrectFeedback]);
+
   const heroHpPercent = Math.max(0, run.heroHp);
   const monsterHpPercent = Math.max(0, run.monsterHp);
 
@@ -442,6 +499,7 @@ export default function AdventureMode({
             }}
             onBossWarning={setBossWarning}
             onBossAttack={handleBossAttack}
+            onRequestRestart={() => setRestartConfirm("full")}
           />
         )}
 
@@ -518,7 +576,7 @@ export default function AdventureMode({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowRestartConfirm(true)}
+                      onClick={() => setRestartConfirm("encounter")}
                       className="rounded-xl border-2 border-slate-300 bg-white px-3 py-1 text-xs font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-100 active:scale-95"
                     >
                       🔄 Ulang
@@ -630,32 +688,44 @@ export default function AdventureMode({
           </div>
         )}
 
-        {showRestartConfirm && (
+        {restartConfirm && (
           <div
             className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
-            aria-label="Konfirmasi ulang petualangan"
+            aria-label={
+              restartConfirm === "full"
+                ? "Konfirmasi ulang petualangan"
+                : "Konfirmasi ulang monster"
+            }
           >
             <section className="w-full max-w-sm rounded-3xl border-4 border-amber-200 bg-gradient-to-b from-amber-50 to-white p-6 text-center shadow-2xl">
               <div className="text-5xl">🔄</div>
               <h2 className="mt-2 text-xl font-black text-slate-900">
-                Ulang dari awal?
+                {restartConfirm === "full"
+                  ? "Ulang petualangan dari awal?"
+                  : "Ulang lawan monster ini?"}
               </h2>
               <p className="mt-2 text-sm font-semibold text-slate-500">
-                Skor dan HP yang sudah kamu kumpulkan akan direset.
+                {restartConfirm === "full"
+                  ? "Semua progres, skor, dan HP akan kembali seperti awal petualangan."
+                  : "Soal dan HP monster ini akan diulang dari awal, dan HP petualang kembali seperti saat mulai melawan monster ini."}
               </p>
               <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
                 <button
                   type="button"
-                  onClick={() => window.location.reload()}
+                  onClick={
+                    restartConfirm === "full"
+                      ? () => window.location.reload()
+                      : handleRetryEncounter
+                  }
                   className="flex-1 rounded-full bg-rose-600 px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-rose-700 active:scale-95"
                 >
                   Ya, Ulang
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowRestartConfirm(false)}
+                  onClick={() => setRestartConfirm(null)}
                   className="flex-1 rounded-full border-2 border-slate-300 bg-white px-6 py-3 text-sm font-black text-slate-600 shadow-sm transition hover:bg-slate-100 active:scale-95"
                 >
                   Batal
@@ -677,7 +747,7 @@ export default function AdventureMode({
               aria-modal="true"
               aria-label="Hasil jawaban"
             >
-              <section className="w-full max-w-md rounded-3xl border-4 border-amber-200 bg-white p-6 text-center shadow-2xl">
+              <section className="battle-combo-pop w-full max-w-md rounded-3xl border-4 border-amber-200 bg-white p-6 text-center shadow-2xl">
                 <div className="text-5xl">
                   {run.monsterHp <= 0 ? "🏆" : "🎉"}
                 </div>
@@ -694,24 +764,25 @@ export default function AdventureMode({
                   </div>
                 )}
 
+                {/* Picking the answer was the only decision needed here, so the
+                    popup advances on its own — except the final boss, which
+                    gets a deliberate tap to close out the adventure. */}
                 {run.monsterHp > 0 ? (
-                  <button
-                    type="button"
-                    onClick={handleNextQuestion}
-                    className="mt-5 w-full rounded-full bg-violet-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-violet-700"
-                  >
-                    Soal Berikutnya →
-                  </button>
-                ) : (
+                  <p className="mt-5 text-sm font-bold text-violet-500">
+                    ➡️ Lanjut ke soal berikutnya…
+                  </p>
+                ) : isFinalEncounter ? (
                   <button
                     type="button"
                     onClick={handleContinue}
                     className="mt-5 w-full rounded-full bg-emerald-600 px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-emerald-700"
                   >
-                    {isFinalEncounter
-                      ? "Selesaikan Petualangan 🏆"
-                      : "Lanjutkan Perjalanan →"}
+                    Selesaikan Petualangan 🏆
                   </button>
+                ) : (
+                  <p className="mt-5 text-sm font-bold text-emerald-600">
+                    ➡️ Melanjutkan perjalanan…
+                  </p>
                 )}
               </section>
             </div>

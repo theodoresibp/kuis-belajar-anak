@@ -278,15 +278,42 @@ body {
 }
 
 @media (orientation: landscape) and (min-height: 600px) {
+  /* Tablets land here too (e.g. an 11" tablet in landscape easily clears
+     600px of CSS height) and have plenty of spare width — put the stage
+     and question side by side instead of splitting the dialog's height
+     between them, because the question card was being capped to ~half
+     the dialog height and its bottom (options/feedback) got clipped by
+     overflow:hidden. */
   .adventure-battle-dialog {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
     max-height: 96dvh;
     gap: 0.5rem;
     padding: 0.85rem;
   }
 
-  .adventure-battle-side,
+  .adventure-battle-side {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .adventure-battle-question {
-    flex: 1 1 0;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* Tablet/PC has width to spare: name and HP each get their own line,
+     same as phone landscape, instead of squeezing both onto one row. */
+  .battle-hp-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
+
+  .battle-hp-value {
+    align-self: flex-end;
   }
 
   .adventure-battle-stage {
@@ -310,14 +337,48 @@ body {
     font-size: 0.65rem;
   }
 
+  /* Tablet/PC question card has a full-height column to itself now, so the
+     illustration can be much bigger than the 14vh it got when the dialog
+     was split in half — set both height and max-height since the base
+     QuestionCard image carries a fixed Tailwind height (h-48/h-56) that
+     would otherwise win once it's smaller than this rule. */
   .adventure-question-card img {
-    max-height: 14vh;
+    height: 30vh;
+    max-height: 30vh;
     object-fit: contain;
   }
 
   .adventure-battle-stage img {
     width: clamp(5rem, 11vh, 7.5rem);
     height: clamp(5rem, 11vh, 7.5rem);
+  }
+
+  /* Tablet/PC has thumb room (and mouse precision) to spare — the
+     direction/jump buttons can grow well past the phone `sm:` size
+     without crowding the screen, which makes them easier to hit on a
+     big touchscreen. Pulled in a bit further from the bezel too, since
+     the extreme corner is an awkward reach on an 11" tablet. */
+  .adventure-controls {
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  .adventure-control-dpad {
+    border-width: 3px;
+  }
+
+  .adventure-control-btn {
+    height: 5.75rem;
+    width: 5.75rem;
+    font-size: 2.75rem;
+  }
+
+  .adventure-jump-btn {
+    height: 6.75rem;
+    width: 6.75rem;
+    font-size: 3rem;
+    border-width: 4px;
   }
 }
 
@@ -495,7 +556,7 @@ body {
 .material-carousel{display:flex;flex:1 1 auto;min-height:0;width:100%;gap:1rem;overflow-x:auto;overflow-y:hidden;padding:.25rem .15rem .75rem;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:.15rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x pan-y}
 .material-slide-track{display:contents}
 .material-slide{flex:0 0 min(82vw,52rem);min-width:0;max-height:100%;overflow-y:auto;overscroll-behavior-y:contain;padding:.5rem .75rem 1rem;border-radius:1rem;background:rgb(248 250 252 / .72);scroll-snap-align:start;-webkit-overflow-scrolling:touch}
-@media(orientation:landscape){.material-shell{max-height:calc(100dvh - 7.5rem)}.material-slide{flex-basis:min(76vw,58rem)}}
+@media(orientation:landscape){.material-slide{flex-basis:min(76vw,58rem)}}
 
 
 /* App-wide landscape viewport: page chrome never scrolls vertically. */

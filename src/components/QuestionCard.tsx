@@ -49,7 +49,9 @@ export default function QuestionCard({
   const resolved = status !== "active";
 
   return (
-    <div className={`${compactLayout ? "adventure-question-card" : ""} w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white`}>
+    <div
+      className={`${compactLayout ? "adventure-question-card" : ""} w-full max-w-2xl rounded-3xl bg-white/95 shadow-xl p-6 sm:p-8 border-4 border-white`}
+    >
       <div className="flex items-center mb-4">
         <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 text-violet-700 font-bold px-4 py-1 text-sm">
           Soal {questionNumber} / {totalQuestions}
@@ -128,7 +130,7 @@ export default function QuestionCard({
       </div>
 
       {!resolved && triedOptionIds.length > 0 && (
-        <div className="mt-5 rounded-2xl bg-red-50 border-2 border-red-200 px-4 py-3 text-sm sm:text-base text-red-800 font-semibold">
+        <div className="mt-2 rounded-2xl bg-red-50 border-2 border-red-200 px-2 py-2 text-sm sm:text-base text-red-800 font-semibold">
           {lastWrongWasBlocked
             ? "🛡️ Perisai berhasil melindungi petualang! Coba pilihan lain ya!"
             : "❌ Belum tepat, coba pilihan lain ya! HP petualang berkurang."}

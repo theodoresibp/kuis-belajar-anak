@@ -35,6 +35,7 @@ interface Props {
   onPickup: (kind: "heart" | "shield") => void;
   onBossWarning: (active: boolean) => void;
   onBossAttack: () => void;
+  onRequestRestart: () => void;
 }
 
 const CONTROL_LABELS: Record<VirtualDirection, string> = {
@@ -67,6 +68,7 @@ export default function AdventureGameCanvas({
   onPickup,
   onBossWarning,
   onBossAttack,
+  onRequestRestart,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<import("phaser").Game | null>(null);
@@ -87,7 +89,14 @@ export default function AdventureGameCanvas({
     onPickupRef.current = onPickup;
     onBossWarningRef.current = onBossWarning;
     onBossAttackRef.current = onBossAttack;
-  }, [onEncounter, onAdventureComplete, onHazard, onPickup, onBossWarning, onBossAttack]);
+  }, [
+    onEncounter,
+    onAdventureComplete,
+    onHazard,
+    onPickup,
+    onBossWarning,
+    onBossAttack,
+  ]);
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -115,8 +124,16 @@ export default function AdventureGameCanvas({
           scale: {
             mode: Phaser.Scale.RESIZE,
             autoCenter: Phaser.Scale.CENTER_BOTH,
+            autoRound: true,
             width: 960,
             height: 540,
+            // Large-screen tablets (e.g. Xiaomi Pad 5) report a landscape
+            // viewport several times the pixel area of a phone — RESIZE
+            // mode would render the full Phaser scene at that resolution
+            // every frame. Capping it keeps the draw cost phone-like while
+            // the CSS layer (`width/height: 100%` on the canvas) still
+            // stretches the smaller buffer to fill the screen.
+            max: { width: 1100, height: 650 },
           },
           physics: {
             default: "arcade",
@@ -128,6 +145,7 @@ export default function AdventureGameCanvas({
           render: {
             antialias: true,
             pixelArt: false,
+            powerPreference: "high-performance",
           },
           scene: [new AdventureScene(plan, heroId, difficulty)],
         });
@@ -143,7 +161,8 @@ export default function AdventureGameCanvas({
           onAdventureCompleteRef.current();
         };
         const handleHazard = () => onHazardRef.current();
-        const handlePickup = (kind: "heart" | "shield") => onPickupRef.current(kind);
+        const handlePickup = (kind: "heart" | "shield") =>
+          onPickupRef.current(kind);
         const handleBossWarning = () => onBossWarningRef.current(true);
         const handleBossWarningClear = () => onBossWarningRef.current(false);
         const handleBossAttack = () => {
@@ -248,8 +267,14 @@ export default function AdventureGameCanvas({
   };
 
   return (
-    <div className="adventure-game-surface h-full w-full" onContextMenu={(event) => event.preventDefault()}>
-      <div className="relative isolate h-full min-h-0 w-full touch-none select-none overflow-hidden bg-sky-200" aria-label="Game petualangan Enchanted Forest">
+    <div
+      className="adventure-game-surface h-full w-full"
+      onContextMenu={(event) => event.preventDefault()}
+    >
+      <div
+        className="relative isolate h-full min-h-0 w-full touch-none select-none overflow-hidden bg-sky-200"
+        aria-label="Game petualangan Enchanted Forest"
+      >
         <div ref={hostRef} className="adventure-game-host absolute inset-0" />
 
         {/* HUD ringkas di dalam scene */}
@@ -257,52 +282,75 @@ export default function AdventureGameCanvas({
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-white/60 bg-slate-950/55 px-3 py-2 text-white shadow-lg backdrop-blur-sm sm:gap-4 sm:px-4">
             <div className="min-w-[112px] flex-1">
               <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-extrabold sm:text-xs">
-                <span>❤️ HP Petualang</span><span>{heroHp}/100</span>
+                <span>❤️ HP Petualang</span>
+                <span>{heroHp}/100</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-white/30 sm:h-2.5">
-                <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${Math.max(0, Math.min(100, heroHp))}%` }} />
+                <div
+                  className="h-full rounded-full bg-emerald-400 transition-all"
+                  style={{ width: `${Math.max(0, Math.min(100, heroHp))}%` }}
+                />
               </div>
-              <div className="mt-1 text-[9px] font-semibold text-white/85 sm:text-[10px]">🛡️ {shieldCharges} perisai</div>
+              <div className="mt-1 text-[9px] font-semibold text-white/85 sm:text-[10px]">
+                🛡️ {shieldCharges} perisai
+              </div>
             </div>
             <div className="px-1 text-center">
-              <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">BENAR</div>
-              <div className="text-base font-black leading-tight sm:text-xl">⭐ {score}/{totalQuestions}</div>
+              <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">
+                BENAR
+              </div>
+              <div className="text-base font-black leading-tight sm:text-xl">
+                ⭐ {score}/{totalQuestions}
+              </div>
             </div>
             <div className="px-1 text-center">
-              <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">MONSTER</div>
-              <div className="text-base font-black leading-tight sm:text-xl">👾 {monsterProgress}/{plan.length}</div>
+              <div className="text-[9px] font-bold text-white/80 sm:text-[10px]">
+                MONSTER
+              </div>
+              <div className="text-base font-black leading-tight sm:text-xl">
+                👾 {monsterProgress}/{plan.length}
+              </div>
             </div>
           </div>
-          <div className="pointer-events-auto flex shrink-0 items-center gap-2">
+
+          <div className="pointer-events-auto flex shrink-0 flex-col items-stretch gap-2">
             <button
               type="button"
-              aria-label={isFullscreen ? "Keluar dari fullscreen" : "Masuk fullscreen"}
-              aria-pressed={isFullscreen}
-              onClick={() => void onToggleFullscreen()}
-              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-lg font-black text-white shadow-lg backdrop-blur-sm"
+              aria-pressed={soundEnabled}
+              aria-label={
+                soundEnabled ? "Matikan efek suara" : "Nyalakan efek suara"
+              }
+              disabled={!ready}
+              onClick={() => {
+                const nextEnabled = !soundEnabled;
+                setSoundEnabled(nextEnabled);
+                gameRef.current?.events.emit("toggle-sound", nextEnabled);
+              }}
+              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-sm sm:px-3 sm:text-sm disabled:opacity-50"
             >
-              {isFullscreen ? "⤡" : "⤢"}
+              {soundEnabled ? "🔊" : "🔇"}
+            </button>
+            <button
+              type="button"
+              aria-label="Ulang petualangan"
+              disabled={!ready}
+              onClick={onRequestRestart}
+              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-sm sm:px-3 sm:text-sm disabled:opacity-50"
+            >
+              🔄
             </button>
           </div>
-          <button
-            type="button"
-            aria-pressed={soundEnabled}
-            aria-label={soundEnabled ? "Matikan efek suara" : "Nyalakan efek suara"}
-            disabled={!ready}
-            onClick={() => {
-              const nextEnabled = !soundEnabled;
-              setSoundEnabled(nextEnabled);
-              gameRef.current?.events.emit("toggle-sound", nextEnabled);
-            }}
-            className="pointer-events-auto shrink-0 rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-sm sm:px-3 sm:text-sm disabled:opacity-50"
-          >
-            {soundEnabled ? "🔊" : "🔇"}
-          </button>
         </div>
 
         {/* Kontrol sentuh: arah di kiri, lompat di kanan */}
-        <div className="pointer-events-none adventure-controls absolute inset-x-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5" aria-label="Kontrol permainan">
-          <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
+        <div
+          className="pointer-events-none adventure-controls absolute inset-x-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5"
+          aria-label="Kontrol permainan"
+        >
+          {/* One fused rocker pad instead of two separate squares — a wider
+              shape is easier to find by feel without looking down, and
+              there's no dead zone between the two halves. */}
+          <div className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/85 shadow-xl backdrop-blur-sm">
             {(["left", "right"] as const).map((direction) => (
               <button
                 key={direction}
@@ -313,7 +361,7 @@ export default function AdventureGameCanvas({
                 onPointerUp={handlePointerRelease}
                 onPointerCancel={handlePointerRelease}
                 onLostPointerCapture={handlePointerRelease}
-                className="flex h-14 w-14 touch-none select-none items-center justify-center rounded-2xl border-2 border-white/70 bg-violet-700/85 text-3xl font-black text-white shadow-xl backdrop-blur-sm active:scale-95 active:bg-violet-900 disabled:opacity-50 sm:h-[72px] sm:w-[72px] sm:text-4xl"
+                className="adventure-control-btn flex h-14 w-14 touch-none select-none items-center justify-center text-3xl font-black text-white active:bg-violet-900 disabled:opacity-50 sm:h-[72px] sm:w-[72px] sm:text-4xl"
               >
                 {CONTROL_SYMBOLS[direction]}
               </button>
@@ -327,14 +375,22 @@ export default function AdventureGameCanvas({
             onPointerUp={handlePointerRelease}
             onPointerCancel={handlePointerRelease}
             onLostPointerCapture={handlePointerRelease}
-            className="pointer-events-auto flex h-[68px] w-[68px] touch-none select-none items-center justify-center rounded-full border-[3px] border-white/80 bg-amber-500/90 text-3xl font-black text-white shadow-xl backdrop-blur-sm active:scale-95 active:bg-amber-600 disabled:opacity-50 sm:h-[84px] sm:w-[84px] sm:text-4xl"
+            className="adventure-jump-btn pointer-events-auto flex h-[68px] w-[68px] touch-none select-none items-center justify-center rounded-full border-[3px] border-white/80 bg-amber-500/90 text-3xl font-black text-white shadow-xl backdrop-blur-sm active:scale-95 active:bg-amber-600 disabled:opacity-50 sm:h-[84px] sm:w-[84px] sm:text-4xl"
           >
             ↑
           </button>
         </div>
 
-        {error && <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/70 p-4 text-center text-sm font-bold text-white">Game gagal dimuat. Silakan refresh halaman.</div>}
-        {!ready && !error && <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 text-sm font-bold text-white">Menyiapkan dunia petualangan...</div>}
+        {error && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/70 p-4 text-center text-sm font-bold text-white">
+            Game gagal dimuat. Silakan refresh halaman.
+          </div>
+        )}
+        {!ready && !error && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/35 text-sm font-bold text-white">
+            Menyiapkan dunia petualangan...
+          </div>
+        )}
       </div>
     </div>
   );

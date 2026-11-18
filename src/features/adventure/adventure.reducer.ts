@@ -8,6 +8,10 @@ export type AdventureRunStatus =
 
 export interface AdventureRunState {
   heroHp: number;
+  /** Hero HP snapshot taken when the current encounter began — lets
+   *  RETRY_ENCOUNTER put the hero back to where they stood before this
+   *  particular fight, without wiping damage taken in earlier encounters. */
+  heroHpAtEncounterStart: number;
   score: number;
   currentQuestionIndex: number;
   encounterIndex: number;
@@ -26,6 +30,7 @@ export type AdventureRunAction =
   | { type: "CORRECT_ANSWER"; damage: number }
   | { type: "NEXT_QUESTION" }
   | { type: "NEXT_ENCOUNTER"; monsterMaxHp?: number }
+  | { type: "RETRY_ENCOUNTER"; questionStart: number }
   | { type: "VICTORY" }
   | { type: "DEFEAT" }
   | { type: "HAZARD" }
@@ -38,6 +43,7 @@ export function createInitialAdventureRunState(
 ): AdventureRunState {
   return {
     heroHp: BATTLE_CONFIG.initialHeroHp,
+    heroHpAtEncounterStart: BATTLE_CONFIG.initialHeroHp,
     score: 0,
     currentQuestionIndex: 0,
     encounterIndex: 0,
@@ -55,7 +61,11 @@ export function adventureReducer(
   switch (action.type) {
     case "START_ENCOUNTER":
       if (state.status === "victory" || state.status === "defeat") return state;
-      return { ...state, status: "encounter" };
+      return {
+        ...state,
+        status: "encounter",
+        heroHpAtEncounterStart: state.heroHp,
+      };
 
     case "WRONG_ANSWER": {
       if (state.status !== "encounter") return state;
@@ -92,6 +102,26 @@ export function adventureReducer(
         monsterHp: monsterMaxHp,
         monsterMaxHp,
         status: "exploring",
+      };
+    }
+
+    // Retry the current monster only: full monster HP, hero HP back to
+    // what it was when this encounter started (not a full heal — damage
+    // from earlier encounters still counts), and back to this encounter's
+    // first question. Correct answers banked during this attempt are
+    // undone so they aren't double-counted on the redo.
+    case "RETRY_ENCOUNTER": {
+      if (state.status !== "encounter") return state;
+      const correctSoFar = Math.max(
+        0,
+        state.currentQuestionIndex - action.questionStart,
+      );
+      return {
+        ...state,
+        heroHp: state.heroHpAtEncounterStart,
+        monsterHp: state.monsterMaxHp,
+        currentQuestionIndex: action.questionStart,
+        score: Math.max(0, state.score - correctSoFar),
       };
     }
 
