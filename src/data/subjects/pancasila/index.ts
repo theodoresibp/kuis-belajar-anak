@@ -2,6 +2,7 @@ import type { Subject } from "@/types/quiz";
 import bab1 from "./bab-1-garuda-pancasila-lambang-negaraku";
 import bab2 from "./bab-2-aturan-di-rumah";
 import pstsBab1 from "./psts-bab-1-garuda-pancasila-lambang-negaraku";
+import psasBab2 from "./psas-bab-2-aturan-di-rumah";
 
 const subject: Subject = {
   id: "pancasila",
@@ -10,7 +11,7 @@ const subject: Subject = {
   description: "Lambang negara, sila-sila Pancasila, dan aturan di rumah",
   emoji: "🦅",
   gradient: "from-red-500 via-rose-400 to-amber-300",
-  chapters: [bab1, bab2, pstsBab1],
+  chapters: [bab1, bab2, pstsBab1, psasBab2],
 };
 
 export default subject;
