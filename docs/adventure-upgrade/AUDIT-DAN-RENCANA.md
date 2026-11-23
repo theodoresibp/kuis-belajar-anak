@@ -310,3 +310,11 @@ pada foto yang dikirim pengguna (nama dari pengguna: **Monster Mama**).
   67/67 test (termasuk 5 test zona baru), build produksi OK, dan QA
   Playwright memperlihatkan ketiga zona + popup "BOSS FINAL —
   MONSTER MAMA" HP 200/200. Musik battle-boss tidak berubah.
+- **Muka asli (2026-11-23, izin pengguna)**: keempat pose Monster
+  Mama kini memakai wajah ASLI dari foto pengguna — kepala foto
+  dipotong di bawah dagu, diskalakan mengikuti ukuran wajah chibi,
+  diberi bingkai stiker putih dan mahkota gambar aslinya
+  (`~/workspace/apply_real_face.py`, sumber chibi tersimpan sebagai
+  cadangan). Badan, gaun, dan tongkat tetap artwork chibi. Atas
+  persetujuan pengguna pula, pekerjaan ini langsung di-merge dan
+  di-push ke `main`.
