@@ -19,6 +19,7 @@ import {
   type EnvironmentLayout,
 } from "./EnvironmentFactory";
 import { getDifficulty, type DifficultySettings } from "@/features/adventure/difficulty";
+import { zoneIdAtX } from "@/features/adventure/zones";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -502,6 +503,7 @@ export default class AdventureScene extends Phaser.Scene {
       worldHeight: this.layout.worldHeight,
       groundTopY: this.layout.groundTopY,
       groundSegments: this.layout.groundSegments,
+      zones: this.layout.zones,
       avoidX: [
         { x: 120, radius: 90 }, // player spawn
         ...this.layout.encounters.map((spot) => ({ x: spot.x, radius: 120 })),
@@ -522,7 +524,18 @@ export default class AdventureScene extends Phaser.Scene {
     // centre y 570 (top 556); platform rows from level-layout.ts keep
     // the 445 low row's 9px head clearance under the platforms.
     this.layout.groundSegments.forEach((segment) => {
-      this.addPlatform(segment.x, 570, segment.width, "ground");
+      // Split at zone boundaries so each stretch of ground wears its
+      // own location's surface (grass / sand / castle stone). Physics
+      // is unaffected — adjacent static bodies behave as one floor.
+      const cuts = this.layout.zones
+        .map((zone) => zone.x1)
+        .filter((x) => x > segment.x && x < segment.x + segment.width)
+        .sort((a, b) => a - b);
+      let start = segment.x;
+      for (const cut of [...cuts, segment.x + segment.width]) {
+        this.addPlatform(start, 570, cut - start, "ground");
+        start = cut;
+      }
     });
     this.layout.platforms.forEach((platform) => {
       this.addPlatform(platform.x, platform.y, platform.width, platform.kind);
@@ -564,11 +577,12 @@ export default class AdventureScene extends Phaser.Scene {
     }
 
     const physicsTopY = y - 14;
+    const zoneId = zoneIdAtX(this.layout.zones, x + width / 2);
     if (kind === "ground") {
-      this.environment.createGroundVisual({ x, width }, physicsTopY);
+      this.environment.createGroundVisual({ x, width }, physicsTopY, zoneId);
     } else {
       this.environment.createPlatformVisual(x + width / 2, physicsTopY, width, kind);
-      this.environment.decoratePlatformTop(x + width / 2, physicsTopY, width);
+      this.environment.decoratePlatformTop(x + width / 2, physicsTopY, width, zoneId);
     }
   }
 

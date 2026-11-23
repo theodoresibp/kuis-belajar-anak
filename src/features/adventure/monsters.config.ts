@@ -186,19 +186,38 @@ export const ADVENTURE_MONSTERS: MonsterDefinition[] = [
     assets: gamificationPoses("purple-dragon"),
     abilities: ["timed-breath-attack"],
   },
-
-  /* ---------------- Final boss ---------------- */
   {
+    // The ancient tree guardian used to be the final boss; it now
+    // guards the middle of long runs as a mini-boss, since the castle
+    // zone has a new final boss (below).
     id: "tree-guardian",
     name: "Penjaga Pohon Purba",
     emoji: "🌳",
-    tier: "final-boss",
-    maxHp: 200,
-    attackDamage: 15,
+    tier: "mini-boss",
+    maxHp: 150,
+    attackDamage: 12,
     displaySize: { width: 190, height: 176 },
     assetStatus: "ready",
     assets: adventurePoses("tree-guardian"),
     abilities: ["timed-root-attack", "branch-slam"],
+  },
+
+  /* ---------------- Final boss ---------------- */
+  {
+    // The one and only final boss, waiting at the castle gate: a
+    // grumpy-pouty queen whose face is based on a photo the user
+    // supplied (2026-11-23). Sole member of the final-boss pool, so the
+    // encounter generator always fields her last.
+    id: "monster-mama",
+    name: "Monster Mama",
+    emoji: "👑",
+    tier: "final-boss",
+    maxHp: 200,
+    attackDamage: 15,
+    displaySize: { width: 196, height: 184 },
+    assetStatus: "ready",
+    assets: adventurePoses("monster-mama"),
+    abilities: ["timed-scepter-attack", "royal-scold"],
   },
 ];
 

@@ -272,3 +272,41 @@ persetujuan pengguna.
   mute yang sama dengan SFX. `sound.ts` ditambah suara serangan
   berlapis noise+sweep (heroAttack/monsterAttack/bossAttack) dan
   AdventureMode kini memainkannya (sebelumnya battle adventure senyap).
+
+### Zona lokasi baru + boss final baru (2026-11-23)
+
+Permintaan pengguna: dunia Adventure yang tadinya hanya Hutan Ajaib
+ditambah lokasi baru, dan boss final dibuat berdasarkan wajah orang
+pada foto yang dikirim pengguna (nama dari pengguna: **Monster Mama**).
+
+- **Tiga zona lokasi** (`src/features/adventure/zones.ts`, murni &
+  deterministik): 🌲 Hutan Ajaib → 🏖️ Pantai Pelangi → 🏰 Gerbang
+  Kastil Senja. Encounter terakhir (boss final) selalu di zona kastil;
+  sisanya dibagi hutan (paruh pertama) dan pantai (paruh kedua). Run
+  1 encounter = seluruhnya zona kastil. Batas zona di tengah antara dua
+  posisi monster, sehingga setiap monster berdiri jelas di lokasinya.
+- **Level layout** membawa `zones`; platform mengikuti lokasi (pantai
+  = kayu, kastil = batu, hutan = bergantian seperti sebelumnya).
+- **EnvironmentFactory** kini sadar zona: langit gradien per zona
+  (biru hutan → krem pantai → ungu-oranye senja kastil) dengan
+  peleburan warna 380px di setiap batas agar tidak terpotong tajam;
+  strip parallax, tile tanah (rumput/pasir/batu kastil), flora (pohon/
+  palem/pilar+banner) dan dekor (jamur dll./kerang+bintang laut+
+  kepiting berjalan/obor+reruntuhan+kristal) per zona. Aset zona yang
+  gagal dimuat jatuh kembali ke aset hutan. Segmen tanah di scene
+  dipotong tepat di batas zona; fisika tidak berubah.
+- **Monster Mama** 👑 (`monster-mama`, final-boss, HP 200, damage 15,
+  tampil 196×184): chibi bermahkota, rambut hitam beruban sebahu dan
+  ekspresi manyun menggerutu persis foto referensi, gaun magenta.
+  Empat pose (idle bersedekap manyun, attack mengangkat tongkat
+  bintang, hurt pusing, defeat duduk kelelahan) dari satu sheet
+  berkunci magenta, dipotong `~/workspace/cut_biomes.py`. Ia satu-
+  satunya anggota pool final-boss, jadi generator selalu
+  menurunkannya terakhir; popup battle memakai artwork-nya sendiri
+  (arena + dialog tetap meminjam counterpart kastil Naga Ungu).
+- **Penjaga Pohon Purba** turun pangkat menjadi mini-boss (HP 150,
+  damage 12) agar tetap muncul di run panjang.
+- Verifikasi: lint bersih (3 warning lama di file tak tersentuh),
+  67/67 test (termasuk 5 test zona baru), build produksi OK, dan QA
+  Playwright memperlihatkan ketiga zona + popup "BOSS FINAL —
+  MONSTER MAMA" HP 200/200. Musik battle-boss tidak berubah.

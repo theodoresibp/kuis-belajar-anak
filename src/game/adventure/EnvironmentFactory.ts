@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import type { ZoneId, ZoneRange } from "../../features/adventure/zones";
 
 /**
  * EnvironmentFactory — builds the Enchanted Forest world visuals for
@@ -34,34 +35,25 @@ export const ENVIRONMENT_ASSETS: ReadonlyArray<{ key: string; path: string }> = 
   "decor-rock",
   "decor-grass-tuft",
   "decor-butterfly",
+  // Pantai Pelangi (beach zone)
+  "pantai-back",
+  "pantai-mid",
+  "pantai-palm-a",
+  "pantai-palm-b",
+  "pantai-ground",
+  "pantai-decor-shell",
+  "pantai-decor-star",
+  "pantai-decor-crab",
+  // Gerbang Kastil Senja (castle zone)
+  "kastil-back",
+  "kastil-mid",
+  "kastil-pillar",
+  "kastil-banner",
+  "kastil-ground",
+  "kastil-decor-torch",
+  "kastil-decor-rubble",
+  "kastil-decor-crystal",
 ].map((key) => ({ key, path: `/assets/adventure/environment/${key}.webp` }));
-
-const TREE_KEYS = [
-  "tree-tall",
-  "tree-round",
-  "tree-roots",
-  "tree-face",
-  "tree-mushroom",
-  "tree-young",
-] as const;
-
-/** Target on-screen height range per tree variant. */
-const TREE_HEIGHTS: Record<(typeof TREE_KEYS)[number], [number, number]> = {
-  "tree-tall": [320, 390],
-  "tree-round": [260, 320],
-  "tree-roots": [270, 330],
-  "tree-face": [280, 340],
-  "tree-mushroom": [280, 340],
-  "tree-young": [120, 170],
-};
-
-const GROUND_DECOR_KEYS = [
-  "decor-bush",
-  "decor-flowers",
-  "decor-mushroom-glow",
-  "decor-rock",
-  "decor-grass-tuft",
-] as const;
 
 export interface GroundSegment {
   x: number;
@@ -74,8 +66,78 @@ export interface EnvironmentLayout {
   /** Top surface Y of the main ground (where trees/decor stand). */
   groundTopY: number;
   groundSegments: GroundSegment[];
+  /** Location zones across the world (forest → beach → castle). */
+  zones: ZoneRange[];
   /** X positions that decorations must keep clear of (monsters, hazards, pickups, spawn). */
   avoidX: Array<{ x: number; radius: number }>;
+}
+
+/** Sky gradient per zone. */
+const ZONE_SKY: Record<ZoneId, { top: number; bottom: number }> = {
+  hutan: { top: 0x38bdf8, bottom: 0xd9f99d },
+  pantai: { top: 0x4fc3f7, bottom: 0xfef3c7 },
+  kastil: { top: 0x5b21b6, bottom: 0xfb923c },
+};
+
+/** Tall flora per zone (trees in the forest, palms on the beach,
+ *  pillars and banners at the castle gate). */
+const ZONE_FLORA: Record<ZoneId, Array<{ key: string; heights: [number, number] }>> = {
+  hutan: [
+    { key: "tree-tall", heights: [320, 390] },
+    { key: "tree-round", heights: [260, 320] },
+    { key: "tree-roots", heights: [270, 330] },
+    { key: "tree-face", heights: [280, 340] },
+    { key: "tree-mushroom", heights: [280, 340] },
+    { key: "tree-young", heights: [120, 170] },
+  ],
+  pantai: [
+    { key: "pantai-palm-a", heights: [250, 330] },
+    { key: "pantai-palm-b", heights: [200, 270] },
+  ],
+  kastil: [
+    { key: "kastil-pillar", heights: [230, 300] },
+    { key: "kastil-banner", heights: [230, 300] },
+  ],
+};
+
+type DecorBehavior = "sway" | "pulse" | "scuttle";
+
+/** Ground decorations per zone. */
+const ZONE_DECOR: Record<
+  ZoneId,
+  Array<{ key: string; heights: [number, number]; behavior?: DecorBehavior }>
+> = {
+  hutan: [
+    { key: "decor-bush", heights: [40, 54] },
+    { key: "decor-flowers", heights: [26, 42], behavior: "sway" },
+    { key: "decor-mushroom-glow", heights: [26, 42], behavior: "pulse" },
+    { key: "decor-rock", heights: [26, 42] },
+    { key: "decor-grass-tuft", heights: [26, 42], behavior: "sway" },
+  ],
+  pantai: [
+    { key: "pantai-decor-shell", heights: [24, 36] },
+    { key: "pantai-decor-star", heights: [26, 40] },
+    { key: "pantai-decor-crab", heights: [26, 38], behavior: "scuttle" },
+  ],
+  kastil: [
+    { key: "kastil-decor-torch", heights: [52, 68], behavior: "pulse" },
+    { key: "kastil-decor-rubble", heights: [24, 38] },
+    { key: "kastil-decor-crystal", heights: [34, 50], behavior: "pulse" },
+  ],
+};
+
+/** Ground tile texture per zone. */
+const ZONE_GROUND: Record<ZoneId, string> = {
+  hutan: "ground-tile",
+  pantai: "pantai-ground",
+  kastil: "kastil-ground",
+};
+
+/** Linear interpolation between two 0xRRGGBB colours. */
+function lerpColor(a: number, b: number, t: number): number {
+  const channel = (shift: number) =>
+    Math.round(((a >> shift) & 0xff) + (((b >> shift) & 0xff) - ((a >> shift) & 0xff)) * t);
+  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
 
 /** Small deterministic RNG (mulberry32) — stable world layout per seed. */
@@ -117,8 +179,8 @@ export class EnvironmentFactory {
   /* ---------------------------------------------------------------- */
 
   createBackdrop(layout: EnvironmentLayout): void {
-    const { worldWidth, worldHeight } = layout;
-    this.createSky(worldWidth, worldHeight);
+    const { worldWidth } = layout;
+    this.createSky(layout);
 
     if (!this.spritesReady) {
       this.createLegacyBackdrop(worldWidth);
@@ -130,44 +192,84 @@ export class EnvironmentFactory {
     // depths), so no pale sky slot shows through at the ground line — a
     // bright horizontal gap there visually severed every standing object
     // (hero, trees, rocks) from the ground and made them look floaty.
-    // Distant hills (parallax 0.2) — pale mountain strip.
-    this.placeParallaxStrip("hills-far", {
-      scrollFactor: 0.2,
-      bottomY: 578,
-      displayHeight: 175,
-      depth: -14,
-      worldWidth,
-    });
-    // Far forest (parallax 0.45) — small tree line.
-    this.placeParallaxStrip("forest-back", {
-      scrollFactor: 0.45,
-      bottomY: 582,
-      displayHeight: 92,
-      depth: -12,
-      worldWidth,
-    });
-    // Mid forest (parallax 0.65) — medium tree line.
-    this.placeParallaxStrip("forest-mid", {
-      scrollFactor: 0.65,
-      bottomY: 588,
-      displayHeight: 215,
-      depth: -11,
-      worldWidth,
-    });
+    // Each zone gets its own parallax strips over its own X range; if a
+    // zone's strip failed to load, the forest strips stand in so the
+    // world never has a hole in it.
+    for (const range of layout.zones) {
+      const span = { worldWidth, fromX: range.x0, toX: range.x1 };
+      if (range.id === "pantai") {
+        this.placeParallaxStrip(this.pickStrip("pantai-back", "hills-far"), {
+          scrollFactor: 0.2, bottomY: 580, displayHeight: 175, depth: -14, ...span,
+        });
+        this.placeParallaxStrip(this.pickStrip("pantai-mid", "forest-mid"), {
+          scrollFactor: 0.5, bottomY: 586, displayHeight: 195, depth: -11, ...span,
+        });
+      } else if (range.id === "kastil") {
+        this.placeParallaxStrip(this.pickStrip("kastil-back", "hills-far"), {
+          scrollFactor: 0.2, bottomY: 580, displayHeight: 250, depth: -14, ...span,
+        });
+        this.placeParallaxStrip(this.pickStrip("kastil-mid", "forest-mid"), {
+          scrollFactor: 0.5, bottomY: 586, displayHeight: 150, depth: -11, ...span,
+        });
+      } else {
+        // Distant hills (parallax 0.2) — pale mountain strip.
+        this.placeParallaxStrip("hills-far", {
+          scrollFactor: 0.2, bottomY: 578, displayHeight: 175, depth: -14, ...span,
+        });
+        // Far forest (parallax 0.45) — small tree line.
+        this.placeParallaxStrip("forest-back", {
+          scrollFactor: 0.45, bottomY: 582, displayHeight: 92, depth: -12, ...span,
+        });
+        // Mid forest (parallax 0.65) — medium tree line.
+        this.placeParallaxStrip("forest-mid", {
+          scrollFactor: 0.65, bottomY: 588, displayHeight: 215, depth: -11, ...span,
+        });
+      }
+    }
 
     this.createClouds(worldWidth);
   }
 
-  private createSky(worldWidth: number, worldHeight: number): void {
+  /** A zone's own strip texture when it loaded, else the forest one. */
+  private pickStrip(key: string, fallback: string): string {
+    return this.scene.textures.exists(key) ? key : fallback;
+  }
+
+  private createSky(layout: EnvironmentLayout): void {
     const sky = this.scene.add.graphics();
-    sky.fillGradientStyle(0x38bdf8, 0x38bdf8, 0xd9f99d, 0xd9f99d, 1);
-    sky.fillRect(0, 0, worldWidth, worldHeight);
-    sky.setScrollFactor(0);
+    for (const range of layout.zones) {
+      const colors = ZONE_SKY[range.id];
+      sky.fillGradientStyle(colors.top, colors.top, colors.bottom, colors.bottom, 1);
+      sky.fillRect(range.x0, 0, range.x1 - range.x0, layout.worldHeight);
+    }
+    // Soften each zone seam with a horizontal colour blend, so the sky
+    // melts from one location's mood into the next instead of cutting
+    // along a hard vertical line.
+    const BLEND = 380;
+    const STEPS = 38;
+    for (let i = 0; i < layout.zones.length - 1; i += 1) {
+      const from = ZONE_SKY[layout.zones[i].id];
+      const to = ZONE_SKY[layout.zones[i + 1].id];
+      const boundary = layout.zones[i].x1;
+      for (let s = 0; s < STEPS; s += 1) {
+        const t = s / (STEPS - 1);
+        const top = lerpColor(from.top, to.top, t);
+        const bottom = lerpColor(from.bottom, to.bottom, t);
+        sky.fillGradientStyle(top, top, bottom, bottom, 1);
+        sky.fillRect(
+          boundary - BLEND / 2 + (BLEND / STEPS) * s,
+          0,
+          BLEND / STEPS + 1,
+          layout.worldHeight,
+        );
+      }
+    }
     sky.setDepth(-20);
   }
 
   /** Repeats a transparent strip image across the span a parallax layer
-   *  needs: worldWidth * factor + one viewport, starting off-screen left. */
+   *  needs for one zone: the zone's camera range * factor + one
+   *  viewport, starting off-screen left. */
   private placeParallaxStrip(
     key: string,
     opts: {
@@ -176,16 +278,19 @@ export class EnvironmentFactory {
       displayHeight: number;
       depth: number;
       worldWidth: number;
+      fromX?: number;
+      toX?: number;
     },
   ): void {
     const frame = this.scene.textures.get(key).getSourceImage();
     const scale = opts.displayHeight / frame.height;
     const tileWidth = frame.width * scale;
-    const span = opts.worldWidth * opts.scrollFactor + 1100;
-    const count = Math.max(1, Math.ceil(span / tileWidth));
+    const startObj = (opts.fromX ?? 0) * opts.scrollFactor - 200;
+    const endObj = (opts.toX ?? opts.worldWidth) * opts.scrollFactor + 1100;
+    const count = Math.max(1, Math.ceil((endObj - startObj) / tileWidth));
 
     for (let i = 0; i < count; i += 1) {
-      const img = this.scene.add.image(i * tileWidth, opts.bottomY, key);
+      const img = this.scene.add.image(startObj + i * tileWidth, opts.bottomY, key);
       img.setOrigin(0, 1);
       img.setDisplaySize(tileWidth, opts.displayHeight);
       img.setScrollFactor(opts.scrollFactor);
@@ -231,16 +336,23 @@ export class EnvironmentFactory {
   /* Ground visuals & platforms                                        */
   /* ---------------------------------------------------------------- */
 
-  /** Grassy dirt surface for one ground segment (visual only — physics
-   *  bodies stay exactly where AdventureScene has always put them). */
-  createGroundVisual(segment: GroundSegment, groundTopY: number): void {
+  /** Ground surface for one ground segment (visual only — physics
+   *  bodies stay exactly where AdventureScene has always put them).
+   *  The tile texture follows the segment's zone: grass in the forest,
+   *  sand on the beach, castle stone at the gate. */
+  createGroundVisual(
+    segment: GroundSegment,
+    groundTopY: number,
+    zoneId: ZoneId = "hutan",
+  ): void {
     if (!this.spritesReady) return;
+    const key = this.pickStrip(ZONE_GROUND[zoneId], "ground-tile");
     const tile = this.scene.add.tileSprite(
       segment.x + segment.width / 2,
       groundTopY + 42,
       segment.width,
       84,
-      "ground-tile",
+      key,
     );
     tile.setTileScale(0.5, 0.5);
     tile.setDepth(2);
@@ -312,57 +424,84 @@ export class EnvironmentFactory {
 
   decorateWorld(layout: EnvironmentLayout): void {
     if (!this.spritesReady) return;
-    this.placeTrees(layout);
-    this.placeGroundDecor(layout);
-    this.placeForegroundTufts(layout);
+    // Flora and decor follow the zone each stretch of ground belongs
+    // to: trees in the forest, palms on the beach, pillars and banners
+    // at the castle gate.
+    for (const range of layout.zones) {
+      const segments = layout.groundSegments
+        .map((segment) => {
+          const x0 = Math.max(segment.x, range.x0);
+          const x1 = Math.min(segment.x + segment.width, range.x1);
+          return x1 - x0 > 80 ? { x: x0, width: x1 - x0 } : null;
+        })
+        .filter((s): s is GroundSegment => s !== null);
+      this.placeFlora(layout, segments, range.id);
+      this.placeGroundDecor(layout, segments, range.id);
+      if (range.id === "hutan") this.placeForegroundTufts(layout, segments);
+    }
   }
 
   private isClear(layout: EnvironmentLayout, x: number, extra = 0): boolean {
     return layout.avoidX.every(({ x: ax, radius }) => Math.abs(x - ax) > radius + extra);
   }
 
-  private placeTrees(layout: EnvironmentLayout): void {
-    for (const segment of layout.groundSegments) {
+  private placeFlora(
+    layout: EnvironmentLayout,
+    segments: GroundSegment[],
+    zoneId: ZoneId,
+  ): void {
+    const entries = ZONE_FLORA[zoneId].filter((entry) =>
+      this.scene.textures.exists(entry.key),
+    );
+    if (entries.length === 0) return;
+    for (const segment of segments) {
       let x = segment.x + 70 + this.rng() * 60;
       const end = segment.x + segment.width - 60;
       while (x < end) {
         if (this.isClear(layout, x, 30)) {
-          const key = TREE_KEYS[Math.floor(this.rng() * TREE_KEYS.length)];
-          const [minH, maxH] = TREE_HEIGHTS[key];
+          const entry = entries[Math.floor(this.rng() * entries.length)];
+          const [minH, maxH] = entry.heights;
           const height = minH + this.rng() * (maxH - minH);
-          const frame = this.scene.textures.get(key).getSourceImage();
-          // Base sunk 16px into the grass band (ground tiles at depth 2
-          // draw over the tree's depth 1) so roots/trunks grow out of the
-          // ground instead of ending on top of it.
-          const tree = this.scene.add.image(x, layout.groundTopY + 16, key);
-          tree.setOrigin(0.5, 1);
-          tree.setDisplaySize((frame.width / frame.height) * height, height);
-          tree.setDepth(1);
-          if (this.rng() > 0.5) tree.setFlipX(true);
+          const frame = this.scene.textures.get(entry.key).getSourceImage();
+          // Base sunk 16px into the ground band (ground tiles at depth
+          // 2 draw over the flora's depth 1) so trunks/pillars grow out
+          // of the ground instead of ending on top of it.
+          const plant = this.scene.add.image(x, layout.groundTopY + 16, entry.key);
+          plant.setOrigin(0.5, 1);
+          plant.setDisplaySize((frame.width / frame.height) * height, height);
+          plant.setDepth(1);
+          if (this.rng() > 0.5) plant.setFlipX(true);
         }
         x += 165 + this.rng() * 130;
       }
     }
   }
 
-  private placeGroundDecor(layout: EnvironmentLayout): void {
-    for (const segment of layout.groundSegments) {
+  private placeGroundDecor(
+    layout: EnvironmentLayout,
+    segments: GroundSegment[],
+    zoneId: ZoneId,
+  ): void {
+    const entries = ZONE_DECOR[zoneId].filter((entry) =>
+      this.scene.textures.exists(entry.key),
+    );
+    if (entries.length === 0) return;
+    for (const segment of segments) {
       let x = segment.x + 45 + this.rng() * 70;
       const end = segment.x + segment.width - 40;
       while (x < end) {
         if (this.isClear(layout, x, 6)) {
-          const key = GROUND_DECOR_KEYS[Math.floor(this.rng() * GROUND_DECOR_KEYS.length)];
-          const height =
-            key === "decor-bush" ? 40 + this.rng() * 14 : 26 + this.rng() * 16;
-          const frame = this.scene.textures.get(key).getSourceImage();
-          // Seated 12px into the grass band so rocks/mushrooms rest IN
-          // the ground surface rather than floating on its top edge.
-          const item = this.scene.add.image(x, layout.groundTopY + 12, key);
+          const entry = entries[Math.floor(this.rng() * entries.length)];
+          const [minH, maxH] = entry.heights;
+          const height = minH + this.rng() * (maxH - minH);
+          const frame = this.scene.textures.get(entry.key).getSourceImage();
+          // Seated 12px into the ground band so items rest IN the
+          // ground surface rather than floating on its top edge.
+          const item = this.scene.add.image(x, layout.groundTopY + 12, entry.key);
           item.setOrigin(0.5, 1);
           item.setDisplaySize((frame.width / frame.height) * height, height);
           item.setDepth(3);
-          if (key === "decor-grass-tuft" || key === "decor-flowers") {
-            item.setOrigin(0.5, 1);
+          if (entry.behavior === "sway") {
             this.scene.tweens.add({
               targets: item,
               angle: { from: -3.5, to: 3.5 },
@@ -372,11 +511,22 @@ export class EnvironmentFactory {
               ease: "Sine.easeInOut",
             });
           }
-          if (key === "decor-mushroom-glow") {
+          if (entry.behavior === "pulse") {
             this.scene.tweens.add({
               targets: item,
               alpha: { from: 0.75, to: 1 },
               duration: 1100 + this.rng() * 700,
+              yoyo: true,
+              repeat: -1,
+              ease: "Sine.easeInOut",
+            });
+          }
+          if (entry.behavior === "scuttle") {
+            // The beach crab sidles back and forth a few pixels.
+            this.scene.tweens.add({
+              targets: item,
+              x: x + 7,
+              duration: 900 + this.rng() * 600,
               yoyo: true,
               repeat: -1,
               ease: "Sine.easeInOut",
@@ -388,10 +538,14 @@ export class EnvironmentFactory {
     }
   }
 
-  /** A few grass tufts in front of the player plane for depth. */
-  private placeForegroundTufts(layout: EnvironmentLayout): void {
+  /** A few grass tufts in front of the player plane for depth
+   *  (forest stretches only). */
+  private placeForegroundTufts(
+    layout: EnvironmentLayout,
+    segments: GroundSegment[],
+  ): void {
     if (!this.scene.textures.exists("decor-grass-tuft")) return;
-    for (const segment of layout.groundSegments) {
+    for (const segment of segments) {
       const count = 2;
       for (let i = 0; i < count; i += 1) {
         const x = segment.x + 90 + this.rng() * (segment.width - 180);
@@ -405,9 +559,15 @@ export class EnvironmentFactory {
     }
   }
 
-  /** Small grass tuft on top of some floating platforms. */
-  decoratePlatformTop(centerX: number, physicsTopY: number, width: number): void {
-    if (!this.spritesReady) return;
+  /** Small grass tuft on top of some floating platforms (forest only —
+   *  a tuft on a castle platform would look lost). */
+  decoratePlatformTop(
+    centerX: number,
+    physicsTopY: number,
+    width: number,
+    zoneId: ZoneId = "hutan",
+  ): void {
+    if (!this.spritesReady || zoneId !== "hutan") return;
     if (this.rng() > 0.55) return;
     const tuft = this.scene.add.image(
       centerX - width / 2 + 22 + this.rng() * (width - 44),

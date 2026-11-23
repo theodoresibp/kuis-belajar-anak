@@ -60,7 +60,15 @@ export interface LevelLayout {
   hazards: { x: number }[];
   pickups: LevelPickup[];
   surfaces: LevelSurface[];
+  /** Location zones (forest → beach → castle) across the world. */
+  zones: ZoneRange[];
 }
+
+import {
+  zoneIdForEncounter,
+  zoneRangesForEncounters,
+  type ZoneRange,
+} from "./zones";
 
 export const LEVEL = {
   worldHeight: 640,
@@ -107,20 +115,27 @@ export function generateLevelLayout(encounterCount: number): LevelLayout {
 
   // Two floating platforms per approach zone (the stretch before each
   // monster), alternating materials and heights like the original world.
+  // Materials also follow the location: wooden platforms on the beach,
+  // stone ones at the castle gate.
   const platforms: LevelPlatform[] = [];
   for (let i = 0; i < count; i += 1) {
     const zoneStart = i * monsterStep;
+    const zone = zoneIdForEncounter(i, count);
+    const lowKind =
+      zone === "pantai" ? "wood" : zone === "kastil" ? "stone" : i % 2 === 0 ? "wood" : "stone";
+    const highKind =
+      zone === "pantai" ? "wood" : zone === "kastil" ? "stone" : i % 2 === 0 ? "stone" : "wood";
     platforms.push({
       x: zoneStart + 360,
       y: 445,
       width: platformWidth,
-      kind: i % 2 === 0 ? "wood" : "stone",
+      kind: lowKind,
     });
     platforms.push({
       x: zoneStart + 640,
       y: i % 2 === 0 ? 380 : 365,
       width: platformWidth,
-      kind: i % 2 === 0 ? "stone" : "wood",
+      kind: highKind,
     });
   }
 
@@ -164,5 +179,9 @@ export function generateLevelLayout(encounterCount: number): LevelLayout {
     hazards,
     pickups,
     surfaces,
+    zones: zoneRangesForEncounters(
+      encounters.map((spot) => spot.x),
+      worldWidth,
+    ),
   };
 }

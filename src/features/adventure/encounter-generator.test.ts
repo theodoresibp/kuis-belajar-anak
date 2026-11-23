@@ -141,6 +141,6 @@ describe("generateEncounterPlan — properties for every size", () => {
         "ready",
       );
     }
-    expect(plan[plan.length - 1].monsterId).toBe("tree-guardian");
+    expect(plan[plan.length - 1].monsterId).toBe("monster-mama");
   });
 });

@@ -112,3 +112,25 @@ mekanik tersendiri.
   2 background cadangan tidak terpakai tapi disimpan).
 - Aset baru direncanakan: **32 file monster + ±18 file environment + 3 file power-up**.
 - Tidak ada aset yang dihapus pada Sprint A.
+
+## 4. Tambahan 2026-11-23 — zona Pantai & Kastil + Monster Mama
+
+Sheet sumber di `docs/adventure-upgrade/sheets/` (berkunci magenta),
+dipotong dengan `~/workspace/cut_biomes.py`.
+
+Folder `public/assets/adventure/environment/`:
+
+| File | Isi |
+|---|---|
+| `pantai-back.webp`, `pantai-mid.webp` | Strip parallax laut kepulauan & bukit pasir berpalem (1920px) |
+| `pantai-palm-a.webp`, `pantai-palm-b.webp` | Palem kelapa tegak & miring |
+| `pantai-ground.webp` | Tile tanah pasir bertepi busa ombak (680×251) |
+| `pantai-decor-shell.webp`, `pantai-decor-star.webp`, `pantai-decor-crab.webp` | Kerang, bintang laut, kepiting (beranimasi menyamping di scene) |
+| `kastil-back.webp`, `kastil-mid.webp` | Strip parallax siluet kastil senja & tembok benteng berbanner |
+| `kastil-pillar.webp`, `kastil-banner.webp` | Pilar batu & tiang banner mahkota |
+| `kastil-ground.webp` | Tile tanah lempeng batu kastil (680×251) |
+| `kastil-decor-torch.webp`, `kastil-decor-rubble.webp`, `kastil-decor-crystal.webp` | Obor menyala, reruntuhan, kristal ungu |
+
+Folder `public/assets/adventure/monsters/monster-mama/`:
+`idle/attack/hurt/defeat.webp` 480×480 (kaki di baris 479) — boss
+final baru berdasarkan foto dari pengguna.
