@@ -119,6 +119,10 @@ export default function AdventureMode({
     "active",
   );
   const [bossWarning, setBossWarning] = useState(false);
+  // Bumped on every correct answer; the canvas forwards it to the
+  // scene, which restarts the boss timed-attack cycle (see
+  // AdventureScene.handleBossAttackReset).
+  const [bossResetSignal, setBossResetSignal] = useState(0);
   const [battleVisual, setBattleVisual] = useState<{
     hero: HeroAnimation;
     monster: MonsterAnimation;
@@ -309,6 +313,9 @@ export default function AdventureMode({
           100;
 
       dispatch({ type: "CORRECT_ANSWER", damage });
+      // Correct answers reset the boss's attack timer: as long as the
+      // player keeps answering in time, the boss never gets to strike.
+      setBossResetSignal((value) => value + 1);
       damageEventId.current += 1;
       playSound("correct");
       playSound("heroAttack");
@@ -488,6 +495,7 @@ export default function AdventureMode({
             )}
             shieldCharges={run.shieldCharges}
             isDefeated={run.status === "defeat"}
+            bossResetSignal={bossResetSignal}
             onEncounter={handleEncounter}
             onAdventureComplete={() => dispatch({ type: "VICTORY" })}
             onHazard={() => dispatch({ type: "HAZARD" })}
@@ -605,8 +613,8 @@ export default function AdventureMode({
                     </p>
                     <p className="mt-1 text-xs font-semibold">
                       {bossWarning
-                        ? "Bersiap! Serangan datang sebentar lagi."
-                        : `Jawab soal secepat mungkin. Boss menyerang secara berkala dengan ${Math.max(1, Math.round(activeEncounter.attackDamage * difficultySettings.damageMultiplier))} damage!`}
+                        ? "Bersiap! Serangan datang sebentar lagi — jawab dengan benar untuk membatalkannya!"
+                        : `Setiap jawaban benar mengatur ulang waktu serangan boss. Serangannya ${Math.max(1, Math.round(activeEncounter.attackDamage * difficultySettings.damageMultiplier))} damage!`}
                     </p>
                   </div>
                 )}

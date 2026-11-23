@@ -29,6 +29,9 @@ interface Props {
   monsterProgress: number;
   shieldCharges: number;
   isDefeated: boolean;
+  /** Incremented on every correct answer; the scene restarts the boss
+   *  timed-attack cycle whenever this changes. */
+  bossResetSignal: number;
   onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
   onAdventureComplete: () => void;
   onHazard: () => void;
@@ -62,6 +65,7 @@ export default function AdventureGameCanvas({
   monsterProgress,
   shieldCharges,
   isDefeated,
+  bossResetSignal,
   onEncounter,
   onAdventureComplete,
   onHazard,
@@ -147,6 +151,10 @@ export default function AdventureGameCanvas({
             pixelArt: false,
             powerPreference: "high-performance",
           },
+          // Cap at 60 FPS: tablets like the Xiaomi Pad 5 have 120Hz
+          // panels, and an uncapped loop would try to render twice as
+          // many frames as on a 60Hz phone for the exact same scene.
+          fps: { target: 60 },
           scene: [new AdventureScene(plan, heroId, difficulty)],
         });
 
@@ -220,6 +228,13 @@ export default function AdventureGameCanvas({
     }
   }, [isDefeated]);
 
+  const bossResetSeenRef = useRef(bossResetSignal);
+  useEffect(() => {
+    if (bossResetSeenRef.current === bossResetSignal) return;
+    bossResetSeenRef.current = bossResetSignal;
+    gameRef.current?.events.emit("boss-attack-reset");
+  }, [bossResetSignal]);
+
   const sendControl = useCallback(
     (direction: VirtualDirection, pressed: boolean) => {
       gameRef.current?.events.emit("virtual-control", direction, pressed);
@@ -279,7 +294,7 @@ export default function AdventureGameCanvas({
 
         {/* HUD ringkas di dalam scene */}
         <div className="pointer-events-none adventure-hud absolute inset-x-3 z-20 flex items-start justify-between gap-2 sm:inset-x-5 sm:top-4">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-white/60 bg-slate-950/55 px-3 py-2 text-white shadow-lg backdrop-blur-sm sm:gap-4 sm:px-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-white/60 bg-slate-950/70 px-3 py-2 text-white shadow-lg sm:gap-4 sm:px-4">
             <div className="min-w-[112px] flex-1">
               <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-extrabold sm:text-xs">
                 <span>❤️ HP Petualang</span>
@@ -326,7 +341,7 @@ export default function AdventureGameCanvas({
                 setSoundEnabled(nextEnabled);
                 gameRef.current?.events.emit("toggle-sound", nextEnabled);
               }}
-              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-sm sm:px-3 sm:text-sm disabled:opacity-50"
+              className="rounded-xl border border-white/70 bg-slate-950/70 px-2.5 py-2 text-xs font-bold text-white shadow-lg sm:px-3 sm:text-sm disabled:opacity-50"
             >
               {soundEnabled ? "🔊" : "🔇"}
             </button>
@@ -335,7 +350,7 @@ export default function AdventureGameCanvas({
               aria-label="Ulang petualangan"
               disabled={!ready}
               onClick={onRequestRestart}
-              className="rounded-xl border border-white/70 bg-slate-950/55 px-2.5 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-sm sm:px-3 sm:text-sm disabled:opacity-50"
+              className="rounded-xl border border-white/70 bg-slate-950/70 px-2.5 py-2 text-xs font-bold text-white shadow-lg sm:px-3 sm:text-sm disabled:opacity-50"
             >
               🔄
             </button>
@@ -350,7 +365,7 @@ export default function AdventureGameCanvas({
           {/* One fused rocker pad instead of two separate squares — a wider
               shape is easier to find by feel without looking down, and
               there's no dead zone between the two halves. */}
-          <div className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/85 shadow-xl backdrop-blur-sm">
+          <div className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/95 shadow-xl">
             {(["left", "right"] as const).map((direction) => (
               <button
                 key={direction}
@@ -375,7 +390,7 @@ export default function AdventureGameCanvas({
             onPointerUp={handlePointerRelease}
             onPointerCancel={handlePointerRelease}
             onLostPointerCapture={handlePointerRelease}
-            className="adventure-jump-btn pointer-events-auto flex h-[68px] w-[68px] touch-none select-none items-center justify-center rounded-full border-[3px] border-white/80 bg-amber-500/90 text-3xl font-black text-white shadow-xl backdrop-blur-sm active:scale-95 active:bg-amber-600 disabled:opacity-50 sm:h-[84px] sm:w-[84px] sm:text-4xl"
+            className="adventure-jump-btn pointer-events-auto flex h-[68px] w-[68px] touch-none select-none items-center justify-center rounded-full border-[3px] border-white/80 bg-amber-500 text-3xl font-black text-white shadow-xl active:scale-95 active:bg-amber-600 disabled:opacity-50 sm:h-[84px] sm:w-[84px] sm:text-4xl"
           >
             ↑
           </button>

@@ -237,6 +237,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.game.events.on("resolve-encounter", this.handleResolveEncounter, this);
     this.game.events.on("toggle-sound", this.handleToggleSound, this);
     this.game.events.on("stop-adventure", this.handleStopAdventure, this);
+    this.game.events.on("boss-attack-reset", this.handleBossAttackReset, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -825,6 +826,15 @@ export default class AdventureScene extends Phaser.Scene {
     this.playTone(encounter.attackDamage > 0 ? 180 : 420, 0.16, "triangle");
     this.game.events.emit("monster-encounter", encounter);
   };
+
+  /** A correct answer buys time: restart the timed-attack cycle from
+   *  the full interval and cancel any warning/strike already winding
+   *  up, so the boss cannot hit a player who keeps answering correctly
+   *  before the timer runs out. No-op outside a boss encounter. */
+  private handleBossAttackReset() {
+    if (!this.encounterPaused || !this.bossAttackTimer) return;
+    this.startBossAttackCycle();
+  }
 
   /** Timed attack cycle for the active mini-boss/final boss (whichever
    *  monster the plan gave an attackDamage). Same rhythm as the original
