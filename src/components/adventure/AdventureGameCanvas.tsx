@@ -188,7 +188,17 @@ export default function AdventureGameCanvas({
           // panels, and an uncapped loop would try to render twice as
           // many frames as on a 60Hz phone for the exact same scene.
           fps: { target: 60 },
-          scene: [new AdventureScene(plan, heroId, difficulty)],
+          scene: [
+            new AdventureScene(
+              plan,
+              heroId,
+              difficulty,
+              // A fresh layout seed per boot: each zone's treasure
+              // chest lands on a different (always reachable) high
+              // platform from run to run (Sprint 3).
+              Math.random().toString(36).slice(2, 10),
+            ),
+          ],
         });
 
         gameRef.current = game;

@@ -19,6 +19,13 @@
  *   path to each monster is never blocked (the Sprint B platform fix).
  * - Platform tops are at most 205px above the surface below them, inside
  *   the ~216px jump reach.
+ * - Sprint 3 (Peti Harta): each zone gets ONE chest step — a platform
+ *   100px above one of the zone's high platforms (16px of head
+ *   clearance over a hero standing on that high platform), so the
+ *   chest takes two deliberate jumps to reach. Which high platform
+ *   hosts it is chosen by the layout seed: the game passes a fresh
+ *   random seed on every load, so the chest's spot changes from run
+ *   to run while always staying on a validated, reachable platform.
  */
 
 export interface LevelEncounterSpot {
@@ -50,6 +57,12 @@ export interface LevelSurface {
   top: number;
 }
 
+/** The extra step above a zone's chosen high platform; the zone's
+ *  treasure chest stands on it (Sprint 3). Also part of `platforms`. */
+export interface LevelChestPlatform extends LevelPlatform {
+  zoneId: ZoneId;
+}
+
 export interface LevelLayout {
   worldWidth: number;
   worldHeight: number;
@@ -57,6 +70,7 @@ export interface LevelLayout {
   encounters: LevelEncounterSpot[];
   groundSegments: LevelGroundSegment[];
   platforms: LevelPlatform[];
+  chestPlatforms: LevelChestPlatform[];
   hazards: { x: number }[];
   pickups: LevelPickup[];
   surfaces: LevelSurface[];
@@ -67,8 +81,10 @@ export interface LevelLayout {
 import {
   zoneIdForEncounter,
   zoneRangesForEncounters,
+  type ZoneId,
   type ZoneRange,
 } from "./zones";
+import { hashSeed, mulberry32 } from "./encounter-generator";
 
 export const LEVEL = {
   worldHeight: 640,
@@ -81,7 +97,10 @@ export const LEVEL = {
   platformWidth: 180,
 } as const;
 
-export function generateLevelLayout(encounterCount: number): LevelLayout {
+export function generateLevelLayout(
+  encounterCount: number,
+  seed?: string,
+): LevelLayout {
   const count = Math.max(1, Math.floor(encounterCount));
   const {
     firstMonsterX,
@@ -139,6 +158,42 @@ export function generateLevelLayout(encounterCount: number): LevelLayout {
     });
   }
 
+  const zones = zoneRangesForEncounters(
+    encounters.map((spot) => spot.x),
+    worldWidth,
+  );
+
+  // Sprint 3 (Peti Harta): one chest step per zone, 100px above one
+  // of the zone's high platforms — half-overlapping it, so the hop up
+  // mirrors the game's other platform hops, with 16px of head
+  // clearance over a hero standing on the high platform below. The
+  // layout seed picks which high platform hosts it (first one when
+  // no seed is given, e.g. in tests and previews); the game passes a
+  // fresh random seed per load, so the chest's spot varies per run
+  // but always lands on a validated platform inside its own zone.
+  const chestPlatforms: LevelChestPlatform[] = [];
+  const rng = seed === undefined ? null : mulberry32(hashSeed(seed));
+  zones.forEach((zone) => {
+    const candidates = platforms.filter((platform) => {
+      const center = platform.x + platform.width / 2;
+      return platform.y <= 400 && center >= zone.x0 && center < zone.x1;
+    });
+    if (candidates.length === 0) return;
+    const base =
+      candidates[
+        rng === null ? 0 : Math.floor(rng() * candidates.length)
+      ];
+    const step: LevelChestPlatform = {
+      x: base.x + 90,
+      y: base.y - 100,
+      width: platformWidth,
+      kind: base.kind,
+      zoneId: zone.id,
+    };
+    platforms.push(step);
+    chestPlatforms.push(step);
+  });
+
   // One spike hazard per approach zone, on the ground under the low
   // platform — visible, and avoidable by jumping onto the platform.
   const hazards = encounters.map((_, i) => ({ x: i * monsterStep + 480 }));
@@ -176,12 +231,10 @@ export function generateLevelLayout(encounterCount: number): LevelLayout {
     encounters,
     groundSegments,
     platforms,
+    chestPlatforms,
     hazards,
     pickups,
     surfaces,
-    zones: zoneRangesForEncounters(
-      encounters.map((spot) => spot.x),
-      worldWidth,
-    ),
+    zones,
   };
 }

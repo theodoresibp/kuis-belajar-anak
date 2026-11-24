@@ -128,11 +128,15 @@ export default class AdventureScene extends Phaser.Scene {
     plan: PlannedEncounter[] = generateEncounterPlan(15, { seed: "preview" }),
     heroId = "bimo",
     difficulty?: DifficultySettings,
+    layoutSeed?: string,
   ) {
     super("AdventureScene");
     this.plan =
       plan.length > 0 ? plan : generateEncounterPlan(15, { seed: "preview" });
-    this.layout = generateLevelLayout(this.plan.length);
+    // The layout seed only steers which high platform hosts each
+    // zone's chest step (Sprint 3): the canvas passes a fresh random
+    // one per load so the chests move around between runs.
+    this.layout = generateLevelLayout(this.plan.length, layoutSeed);
     this.worldWidth = this.layout.worldWidth;
     this.heroId = ["rara", "bimo", "tari"].includes(heroId) ? heroId : "bimo";
     this.difficulty = difficulty ?? getDifficulty(undefined);

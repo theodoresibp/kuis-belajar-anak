@@ -3,8 +3,9 @@ import type { ZoneId } from "./zones";
 
 /**
  * Sprint 3 (Peti Harta): one treasure chest per zone, standing on a
- * high platform the player must deliberately jump to. Answering one
- * bonus question opens it, and the reward pops out as a pickup.
+ * dedicated chest step — an extra platform one hop above one of the
+ * zone's high platforms. Answering one bonus question opens it, and
+ * the reward pops out as a pickup.
  *
  * Each zone introduces one NEW power-up (the user reopened the door
  * to new variants for this sprint):
@@ -12,9 +13,10 @@ import type { ZoneId } from "./zones";
  *   Pantai -> Berry Kecepatan (run 1.5x faster for 20 seconds)
  *   Kastil -> Bulu Sayap   (double jump for 30 seconds)
  *
- * Pure and deterministic like the rest of the adventure generators:
- * chest spots derive from the level layout's own platforms, so a
- * chest always stands on a real platform inside its zone.
+ * The spots themselves come from the level layout (which high
+ * platform hosts the step is picked by the layout's seed — the game
+ * passes a fresh random seed per load, so the chest's spot changes
+ * from run to run while always staying on a validated platform).
  */
 
 export type ChestRewardKind = "orb" | "berry" | "wing";
@@ -69,27 +71,15 @@ export interface AdventureChest {
 }
 
 /**
- * One chest per zone of the run: on the zone's first HIGH platform
- * (the layout's upper row, centre y 365/380 — reaching it takes a
- * deliberate jump from the low row or the ground).
+ * One chest per zone of the run, standing on the zone's chest step
+ * from the level layout (see generateLevelLayout).
  */
 export function buildChests(layout: LevelLayout): AdventureChest[] {
-  const chests: AdventureChest[] = [];
-  layout.zones.forEach((zone) => {
-    const platform = layout.platforms.find((candidate) => {
-      const center = candidate.x + candidate.width / 2;
-      return (
-        candidate.y <= 400 && center >= zone.x0 && center < zone.x1
-      );
-    });
-    if (!platform) return;
-    chests.push({
-      id: `chest-${zone.id}`,
-      zoneId: zone.id,
-      reward: ZONE_CHEST_REWARD[zone.id],
-      x: platform.x + platform.width / 2,
-      platformTopY: platform.y - 14,
-    });
-  });
-  return chests;
+  return layout.chestPlatforms.map((platform) => ({
+    id: `chest-${platform.zoneId}`,
+    zoneId: platform.zoneId,
+    reward: ZONE_CHEST_REWARD[platform.zoneId],
+    x: platform.x + platform.width / 2,
+    platformTopY: platform.y - 14,
+  }));
 }

@@ -83,15 +83,27 @@ describe("generateLevelLayout — invariants for any run length", () => {
       // Platform rules: low row keeps 9px head clearance for the 88px
       // hero walking underneath (underside 459 vs head at 468), and
       // every platform top is within jump reach from the ground
-      // (<= 205px up; max jump is ~216px).
+      // (<= 205px up; max jump is ~216px) — except chest steps, which
+      // are reached from the high platform 100px below them instead.
       for (const platform of layout.platforms) {
         if (platform.y === 445) {
           expect(platform.y + 14).toBeLessThanOrEqual(
             LEVEL.groundTopY - 88 - 9,
           );
         }
-        expect(LEVEL.groundTopY - (platform.y - 14)).toBeLessThanOrEqual(205);
+        if (layout.chestPlatforms.includes(platform)) {
+          const base = layout.platforms.find(
+            (other) =>
+              other.y === platform.y + 100 && other.x === platform.x - 90,
+          );
+          expect(base).toBeDefined();
+        } else {
+          expect(LEVEL.groundTopY - (platform.y - 14)).toBeLessThanOrEqual(205);
+        }
       }
+
+      // One chest step per zone.
+      expect(layout.chestPlatforms).toHaveLength(layout.zones.length);
 
       // Surfaces cover every ground segment and platform.
       expect(layout.surfaces).toHaveLength(

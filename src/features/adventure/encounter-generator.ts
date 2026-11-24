@@ -63,7 +63,7 @@ function tierPattern(index: number): "normal" | "elite" {
 
 /* ---------------- deterministic RNG (mulberry32 + FNV-1a hash) ------- */
 
-function hashSeed(seed: string): number {
+export function hashSeed(seed: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < seed.length; i += 1) {
     hash ^= seed.charCodeAt(i);
@@ -72,7 +72,7 @@ function hashSeed(seed: string): number {
   return hash >>> 0;
 }
 
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let state = seed;
   return () => {
     state = (state + 0x6d2b79f5) | 0;
