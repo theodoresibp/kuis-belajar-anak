@@ -29,8 +29,21 @@ import {
   type AdventureChest,
 } from "@/features/adventure/chests";
 import { buildWorldMap } from "@/features/adventure/world-map";
-import { ZONES, type ZoneId } from "@/features/adventure/zones";
+import {
+  ZONES,
+  zoneIdForEncounter,
+  type ZoneId,
+} from "@/features/adventure/zones";
 import WorldMap from "./WorldMap";
+import {
+  ALBUM_TOTAL,
+  countCollected,
+  loadAlbum,
+  recordDefeat,
+  saveAlbum,
+  type AlbumCollection,
+} from "@/features/adventure/monster-album";
+import MonsterAlbum from "./MonsterAlbum";
 import { MaterialSections, MaterialSummary } from "@/components/MaterialView";
 import Image from "next/image";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
@@ -144,6 +157,18 @@ export default function AdventureMode({
   } | null>(null);
   // Sprint 2 (Peta Dunia): the in-run world map overlay.
   const [worldMapOpen, setWorldMapOpen] = useState(false);
+  // Sprint 4 (Album Monster): the persistent defeated-monster
+  // collection (localStorage) and whether the album overlay is open.
+  const [album, setAlbum] = useState<AlbumCollection>({});
+  const [albumOpen, setAlbumOpen] = useState(false);
+  useEffect(() => {
+    // Loaded after mount on purpose: localStorage does not exist
+    // during SSR, and starting from an empty album on both renders
+    // keeps hydration stable (the button count corrects itself a
+    // moment after the page appears).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAlbum(loadAlbum());
+  }, []);
   // Sprint 3 (Peti Harta): the chest the player is opening, its bonus
   // question, and the resolver that resumes the scene.
   const [chestPanel, setChestPanel] = useState<{
@@ -504,6 +529,18 @@ export default function AdventureMode({
 
   function handleContinue() {
     if (run.monsterHp > 0 || !resolveActiveEncounter) return;
+    // Sprint 4 (Album Monster): this is the one point where a
+    // monster's defeat is finalised — record it in the persistent
+    // album before the encounter state is cleared.
+    if (activeEncounter) {
+      const nextAlbum = recordDefeat(
+        album,
+        activeEncounter.monsterId,
+        zoneIdForEncounter(run.encounterIndex, plan.length),
+      );
+      setAlbum(nextAlbum);
+      saveAlbum(nextAlbum);
+    }
     setShowCorrectFeedback(false);
     if (feedbackTimer.current !== null)
       window.clearTimeout(feedbackTimer.current);
@@ -668,6 +705,15 @@ export default function AdventureMode({
             <p className="text-xs font-medium text-white/60 mt-2">
               Fullscreen dan landscape akan diaktifkan jika didukung browser.
             </p>
+            {/* Sprint 4 (Album Monster): the persistent collection. */}
+            <button
+              type="button"
+              onClick={() => setAlbumOpen(true)}
+              className="rounded-full border-2 border-violet-200 bg-violet-600/90 px-6 py-2.5 text-sm font-black text-white shadow-md transition hover:bg-violet-600"
+            >
+              📖 Album Monster — {countCollected(album)} dari {ALBUM_TOTAL}{" "}
+              terkumpul
+            </button>
           </section>
         )}
 
@@ -973,6 +1019,15 @@ export default function AdventureMode({
           </div>
         )}
 
+        {/* Sprint 4 (Album Monster): the collection overlay, opened
+            from the start screen and the result screen. */}
+        {albumOpen && (
+          <MonsterAlbum
+            collection={album}
+            onClose={() => setAlbumOpen(false)}
+          />
+        )}
+
         {/* Sprint 2 (Peta Dunia): the in-run map overlay. The scene
             pauses while it is open (worldMapOpen prop on the canvas). */}
         {worldMapOpen && (
@@ -1130,9 +1185,16 @@ export default function AdventureMode({
                   Hebat! Kamu berhasil melewati {encounterCount} monster dan
                   menjawab {run.score} soal dengan benar.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setAlbumOpen(true)}
+                  className="mt-6 w-full rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-violet-700"
+                >
+                  📖 Lihat Album Monster
+                </button>
                 <Link
                   href="/"
-                  className="mt-6 inline-flex w-full justify-center rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-emerald-700"
+                  className="mt-3 inline-flex w-full justify-center rounded-full bg-emerald-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-emerald-700"
                 >
                   Kembali ke Beranda
                 </Link>
@@ -1155,8 +1217,15 @@ export default function AdventureMode({
                 </p>
                 <button
                   type="button"
-                  onClick={() => window.location.reload()}
+                  onClick={() => setAlbumOpen(true)}
                   className="mt-6 w-full rounded-full bg-violet-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-violet-700"
+                >
+                  📖 Lihat Album Monster
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-3 w-full rounded-full bg-red-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-red-700"
                 >
                   Ulangi Petualangan
                 </button>
