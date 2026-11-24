@@ -223,8 +223,7 @@ export default function AdventureMode({
         window.clearTimeout(feedbackTimer.current);
       if (advanceTimer.current !== null)
         window.clearTimeout(advanceTimer.current);
-      if (chestTimer.current !== null)
-        window.clearTimeout(chestTimer.current);
+      if (chestTimer.current !== null) window.clearTimeout(chestTimer.current);
     };
   }, []);
   const fullscreenRef = useRef<HTMLElement>(null);
@@ -543,9 +542,10 @@ export default function AdventureMode({
       // and is spent (the last question already deals full HP, so the
       // orb only clears there without changing the number).
       const orbBoosted = run.energyOrb;
-      const damage = orbBoosted && !isLastQuestionOfEncounter
-        ? Math.round(baseDamage * 2 * 100) / 100
-        : baseDamage;
+      const damage =
+        orbBoosted && !isLastQuestionOfEncounter
+          ? Math.round(baseDamage * 2 * 100) / 100
+          : baseDamage;
 
       dispatch({ type: "CORRECT_ANSWER", damage, orbBoosted });
       // Correct answers reset the boss's attack timer: as long as the
@@ -894,8 +894,8 @@ export default function AdventureMode({
 
                 {run.energyOrb && (
                   <div className="mb-3 rounded-2xl border-2 border-violet-300 bg-violet-100 px-4 py-2 text-center text-sm font-black text-violet-800">
-                    🔮 Orb Energi aktif — jawaban benar ini memberi damage
-                    2× lipat!
+                    🔮 Orb Energi aktif — jawaban benar ini memberi damage 2×
+                    lipat!
                   </div>
                 )}
 
@@ -1143,8 +1143,8 @@ export default function AdventureMode({
                   </span>
                 </div>
                 <p className="mt-1 text-sm font-semibold text-slate-500">
-                  Jawab sebanyak-banyaknya! Setiap 3 jawaban benar = +1
-                  perisai. Jawaban salah tidak mengurangi HP.
+                  Jawab sebanyak-banyaknya! Setiap 3 jawaban benar = +1 perisai.
+                  Jawaban salah tidak mengurangi HP.
                 </p>
               </header>
 
@@ -1338,10 +1338,11 @@ export default function AdventureMode({
                     popup advances on its own — except the final boss, which
                     gets a deliberate tap to close out the adventure. */}
                 {run.monsterHp > 0 ? (
-                  <p className="mt-5 text-sm font-bold text-violet-500">
-                    ➡️ Lanjut ke soal berikutnya…
-                  </p>
-                ) : isFinalEncounter ? (
+                  <></>
+                ) : // <p className="mt-5 text-sm font-bold text-violet-500">
+                //   ➡️ Lanjut ke soal berikutnya…
+                // </p>
+                isFinalEncounter ? (
                   <button
                     type="button"
                     onClick={handleContinue}
