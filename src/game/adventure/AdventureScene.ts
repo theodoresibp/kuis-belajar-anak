@@ -19,7 +19,7 @@ import {
   type EnvironmentLayout,
 } from "./EnvironmentFactory";
 import { getDifficulty, type DifficultySettings } from "@/features/adventure/difficulty";
-import { zoneIdAtX } from "@/features/adventure/zones";
+import { zoneIdAtX, type ZoneId } from "@/features/adventure/zones";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -81,6 +81,9 @@ export default class AdventureScene extends Phaser.Scene {
   private activeEncounterIndex: number | null = null;
   private activeMonster?: Phaser.Physics.Arcade.Sprite;
   private encounterPaused = false;
+  private owlPaused = false;
+  private owlZoneIndex = -1;
+  private owlVisitedZones = new Set<number>();
   private nextEncounterIndex = 0;
   private starMarker?: Phaser.GameObjects.Container;
   private bossAttackTimer: Phaser.Time.TimerEvent | null = null;
@@ -154,6 +157,9 @@ export default class AdventureScene extends Phaser.Scene {
     // texture remains as fallback).
     this.load.image("hazard-thorn-art", "/assets/adventure/hazard-thorn.webp");
 
+    // Sprint 1 (Burung Hantu): the owl teacher waiting at each zone.
+    this.load.image("npc-owl-art", "/assets/adventure/npc-owl.webp");
+
     this.load.on("loaderror", (file: Phaser.Loader.File) => {
       console.error("Adventure asset gagal dimuat:", file.key, file.src);
     });
@@ -195,6 +201,7 @@ export default class AdventureScene extends Phaser.Scene {
 
     this.physics.add.collider(this.player, this.platforms);
     this.createEncounters();
+    this.createOwls();
     this.createHazardsAndPowerUps();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -238,6 +245,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.game.events.on("toggle-sound", this.handleToggleSound, this);
     this.game.events.on("stop-adventure", this.handleStopAdventure, this);
     this.game.events.on("boss-attack-reset", this.handleBossAttackReset, this);
+    this.game.events.on("resolve-owl", this.handleResolveOwl, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -252,6 +260,7 @@ export default class AdventureScene extends Phaser.Scene {
       this.game.events.off("resolve-encounter", this.handleResolveEncounter, this);
       this.game.events.off("toggle-sound", this.handleToggleSound, this);
       this.game.events.off("stop-adventure", this.handleStopAdventure, this);
+      this.game.events.off("resolve-owl", this.handleResolveOwl, this);
       this.heroPoseTimer?.remove(false);
       this.heroPoseTimer = null;
     });
@@ -639,6 +648,52 @@ export default class AdventureScene extends Phaser.Scene {
       usingFallback: !this.textures.exists(base),
     };
   }
+
+  /** Sprint 1 (Burung Hantu): one owl greeter per zone — just ahead
+   *  of the spawn for the first zone, a little inside the entrance
+   *  for the later ones. Purely decorative; the pause/panel flow is
+   *  driven by the zone-entry check in update(). */
+  private createOwls() {
+    if (!this.textures.exists("npc-owl-art")) return;
+    this.layout.zones.forEach((zone, index) => {
+      const x = index === 0 ? 330 : zone.x0 + 150;
+      const owl = this.add.image(x, 558 - 55, "npc-owl-art");
+      owl.setDisplaySize(110, 110);
+      this.environment.addShadow(x, 560, 84, 0.45);
+      this.tweens.add({
+        targets: owl,
+        y: owl.y - 6,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      this.add
+        .text(x, 558 - 110 - 14, "🦉 Burung Hantu", {
+          fontFamily: "Arial, sans-serif",
+          fontSize: "15px",
+          fontStyle: "bold",
+          color: "#ffffff",
+          stroke: "#24533a",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5, 1);
+    });
+  }
+
+  private startOwlStop(zoneId: ZoneId) {
+    this.owlPaused = true;
+    this.player.setVelocity(0, 0);
+    this.virtual = { left: false, right: false, jump: false };
+    this.physics.world.pause();
+    this.game.events.emit("owl-stop", zoneId);
+  }
+
+  private handleResolveOwl = () => {
+    if (!this.owlPaused) return;
+    this.owlPaused = false;
+    this.physics.world.resume();
+  };
 
   private createEncounters() {
     this.plan.forEach((encounter, index) => {
@@ -1211,8 +1266,27 @@ export default class AdventureScene extends Phaser.Scene {
       return;
     }
 
+    if (this.owlPaused) {
+      this.player?.setVelocityX(0);
+      return;
+    }
+
     if (!this.player?.body || !this.cursors || !this.wasd) {
       return;
+    }
+
+    // Sprint 1 (Burung Hantu): entering a zone for the first time
+    // pauses the run at the owl, which presents the material/tip.
+    const zoneIndex = this.layout.zones.findIndex(
+      (zone) => this.player.x >= zone.x0 && this.player.x < zone.x1,
+    );
+    if (zoneIndex >= 0 && zoneIndex !== this.owlZoneIndex) {
+      this.owlZoneIndex = zoneIndex;
+      if (!this.owlVisitedZones.has(zoneIndex)) {
+        this.owlVisitedZones.add(zoneIndex);
+        this.startOwlStop(this.layout.zones[zoneIndex].id);
+        return;
+      }
     }
 
     // Sprint F: the next monster notices the hero — a one-time entrance

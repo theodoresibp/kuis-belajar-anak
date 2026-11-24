@@ -23,6 +23,10 @@ import {
   createInitialAdventureRunState,
 } from "@/features/adventure/adventure.reducer";
 import { generateEncounterPlan } from "@/features/adventure/encounter-generator";
+import { buildOwlStops, type OwlStop } from "@/features/adventure/owl";
+import type { ZoneId } from "@/features/adventure/zones";
+import { MaterialSections, MaterialSummary } from "@/components/MaterialView";
+import Image from "next/image";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
 import {
   setMusicTrack,
@@ -100,6 +104,11 @@ export default function AdventureMode({
     [chapter.id, questions.length],
   );
   const encounterCount = plan.length;
+  // Sprint 1 (Burung Hantu): one owl stop per zone of this run.
+  const owlStops = useMemo(
+    () => buildOwlStops(chapter, plan.length),
+    [chapter, plan],
+  );
   const encounterQuestionCounts = plan.map(
     (encounter) => encounter.questionCount,
   );
@@ -119,6 +128,12 @@ export default function AdventureMode({
     "active",
   );
   const [bossWarning, setBossWarning] = useState(false);
+  // Sprint 1 (Burung Hantu): the stop the owl is currently presenting,
+  // with the resolver that resumes the run.
+  const [owlPanel, setOwlPanel] = useState<{
+    stop: OwlStop;
+    resolve: () => void;
+  } | null>(null);
   // Bumped on every correct answer; the canvas forwards it to the
   // scene, which restarts the boss timed-attack cycle (see
   // AdventureScene.handleBossAttackReset).
@@ -271,6 +286,24 @@ export default function AdventureMode({
   const isLastQuestionOfEncounter =
     localQuestionIndex === currentEncounterQuestionCount - 1;
   const isFinalEncounter = run.encounterIndex === encounterCount - 1;
+
+  function handleOwlStop(zoneId: ZoneId, resolve: () => void) {
+    const stop = owlStops[zoneId];
+    if (!stop) {
+      // No owl content for this zone: resume immediately.
+      resolve();
+      return;
+    }
+    playSound("powerup");
+    setOwlPanel({ stop, resolve });
+  }
+
+  function dismissOwlPanel() {
+    if (!owlPanel) return;
+    const { resolve } = owlPanel;
+    setOwlPanel(null);
+    resolve();
+  }
 
   function handleEncounter(encounter: AdventureEncounter, resolve: () => void) {
     if (!shuffledQuestions) {
@@ -507,6 +540,7 @@ export default function AdventureMode({
             }}
             onBossWarning={setBossWarning}
             onBossAttack={handleBossAttack}
+            onOwlStop={handleOwlStop}
             onRequestRestart={() => setRestartConfirm("full")}
           />
         )}
@@ -692,6 +726,65 @@ export default function AdventureMode({
                   </div>
                 )}
               </div>
+            </section>
+          </div>
+        )}
+
+        {/* Sprint 1 (Burung Hantu): the owl's panel. The material stop
+            renders the chapter material IN FULL (summary + every
+            section, via the shared MaterialView components) in a
+            scrollable body; recall/boss-tip stops show their text. */}
+        {owlPanel && (
+          <div
+            className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Burung Hantu: ${owlPanel.stop.title}`}
+          >
+            <section className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-4 border-teal-200 bg-white shadow-2xl">
+              <header className="flex items-center gap-3 bg-teal-50 px-5 py-3">
+                <Image
+                  src="/assets/adventure/npc-owl.webp"
+                  alt="Burung Hantu"
+                  width={56}
+                  height={56}
+                  unoptimized
+                  className="h-14 w-14 shrink-0 object-contain"
+                />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-teal-600">
+                    🦉 Burung Hantu
+                  </p>
+                  <h2 className="text-lg font-black text-slate-900 sm:text-xl">
+                    {owlPanel.stop.title}
+                  </h2>
+                </div>
+              </header>
+
+              {owlPanel.stop.kind === "material" && chapter.material ? (
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                  <MaterialSummary material={chapter.material} />
+                  <div className="mt-2">
+                    <MaterialSections material={chapter.material} />
+                  </div>
+                </div>
+              ) : (
+                <div className="px-5 py-4">
+                  <p className="text-base font-semibold leading-relaxed text-slate-700">
+                    {owlPanel.stop.text}
+                  </p>
+                </div>
+              )}
+
+              <footer className="border-t-2 border-slate-100 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={dismissOwlPanel}
+                  className="w-full rounded-full bg-teal-600 px-6 py-3 text-base font-black text-white shadow-md transition hover:bg-teal-700 active:scale-95"
+                >
+                  {owlPanel.stop.buttonLabel}
+                </button>
+              </footer>
             </section>
           </div>
         )}

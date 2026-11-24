@@ -11,6 +11,7 @@ import {
 import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
 import type { PlannedEncounter } from "@/features/adventure/encounter-generator";
 import type { DifficultySettings } from "@/features/adventure/difficulty";
+import type { ZoneId } from "@/features/adventure/zones";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -38,6 +39,9 @@ interface Props {
   onPickup: (kind: "heart" | "shield") => void;
   onBossWarning: (active: boolean) => void;
   onBossAttack: () => void;
+  /** Sprint 1 (Burung Hantu): the scene paused at a zone's owl;
+   *  resolve() resumes the run. */
+  onOwlStop: (zoneId: ZoneId, resolve: () => void) => void;
   onRequestRestart: () => void;
 }
 
@@ -72,6 +76,7 @@ export default function AdventureGameCanvas({
   onPickup,
   onBossWarning,
   onBossAttack,
+  onOwlStop,
   onRequestRestart,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -90,6 +95,7 @@ export default function AdventureGameCanvas({
   const onPickupRef = useRef(onPickup);
   const onBossWarningRef = useRef(onBossWarning);
   const onBossAttackRef = useRef(onBossAttack);
+  const onOwlStopRef = useRef(onOwlStop);
 
   useEffect(() => {
     onEncounterRef.current = onEncounter;
@@ -98,6 +104,7 @@ export default function AdventureGameCanvas({
     onPickupRef.current = onPickup;
     onBossWarningRef.current = onBossWarning;
     onBossAttackRef.current = onBossAttack;
+    onOwlStopRef.current = onOwlStop;
   }, [
     onEncounter,
     onAdventureComplete,
@@ -105,6 +112,7 @@ export default function AdventureGameCanvas({
     onPickup,
     onBossWarning,
     onBossAttack,
+    onOwlStop,
   ]);
 
   const [ready, setReady] = useState(false);
@@ -182,6 +190,11 @@ export default function AdventureGameCanvas({
           onBossWarningRef.current(false);
           onBossAttackRef.current();
         };
+        const handleOwlStop = (zoneId: ZoneId) => {
+          onOwlStopRef.current(zoneId, () => {
+            game.events.emit("resolve-owl");
+          });
+        };
 
         game.events.on("monster-encounter", handleEncounter);
         game.events.on("adventure-complete", handleAdventureComplete);
@@ -190,6 +203,7 @@ export default function AdventureGameCanvas({
         game.events.on("boss-attack-warning", handleBossWarning);
         game.events.on("boss-attack-warning-clear", handleBossWarningClear);
         game.events.on("boss-attack", handleBossAttack);
+        game.events.on("owl-stop", handleOwlStop);
 
         game.events.once(Phaser.Core.Events.DESTROY, () => {
           game.events.off("monster-encounter", handleEncounter);
@@ -199,6 +213,7 @@ export default function AdventureGameCanvas({
           game.events.off("boss-attack-warning", handleBossWarning);
           game.events.off("boss-attack-warning-clear", handleBossWarningClear);
           game.events.off("boss-attack", handleBossAttack);
+          game.events.off("owl-stop", handleOwlStop);
         });
 
         if (!disposed) {
