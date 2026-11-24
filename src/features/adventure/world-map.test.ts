@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlannedEncounter } from "./encounter-generator";
-import { buildWorldMap } from "./world-map";
+import { buildWorldMap, layoutWorldMapNodes, ZONE_TRAILS } from "./world-map";
 
 function encounter(index: number, tier: PlannedEncounter["tier"]): PlannedEncounter {
   return {
@@ -52,5 +52,38 @@ describe("buildWorldMap", () => {
       ["kastil", 4, 4],
     ]);
     expect(map.nodes[4].monsterName).toBe("Monster 4");
+  });
+});
+
+describe("layoutWorldMapNodes (illustrated map)", () => {
+  it("the boss stands exactly on the castle FINISH point", () => {
+    const map = buildWorldMap([encounter(0, "boss")]);
+    const laid = layoutWorldMapNodes(map);
+    const finish = ZONE_TRAILS.kastil[ZONE_TRAILS.kastil.length - 1];
+    expect(laid[0].x).toBe(finish.x);
+    expect(laid[0].y).toBe(finish.y);
+  });
+
+  it("every node lands inside the image and inside its zone's region", () => {
+    const plan = [
+      encounter(0, "normal"),
+      encounter(1, "normal"),
+      encounter(2, "elite"),
+      encounter(3, "normal"),
+      encounter(4, "boss"),
+    ];
+    const laid = layoutWorldMapNodes(buildWorldMap(plan));
+    laid.forEach(({ x, y }) => {
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(100);
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(100);
+    });
+    // Forest nodes stay on the forest (left) side, beach nodes low,
+    // castle nodes on the right side.
+    expect(laid[0].x).toBeLessThan(45);
+    expect(laid[2].y).toBeGreaterThan(55);
+    expect(laid[3].x).toBeGreaterThan(40);
+    expect(laid[4].x).toBeGreaterThan(80);
   });
 });
