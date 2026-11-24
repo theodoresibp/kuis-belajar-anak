@@ -24,6 +24,10 @@ import {
 } from "@/features/adventure/adventure.reducer";
 import { generateEncounterPlan } from "@/features/adventure/encounter-generator";
 import { buildOwlStops, type OwlStop } from "@/features/adventure/owl";
+import {
+  CHEST_REWARDS,
+  type AdventureChest,
+} from "@/features/adventure/chests";
 import { buildWorldMap } from "@/features/adventure/world-map";
 import { ZONES, type ZoneId } from "@/features/adventure/zones";
 import WorldMap from "./WorldMap";
@@ -140,6 +144,16 @@ export default function AdventureMode({
   } | null>(null);
   // Sprint 2 (Peta Dunia): the in-run world map overlay.
   const [worldMapOpen, setWorldMapOpen] = useState(false);
+  // Sprint 3 (Peti Harta): the chest the player is opening, its bonus
+  // question, and the resolver that resumes the scene.
+  const [chestPanel, setChestPanel] = useState<{
+    chest: AdventureChest;
+    question: QuizQuestion;
+    resolve: (opened: boolean) => void;
+  } | null>(null);
+  const [chestTriedOptionIds, setChestTriedOptionIds] = useState<string[]>([]);
+  const [chestSolved, setChestSolved] = useState(false);
+  const chestTimer = useRef<number | null>(null);
   // Bumped on every correct answer; the canvas forwards it to the
   // scene, which restarts the boss timed-attack cycle (see
   // AdventureScene.handleBossAttackReset).
@@ -159,6 +173,8 @@ export default function AdventureMode({
         window.clearTimeout(feedbackTimer.current);
       if (advanceTimer.current !== null)
         window.clearTimeout(advanceTimer.current);
+      if (chestTimer.current !== null)
+        window.clearTimeout(chestTimer.current);
     };
   }, []);
   const fullscreenRef = useRef<HTMLElement>(null);
@@ -311,6 +327,54 @@ export default function AdventureMode({
     resolve();
   }
 
+  // Sprint 3 (Peti Harta): the scene paused at a chest. One bonus
+  // question from the run's own bank guards the reward — it is a
+  // bonus, so it never touches the encounter queue, score or HP.
+  function handleChestStop(
+    chest: AdventureChest,
+    resolve: (opened: boolean) => void,
+  ) {
+    if (questions.length === 0) {
+      resolve(false);
+      return;
+    }
+    const picked = questions[Math.floor(Math.random() * questions.length)];
+    setChestPanel({
+      chest,
+      question: { ...picked, options: shuffle(picked.options) },
+      resolve,
+    });
+    setChestTriedOptionIds([]);
+    setChestSolved(false);
+    playSound("powerup");
+  }
+
+  function handleChestAnswer(optionId: string) {
+    if (!chestPanel || chestSolved || chestTriedOptionIds.includes(optionId)) {
+      return;
+    }
+    if (optionId !== chestPanel.question.correctOptionId) {
+      setChestTriedOptionIds((previous) => [...previous, optionId]);
+      playSound("wrong");
+      return;
+    }
+    setChestSolved(true);
+    playSound("correct");
+    playSound("powerup");
+    const { resolve } = chestPanel;
+    chestTimer.current = window.setTimeout(() => {
+      setChestPanel(null);
+      resolve(true);
+    }, 1100);
+  }
+
+  function closeChestPanel() {
+    if (!chestPanel || chestSolved) return;
+    const { resolve } = chestPanel;
+    setChestPanel(null);
+    resolve(false);
+  }
+
   function handleEncounter(encounter: AdventureEncounter, resolve: () => void) {
     if (!shuffledQuestions) {
       setShuffledQuestions(
@@ -346,12 +410,19 @@ export default function AdventureMode({
         window.clearTimeout(advanceTimer.current);
       // Per-question damage scales with this monster's HP; the encounter's
       // last question always deals exactly the remaining HP.
-      const damage = isLastQuestionOfEncounter
+      const baseDamage = isLastQuestionOfEncounter
         ? run.monsterHp
         : Math.round((run.monsterMaxHp / currentEncounterQuestionCount) * 100) /
           100;
+      // Sprint 3: an Energy Orb waiting in the run doubles this hit
+      // and is spent (the last question already deals full HP, so the
+      // orb only clears there without changing the number).
+      const orbBoosted = run.energyOrb;
+      const damage = orbBoosted && !isLastQuestionOfEncounter
+        ? Math.round(baseDamage * 2 * 100) / 100
+        : baseDamage;
 
-      dispatch({ type: "CORRECT_ANSWER", damage });
+      dispatch({ type: "CORRECT_ANSWER", damage, orbBoosted });
       // Correct answers reset the boss's attack timer: as long as the
       // player keeps answering in time, the boss never gets to strike.
       setBossResetSignal((value) => value + 1);
@@ -533,12 +604,18 @@ export default function AdventureMode({
               encounterCount,
             )}
             shieldCharges={run.shieldCharges}
+            energyOrbActive={run.energyOrb}
             isDefeated={run.status === "defeat"}
             bossResetSignal={bossResetSignal}
             onEncounter={handleEncounter}
             onAdventureComplete={() => dispatch({ type: "VICTORY" })}
             onHazard={() => dispatch({ type: "HAZARD" })}
             onPickup={(kind) => {
+              if (kind === "orb") {
+                playSound("powerup");
+                dispatch({ type: "COLLECT_ENERGY_ORB" });
+                return;
+              }
               playSound(kind === "heart" ? "heal" : "shield");
               dispatch({
                 type: kind === "heart" ? "COLLECT_HEART" : "COLLECT_SHIELD",
@@ -547,6 +624,7 @@ export default function AdventureMode({
             onBossWarning={setBossWarning}
             onBossAttack={handleBossAttack}
             onOwlStop={handleOwlStop}
+            onChestStop={handleChestStop}
             worldMapOpen={worldMapOpen}
             onOpenWorldMap={() => setWorldMapOpen(true)}
             onRequestRestart={() => setRestartConfirm("full")}
@@ -665,6 +743,13 @@ export default function AdventureMode({
                         ? "Bersiap! Serangan datang sebentar lagi — jawab dengan benar untuk membatalkannya!"
                         : `Setiap jawaban benar mengatur ulang waktu serangan boss. Serangannya ${Math.max(1, Math.round(activeEncounter.attackDamage * difficultySettings.damageMultiplier))} damage!`}
                     </p>
+                  </div>
+                )}
+
+                {run.energyOrb && (
+                  <div className="mb-3 rounded-2xl border-2 border-violet-300 bg-violet-100 px-4 py-2 text-center text-sm font-black text-violet-800">
+                    🔮 Orb Energi aktif — jawaban benar ini memberi damage
+                    2× lipat!
                   </div>
                 )}
 
@@ -809,6 +894,81 @@ export default function AdventureMode({
                   {owlPanel.stop.buttonLabel}
                 </button>
               </footer>
+            </section>
+          </div>
+        )}
+
+        {/* Sprint 3 (Peti Harta): one bonus question guards the
+            chest's new power-up. Wrong picks only mark the option —
+            no HP or score is at stake — and Tutup leaves the chest
+            closed for a later try. */}
+        {chestPanel && (
+          <div
+            className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Peti Harta"
+          >
+            <section className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-4 border-amber-300 bg-white shadow-2xl">
+              <header className="flex items-center gap-3 bg-amber-50 px-5 py-3">
+                <Image
+                  src={
+                    chestSolved
+                      ? "/assets/adventure/chest-open.webp"
+                      : "/assets/adventure/chest-closed.webp"
+                  }
+                  alt="Peti Harta"
+                  width={56}
+                  height={56}
+                  unoptimized
+                  className="h-14 w-14 shrink-0 object-contain"
+                />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">
+                    🎁 Peti Harta — {ZONES[chestPanel.chest.zoneId].name}
+                  </p>
+                  <h2 className="text-lg font-black text-slate-900 sm:text-xl">
+                    {chestSolved
+                      ? "Peti terbuka! 🎉"
+                      : `Ada ${CHEST_REWARDS[chestPanel.chest.reward].emoji} ${CHEST_REWARDS[chestPanel.chest.reward].name} di dalamnya!`}
+                  </h2>
+                  <p className="text-sm font-semibold text-slate-500">
+                    {chestSolved
+                      ? CHEST_REWARDS[chestPanel.chest.reward].description
+                      : "Jawab 1 soal ini dengan benar untuk membuka petinya."}
+                  </p>
+                </div>
+              </header>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                <QuestionCard
+                  questionNumber={1}
+                  totalQuestions={1}
+                  question={chestPanel.question.question}
+                  image={chestPanel.question.image}
+                  imageAlt={chestPanel.question.imageAlt}
+                  options={chestPanel.question.options}
+                  correctOptionId={chestPanel.question.correctOptionId}
+                  triedOptionIds={chestTriedOptionIds}
+                  status={chestSolved ? "correct" : "active"}
+                  explanation={chestPanel.question.explanation}
+                  hideExplanation
+                  compactLayout
+                  onSelect={handleChestAnswer}
+                />
+              </div>
+
+              {!chestSolved && (
+                <footer className="border-t-2 border-slate-100 px-5 py-3">
+                  <button
+                    type="button"
+                    onClick={closeChestPanel}
+                    className="w-full rounded-full border-2 border-slate-300 bg-white px-6 py-3 text-base font-black text-slate-600 shadow-sm transition hover:bg-slate-100 active:scale-95"
+                  >
+                    Tutup Dulu
+                  </button>
+                </footer>
+              )}
             </section>
           </div>
         )}

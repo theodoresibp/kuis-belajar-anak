@@ -172,4 +172,31 @@ describe("adventureReducer — per-encounter monsterMaxHp (Sprint C)", () => {
     state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: state.monsterHp });
     expect(state.monsterHp).toBe(0);
   });
+
+  it("energy orb: collected while exploring, spent by the boosted correct answer", () => {
+    let state = createInitialAdventureRunState();
+    expect(state.energyOrb).toBe(false);
+    state = adventureReducer(state, { type: "COLLECT_ENERGY_ORB" });
+    expect(state.energyOrb).toBe(true);
+
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    // A plain correct answer keeps the orb waiting.
+    state = adventureReducer(state, { type: "CORRECT_ANSWER", damage: 20 });
+    expect(state.energyOrb).toBe(true);
+    // The boosted one (caller already doubled the damage) consumes it.
+    state = adventureReducer(state, {
+      type: "CORRECT_ANSWER",
+      damage: 40,
+      orbBoosted: true,
+    });
+    expect(state.energyOrb).toBe(false);
+    expect(state.monsterHp).toBe(40);
+  });
+
+  it("energy orb cannot be collected mid-encounter", () => {
+    let state = createInitialAdventureRunState();
+    state = adventureReducer(state, { type: "START_ENCOUNTER" });
+    state = adventureReducer(state, { type: "COLLECT_ENERGY_ORB" });
+    expect(state.energyOrb).toBe(false);
+  });
 });

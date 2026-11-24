@@ -21,13 +21,18 @@ export interface AdventureRunState {
    *  final boss 200); correct-answer damage is maxHp / questions. */
   monsterMaxHp: number;
   shieldCharges: number;
+  /** Sprint 3 (Peti Harta): an Energy Orb is waiting — the next
+   *  correct answer deals double damage and consumes it. The caller
+   *  computes the doubled damage; CORRECT_ANSWER just clears the
+   *  flag when it was spent (orbBoosted). */
+  energyOrb: boolean;
   status: AdventureRunStatus;
 }
 
 export type AdventureRunAction =
   | { type: "START_ENCOUNTER" }
   | { type: "WRONG_ANSWER"; damage?: number }
-  | { type: "CORRECT_ANSWER"; damage: number }
+  | { type: "CORRECT_ANSWER"; damage: number; orbBoosted?: boolean }
   | { type: "NEXT_QUESTION" }
   | { type: "NEXT_ENCOUNTER"; monsterMaxHp?: number }
   | { type: "RETRY_ENCOUNTER"; questionStart: number }
@@ -36,7 +41,8 @@ export type AdventureRunAction =
   | { type: "HAZARD" }
   | { type: "BOSS_ATTACK"; damage?: number }
   | { type: "COLLECT_HEART" }
-  | { type: "COLLECT_SHIELD" };
+  | { type: "COLLECT_SHIELD" }
+  | { type: "COLLECT_ENERGY_ORB" };
 
 export function createInitialAdventureRunState(
   firstMonsterMaxHp: number = BATTLE_CONFIG.initialMonsterHp,
@@ -50,6 +56,7 @@ export function createInitialAdventureRunState(
     monsterHp: firstMonsterMaxHp,
     monsterMaxHp: firstMonsterMaxHp,
     shieldCharges: 0,
+    energyOrb: false,
     status: "exploring",
   };
 }
@@ -86,6 +93,7 @@ export function adventureReducer(
         ...state,
         score: state.score + 1,
         monsterHp: Math.max(0, Math.round((state.monsterHp - action.damage) * 100) / 100),
+        energyOrb: action.orbBoosted ? false : state.energyOrb,
       };
 
     case "NEXT_QUESTION":
@@ -157,6 +165,10 @@ export function adventureReducer(
     case "COLLECT_SHIELD":
       if (state.status !== "exploring") return state;
       return { ...state, shieldCharges: state.shieldCharges + 1 };
+
+    case "COLLECT_ENERGY_ORB":
+      if (state.status !== "exploring") return state;
+      return { ...state, energyOrb: true };
 
     case "DEFEAT":
       return { ...state, heroHp: 0, status: "defeat" };

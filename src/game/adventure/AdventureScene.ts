@@ -20,6 +20,14 @@ import {
 } from "./EnvironmentFactory";
 import { getDifficulty, type DifficultySettings } from "@/features/adventure/difficulty";
 import { zoneIdAtX, type ZoneId } from "@/features/adventure/zones";
+import {
+  buildChests,
+  BERRY_DURATION_MS,
+  BERRY_SPEED_MULTIPLIER,
+  WING_DURATION_MS,
+  type AdventureChest,
+  type ChestRewardKind,
+} from "@/features/adventure/chests";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -83,6 +91,17 @@ export default class AdventureScene extends Phaser.Scene {
   private encounterPaused = false;
   private owlPaused = false;
   private mapPaused = false;
+  private chestPaused = false;
+  private chestSprites: Phaser.Physics.Arcade.Sprite[] = [];
+  /** Sprint 3 (Peti Harta): timed power-up effects run on their own
+   *  clock that only advances while the run is actually playing, so
+   *  opening a popup (encounter/owl/map/chest) never drains them. */
+  private effectClockMs = 0;
+  private berryUntilMs = 0;
+  private wingUntilMs = 0;
+  private airJumpsUsed = 0;
+  private effectHudText?: Phaser.GameObjects.Text;
+  private effectHudCache = "";
   private owlZoneIndex = -1;
   private owlVisitedZones = new Set<number>();
   private nextEncounterIndex = 0;
@@ -161,6 +180,14 @@ export default class AdventureScene extends Phaser.Scene {
     // Sprint 1 (Burung Hantu): the owl teacher waiting at each zone.
     this.load.image("npc-owl-art", "/assets/adventure/npc-owl.webp");
 
+    // Sprint 3 (Peti Harta): chest states + the three new power-ups
+    // (procedural textures in createTextures remain as fallbacks).
+    this.load.image("chest-closed-art", "/assets/adventure/chest-closed.webp");
+    this.load.image("chest-open-art", "/assets/adventure/chest-open.webp");
+    this.load.image("powerup-orb-art", "/assets/adventure/powerups/orb.webp");
+    this.load.image("powerup-berry-art", "/assets/adventure/powerups/berry.webp");
+    this.load.image("powerup-wing-art", "/assets/adventure/powerups/wing.webp");
+
     this.load.on("loaderror", (file: Phaser.Loader.File) => {
       console.error("Adventure asset gagal dimuat:", file.key, file.src);
     });
@@ -204,6 +231,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.createEncounters();
     this.createOwls();
     this.createHazardsAndPowerUps();
+    this.createChests();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -249,6 +277,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.game.events.on("resolve-owl", this.handleResolveOwl, this);
     this.game.events.on("pause-run", this.handlePauseRun, this);
     this.game.events.on("resume-run", this.handleResumeRun, this);
+    this.game.events.on("resolve-chest", this.handleResolveChest, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -266,6 +295,7 @@ export default class AdventureScene extends Phaser.Scene {
       this.game.events.off("resolve-owl", this.handleResolveOwl, this);
       this.game.events.off("pause-run", this.handlePauseRun, this);
       this.game.events.off("resume-run", this.handleResumeRun, this);
+      this.game.events.off("resolve-chest", this.handleResolveChest, this);
       this.heroPoseTimer?.remove(false);
       this.heroPoseTimer = null;
     });
@@ -416,6 +446,43 @@ export default class AdventureScene extends Phaser.Scene {
       ctx.fillRect(0, 0, 128, 128);
       glowCanvas.refresh();
     }
+
+    // Sprint 3 fallbacks if the chest/power-up artwork fails to load:
+    // simple shapes in each item's signature colour.
+    const chestFallback = this.make.graphics({ x: 0, y: 0 });
+    chestFallback.fillStyle(0x92400e, 1);
+    chestFallback.fillRoundedRect(2, 10, 60, 46, 6);
+    chestFallback.fillStyle(0xf59e0b, 1);
+    chestFallback.fillRect(2, 28, 60, 8);
+    chestFallback.fillCircle(32, 32, 7);
+    chestFallback.generateTexture("chest-closed-fallback", 64, 64);
+    chestFallback.destroy();
+
+    const orbFallback = this.make.graphics({ x: 0, y: 0 });
+    orbFallback.fillStyle(0x7c3aed, 1);
+    orbFallback.fillCircle(22, 22, 20);
+    orbFallback.fillStyle(0xddd6fe, 1);
+    orbFallback.fillCircle(15, 14, 6);
+    orbFallback.generateTexture("powerup-orb-fallback", 44, 44);
+    orbFallback.destroy();
+
+    const berryFallback = this.make.graphics({ x: 0, y: 0 });
+    berryFallback.fillStyle(0xdc2626, 1);
+    berryFallback.fillCircle(15, 28, 12);
+    berryFallback.fillCircle(30, 28, 12);
+    berryFallback.fillCircle(22, 18, 11);
+    berryFallback.fillStyle(0x16a34a, 1);
+    berryFallback.fillTriangle(14, 10, 30, 10, 22, 2);
+    berryFallback.generateTexture("powerup-berry-fallback", 44, 44);
+    berryFallback.destroy();
+
+    const wingFallback = this.make.graphics({ x: 0, y: 0 });
+    wingFallback.fillStyle(0xfbbf24, 1);
+    wingFallback.fillEllipse(22, 24, 16, 34);
+    wingFallback.fillStyle(0xffffff, 1);
+    wingFallback.fillEllipse(20, 20, 11, 24);
+    wingFallback.generateTexture("powerup-wing-fallback", 44, 44);
+    wingFallback.destroy();
   }
 
   private createHeroFrame(
@@ -700,11 +767,227 @@ export default class AdventureScene extends Phaser.Scene {
     this.physics.world.resume();
   };
 
+  /** Sprint 3 (Peti Harta): one chest per zone on its first high
+   *  platform (spots from the pure buildChests module), with a gold
+   *  glow and a label so it reads as a goal worth jumping for. */
+  private createChests() {
+    const closedTexture = this.textures.exists("chest-closed-art")
+      ? "chest-closed-art"
+      : "chest-closed-fallback";
+    buildChests(this.layout).forEach((chest) => {
+      const glow = this.add
+        .image(chest.x, chest.platformTopY - 34, "glow-soft")
+        .setTint(0xfbbf24)
+        .setDisplaySize(130, 130)
+        .setAlpha(0.5)
+        .setDepth(7);
+      this.tweens.add({
+        targets: glow,
+        alpha: 0.26,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      const sprite = this.physics.add.sprite(
+        chest.x,
+        chest.platformTopY,
+        closedTexture,
+      );
+      sprite.setOrigin(0.5, 1);
+      sprite.setDisplaySize(84, 84);
+      sprite.setImmovable(true);
+      sprite.body.allowGravity = false;
+      sprite.setDepth(8);
+      sprite.setData("chest", chest);
+      sprite.setData("opened", false);
+      sprite.setData("armed", true);
+      sprite.setData("glow", glow);
+      this.environment.addShadow(chest.x, chest.platformTopY + 4, 72, 0.4);
+      const label = this.add
+        .text(chest.x, chest.platformTopY - 92, "🎁 Peti Harta", {
+          fontFamily: "Arial, sans-serif",
+          fontSize: "15px",
+          fontStyle: "bold",
+          color: "#ffffff",
+          stroke: "#7c2d12",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(11);
+      sprite.setData("label", label);
+      this.physics.add.overlap(
+        this.player,
+        sprite,
+        this.triggerChest,
+        undefined,
+        this,
+      );
+      this.chestSprites.push(sprite);
+    });
+  }
+
+  private triggerChest = (_player: unknown, chestObject: unknown) => {
+    if (
+      this.chestPaused ||
+      this.encounterPaused ||
+      this.owlPaused ||
+      this.mapPaused ||
+      this.isAdventureStopped
+    ) {
+      return;
+    }
+    if (!(chestObject instanceof Phaser.GameObjects.GameObject)) return;
+    const sprite = chestObject as Phaser.Physics.Arcade.Sprite;
+    if (!sprite.active || sprite.getData("opened") || !sprite.getData("armed")) {
+      return;
+    }
+    // One popup per approach: the chest only re-arms once the player
+    // has walked away (see update()), so closing the popup while
+    // standing next to it never reopens it instantly.
+    sprite.setData("armed", false);
+    this.chestPaused = true;
+    this.player.setVelocity(0, 0);
+    this.virtual = { left: false, right: false, jump: false };
+    this.physics.world.pause();
+    this.playTone(392, 0.14, "triangle");
+    this.time.delayedCall(120, () => this.playTone(523, 0.16, "triangle"));
+    this.game.events.emit(
+      "chest-stop",
+      sprite.getData("chest") as AdventureChest,
+    );
+  };
+
+  private handleResolveChest = (chestId: string, opened: boolean) => {
+    if (!this.chestPaused) return;
+    this.chestPaused = false;
+    this.physics.world.resume();
+    if (!opened) return;
+    const sprite = this.chestSprites.find(
+      (candidate) =>
+        (candidate.getData("chest") as AdventureChest).id === chestId,
+    );
+    if (!sprite?.active || sprite.getData("opened")) return;
+    sprite.setData("opened", true);
+    if (this.textures.exists("chest-open-art")) {
+      sprite.setTexture("chest-open-art");
+    } else {
+      sprite.setTint(0xfbbf24);
+    }
+    const glow = sprite.getData("glow") as Phaser.GameObjects.Image | undefined;
+    if (glow?.active) {
+      this.tweens.killTweensOf(glow);
+      glow.destroy();
+    }
+    const label = sprite.getData("label") as Phaser.GameObjects.Text | undefined;
+    label?.destroy();
+    const chest = sprite.getData("chest") as AdventureChest;
+    this.sparkleBurst(
+      chest.x,
+      chest.platformTopY - 44,
+      [0xfde047, 0xf59e0b, 0xffffff],
+      16,
+    );
+    this.playTone(660, 0.12, "sine");
+    this.time.delayedCall(110, () => this.playTone(880, 0.14, "sine"));
+    this.time.delayedCall(220, () => this.playTone(1174, 0.18, "sine"));
+    this.spawnChestReward(chest);
+  };
+
+  /** The chest's reward pops out and settles beside the chest on the
+   *  same platform, where the ordinary pickup overlap collects it. */
+  private spawnChestReward(chest: AdventureChest) {
+    const reward = chest.reward;
+    const artKey = `powerup-${reward}-art`;
+    const texture = this.textures.exists(artKey)
+      ? artKey
+      : `powerup-${reward}-fallback`;
+    const glowTint =
+      reward === "orb" ? 0xa78bfa : reward === "berry" ? 0xf87171 : 0x7dd3fc;
+    const startY = chest.platformTopY - 30;
+    const glow = this.add
+      .image(chest.x, startY, "glow-soft")
+      .setTint(glowTint)
+      .setDisplaySize(110, 110)
+      .setAlpha(0.55)
+      .setDepth(7);
+    const item = this.physics.add.sprite(chest.x, startY, texture);
+    item.setDisplaySize(56, 56);
+    item.setImmovable(true);
+    item.body.allowGravity = false;
+    item.setDepth(9);
+    item.setData("pickup-kind", reward);
+    item.setData("glow", glow);
+    const restX = chest.x + 64;
+    const restY = chest.platformTopY - 36;
+    this.tweens.add({
+      targets: [item, glow],
+      y: chest.platformTopY - 128,
+      duration: 240,
+      ease: "Quad.easeOut",
+      onComplete: () => {
+        this.tweens.add({
+          targets: [item, glow],
+          x: restX,
+          y: restY,
+          duration: 380,
+          ease: "Bounce.easeOut",
+          onComplete: () => {
+            this.tweens.add({
+              targets: [item, glow],
+              y: restY - 10,
+              duration: 850,
+              yoyo: true,
+              repeat: -1,
+              ease: "Sine.easeInOut",
+            });
+          },
+        });
+      },
+    });
+    this.physics.add.overlap(
+      this.player,
+      item,
+      this.collectPowerUp,
+      undefined,
+      this,
+    );
+  }
+
+  /** Floating announcement above the hero when a timed power-up
+   *  starts (the countdown itself lives in the scene HUD). */
+  private showEffectToast(text: string) {
+    const toast = this.add
+      .text(this.player.x, this.player.y - 120, text, {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "17px",
+        fontStyle: "bold",
+        color: "#ffffff",
+        stroke: "#1e3a8a",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(16);
+    this.tweens.add({
+      targets: toast,
+      y: toast.y - 34,
+      alpha: 0,
+      duration: 1500,
+      ease: "Sine.easeOut",
+      onComplete: () => toast.destroy(),
+    });
+  }
+
   /** Sprint 2 (Peta Dunia): opening the world map pauses the run;
    *  closing it resumes — unless an encounter/owl pause owns the
    *  world at that moment. */
   private handlePauseRun = () => {
-    if (this.encounterPaused || this.owlPaused || this.isAdventureStopped) {
+    if (
+      this.encounterPaused ||
+      this.owlPaused ||
+      this.chestPaused ||
+      this.isAdventureStopped
+    ) {
       return;
     }
     this.mapPaused = true;
@@ -715,7 +998,7 @@ export default class AdventureScene extends Phaser.Scene {
   private handleResumeRun = () => {
     if (!this.mapPaused) return;
     this.mapPaused = false;
-    if (!this.encounterPaused && !this.owlPaused) {
+    if (!this.encounterPaused && !this.owlPaused && !this.chestPaused) {
       this.physics.world.resume();
     }
   };
@@ -1244,15 +1527,48 @@ export default class AdventureScene extends Phaser.Scene {
     if (!(itemObject instanceof Phaser.GameObjects.GameObject)) return;
     const item = itemObject as Phaser.Physics.Arcade.Sprite;
     if (!item.active) return;
-    const kind = item.getData("pickup-kind");
-    if (kind !== "heart" && kind !== "shield") return;
+    const kind = item.getData("pickup-kind") as
+      | "heart"
+      | "shield"
+      | ChestRewardKind
+      | undefined;
+    if (
+      kind !== "heart" &&
+      kind !== "shield" &&
+      kind !== "orb" &&
+      kind !== "berry" &&
+      kind !== "wing"
+    ) {
+      return;
+    }
     const glow = item.getData("glow") as Phaser.GameObjects.Image | undefined;
     const { x, y } = item;
     item.destroy();
     glow?.destroy();
-    this.sparkleBurst(x, y, kind === "heart" ? [0xf472b6, 0xfda4af, 0xffffff] : [0x60a5fa, 0xbfdbfe, 0xffffff], 10);
+    const colors =
+      kind === "heart"
+        ? [0xf472b6, 0xfda4af, 0xffffff]
+        : kind === "shield"
+          ? [0x60a5fa, 0xbfdbfe, 0xffffff]
+          : kind === "orb"
+            ? [0xa78bfa, 0xddd6fe, 0xffffff]
+            : kind === "berry"
+              ? [0xf87171, 0xfecaca, 0xffffff]
+              : [0x7dd3fc, 0xfde68a, 0xffffff];
+    this.sparkleBurst(x, y, colors, 10);
     this.playPickupSound();
-    this.game.events.emit("adventure-pickup", kind);
+    // Sprint 3: the timed power-ups live entirely in the scene (they
+    // steer the player body); the orb joins hearts/shields on the
+    // React run state via the pickup event.
+    if (kind === "berry") {
+      this.berryUntilMs = this.effectClockMs + BERRY_DURATION_MS;
+      this.showEffectToast("🍓 Cepat! Lari lebih kencang!");
+    } else if (kind === "wing") {
+      this.wingUntilMs = this.effectClockMs + WING_DURATION_MS;
+      this.showEffectToast("🪶 Lompat ganda aktif!");
+    } else {
+      this.game.events.emit("adventure-pickup", kind);
+    }
   }
 
   private createHud() {
@@ -1278,9 +1594,23 @@ export default class AdventureScene extends Phaser.Scene {
       })
       .setScrollFactor(0)
       .setDepth(20);
+
+    // Sprint 3: countdown line for the timed chest power-ups
+    // (Berry Kecepatan / Bulu Sayap), refreshed in update().
+    this.effectHudText = this.add
+      .text(24, 74, "", {
+        fontFamily: "Arial",
+        fontSize: "14px",
+        fontStyle: "bold",
+        color: "#fef08a",
+        stroke: "#24533a",
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(20);
   }
 
-  update() {
+  update(_time: number, delta: number) {
     if (this.isAdventureStopped) {
       this.player?.setVelocity(0, 0);
       return;
@@ -1301,8 +1631,44 @@ export default class AdventureScene extends Phaser.Scene {
       return;
     }
 
+    if (this.chestPaused) {
+      this.player?.setVelocityX(0);
+      return;
+    }
+
     if (!this.player?.body || !this.cursors || !this.wasd) {
       return;
+    }
+
+    // Sprint 3: the power-up effect clock only advances while the
+    // run is actually playing (every pause returns above).
+    this.effectClockMs += delta;
+
+    // Sprint 3: a chest whose popup was closed unopened re-arms once
+    // the player has walked away from it.
+    this.chestSprites.forEach((sprite) => {
+      if (
+        sprite.active &&
+        !sprite.getData("opened") &&
+        !sprite.getData("armed") &&
+        Math.abs(this.player.x - sprite.x) > 120
+      ) {
+        sprite.setData("armed", true);
+      }
+    });
+
+    // Sprint 3: countdown line for the timed chest power-ups.
+    if (this.effectHudText) {
+      const parts: string[] = [];
+      const berryLeft = Math.ceil((this.berryUntilMs - this.effectClockMs) / 1000);
+      if (berryLeft > 0) parts.push(`🍓 Kecepatan: ${berryLeft} dtk`);
+      const wingLeft = Math.ceil((this.wingUntilMs - this.effectClockMs) / 1000);
+      if (wingLeft > 0) parts.push(`🪶 Lompat Ganda: ${wingLeft} dtk`);
+      const text = parts.join("   ");
+      if (text !== this.effectHudCache) {
+        this.effectHudCache = text;
+        this.effectHudText.setText(text);
+      }
     }
 
     // Sprint 1 (Burung Hantu): entering a zone for the first time
@@ -1389,16 +1755,36 @@ export default class AdventureScene extends Phaser.Scene {
 
     const body = this.player.body as Phaser.Physics.Arcade.Body;
 
+    // Sprint 3: Berry Kecepatan multiplies the run speed while active.
+    const speed =
+      this.effectClockMs < this.berryUntilMs
+        ? this.moveSpeed * BERRY_SPEED_MULTIPLIER
+        : this.moveSpeed;
+
     if (left === right) {
       this.player.setVelocityX(0);
     } else {
-      this.player.setVelocityX(left ? -this.moveSpeed : this.moveSpeed);
+      this.player.setVelocityX(left ? -speed : speed);
       this.player.setFlipX(left);
+    }
+
+    if (body.blocked.down) {
+      this.airJumpsUsed = 0;
     }
 
     if (jump && body.blocked.down) {
       this.player.setVelocityY(this.jumpVelocity);
       this.playTone(480, 0.09, "triangle", 0.035);
+    } else if (
+      jump &&
+      this.effectClockMs < this.wingUntilMs &&
+      this.airJumpsUsed < 1
+    ) {
+      // Sprint 3: Bulu Sayap grants one extra mid-air jump.
+      this.airJumpsUsed += 1;
+      this.player.setVelocityY(this.jumpVelocity * 0.94);
+      this.playTone(720, 0.09, "triangle", 0.035);
+      this.sparkleBurst(this.player.x, body.bottom, [0xffffff, 0xfde68a], 6);
     }
 
     if (jump) {

@@ -12,6 +12,7 @@ import type { AdventureEncounter } from "@/game/adventure/AdventureScene";
 import type { PlannedEncounter } from "@/features/adventure/encounter-generator";
 import type { DifficultySettings } from "@/features/adventure/difficulty";
 import type { ZoneId } from "@/features/adventure/zones";
+import type { AdventureChest } from "@/features/adventure/chests";
 
 type VirtualDirection = "left" | "right" | "jump";
 
@@ -29,6 +30,9 @@ interface Props {
   totalQuestions: number;
   monsterProgress: number;
   shieldCharges: number;
+  /** Sprint 3 (Peti Harta): an Energy Orb is waiting to double the
+   *  next correct answer's damage. */
+  energyOrbActive: boolean;
   isDefeated: boolean;
   /** Incremented on every correct answer; the scene restarts the boss
    *  timed-attack cycle whenever this changes. */
@@ -36,12 +40,18 @@ interface Props {
   onEncounter: (encounter: AdventureEncounter, resolve: () => void) => void;
   onAdventureComplete: () => void;
   onHazard: () => void;
-  onPickup: (kind: "heart" | "shield") => void;
+  onPickup: (kind: "heart" | "shield" | "orb") => void;
   onBossWarning: (active: boolean) => void;
   onBossAttack: () => void;
   /** Sprint 1 (Burung Hantu): the scene paused at a zone's owl;
    *  resolve() resumes the run. */
   onOwlStop: (zoneId: ZoneId, resolve: () => void) => void;
+  /** Sprint 3 (Peti Harta): the scene paused at a treasure chest;
+   *  resolve(opened) resumes — opened=true pops the reward out. */
+  onChestStop: (
+    chest: AdventureChest,
+    resolve: (opened: boolean) => void,
+  ) => void;
   /** Sprint 2 (Peta Dunia): while true, the scene pauses the run. */
   worldMapOpen: boolean;
   onOpenWorldMap: () => void;
@@ -71,6 +81,7 @@ export default function AdventureGameCanvas({
   totalQuestions,
   monsterProgress,
   shieldCharges,
+  energyOrbActive,
   isDefeated,
   bossResetSignal,
   onEncounter,
@@ -80,6 +91,7 @@ export default function AdventureGameCanvas({
   onBossWarning,
   onBossAttack,
   onOwlStop,
+  onChestStop,
   worldMapOpen,
   onOpenWorldMap,
   onRequestRestart,
@@ -101,6 +113,7 @@ export default function AdventureGameCanvas({
   const onBossWarningRef = useRef(onBossWarning);
   const onBossAttackRef = useRef(onBossAttack);
   const onOwlStopRef = useRef(onOwlStop);
+  const onChestStopRef = useRef(onChestStop);
 
   useEffect(() => {
     onEncounterRef.current = onEncounter;
@@ -110,6 +123,7 @@ export default function AdventureGameCanvas({
     onBossWarningRef.current = onBossWarning;
     onBossAttackRef.current = onBossAttack;
     onOwlStopRef.current = onOwlStop;
+    onChestStopRef.current = onChestStop;
   }, [
     onEncounter,
     onAdventureComplete,
@@ -118,6 +132,7 @@ export default function AdventureGameCanvas({
     onBossWarning,
     onBossAttack,
     onOwlStop,
+    onChestStop,
   ]);
 
   const [ready, setReady] = useState(false);
@@ -187,7 +202,7 @@ export default function AdventureGameCanvas({
           onAdventureCompleteRef.current();
         };
         const handleHazard = () => onHazardRef.current();
-        const handlePickup = (kind: "heart" | "shield") =>
+        const handlePickup = (kind: "heart" | "shield" | "orb") =>
           onPickupRef.current(kind);
         const handleBossWarning = () => onBossWarningRef.current(true);
         const handleBossWarningClear = () => onBossWarningRef.current(false);
@@ -200,6 +215,11 @@ export default function AdventureGameCanvas({
             game.events.emit("resolve-owl");
           });
         };
+        const handleChestStop = (chest: AdventureChest) => {
+          onChestStopRef.current(chest, (opened: boolean) => {
+            game.events.emit("resolve-chest", chest.id, opened);
+          });
+        };
 
         game.events.on("monster-encounter", handleEncounter);
         game.events.on("adventure-complete", handleAdventureComplete);
@@ -209,6 +229,7 @@ export default function AdventureGameCanvas({
         game.events.on("boss-attack-warning-clear", handleBossWarningClear);
         game.events.on("boss-attack", handleBossAttack);
         game.events.on("owl-stop", handleOwlStop);
+        game.events.on("chest-stop", handleChestStop);
 
         game.events.once(Phaser.Core.Events.DESTROY, () => {
           game.events.off("monster-encounter", handleEncounter);
@@ -219,6 +240,7 @@ export default function AdventureGameCanvas({
           game.events.off("boss-attack-warning-clear", handleBossWarningClear);
           game.events.off("boss-attack", handleBossAttack);
           game.events.off("owl-stop", handleOwlStop);
+          game.events.off("chest-stop", handleChestStop);
         });
 
         if (!disposed) {
@@ -397,6 +419,11 @@ export default function AdventureGameCanvas({
               </div>
               <div className="mt-1 text-[9px] font-semibold text-white/85 sm:text-[10px]">
                 🛡️ {shieldCharges} perisai
+                {energyOrbActive && (
+                  <span className="ml-2 font-black text-violet-300">
+                    🔮 Orb aktif: damage 2×!
+                  </span>
+                )}
               </div>
             </div>
             <div className="px-1 text-center">
