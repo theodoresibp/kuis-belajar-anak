@@ -44,6 +44,12 @@ import {
   type AlbumCollection,
 } from "@/features/adventure/monster-album";
 import MonsterAlbum from "./MonsterAlbum";
+import {
+  LIGHTNING_DURATION_SECONDS,
+  buildLightningQueue,
+  shieldsEarned,
+  shouldTriggerLightningRound,
+} from "@/features/adventure/lightning-round";
 import { MaterialSections, MaterialSummary } from "@/components/MaterialView";
 import Image from "next/image";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
@@ -179,6 +185,25 @@ export default function AdventureMode({
   const [chestTriedOptionIds, setChestTriedOptionIds] = useState<string[]>([]);
   const [chestSolved, setChestSolved] = useState(false);
   const chestTimer = useRef<number | null>(null);
+  // Sprint 5 (Ronde Kilat): the lightning round chained after a
+  // zone-transition owl panel. The owl's resolver is held in the
+  // panel state until the round ends, so the scene stays paused
+  // for the whole round.
+  const [lightningPanel, setLightningPanel] = useState<{
+    zoneId: ZoneId;
+    queue: QuizQuestion[];
+    resolve: () => void;
+  } | null>(null);
+  const [lightningIndex, setLightningIndex] = useState(0);
+  const [lightningCorrect, setLightningCorrect] = useState(0);
+  const [lightningTriedOptionIds, setLightningTriedOptionIds] = useState<
+    string[]
+  >([]);
+  const [lightningSecondsLeft, setLightningSecondsLeft] = useState(
+    LIGHTNING_DURATION_SECONDS,
+  );
+  const [lightningDone, setLightningDone] = useState(false);
+  const lightningShieldsAwarded = useRef(false);
   // Bumped on every correct answer; the canvas forwards it to the
   // scene, which restarts the boss timed-attack cycle (see
   // AdventureScene.handleBossAttackReset).
@@ -323,6 +348,34 @@ export default function AdventureMode({
     if (run.status === "defeat") playSound("finish");
   }, [run.status]);
 
+  // Sprint 5 (Ronde Kilat): the 30-second countdown runs off an end
+  // timestamp, so browser throttling cannot stretch the round. When
+  // it reaches zero the round moves to its summary state.
+  useEffect(() => {
+    if (!lightningPanel || lightningDone) return;
+    const endsAt = Date.now() + LIGHTNING_DURATION_SECONDS * 1000;
+    const id = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setLightningSecondsLeft(left);
+      if (left <= 0) setLightningDone(true);
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [lightningPanel, lightningDone]);
+
+  // Sprint 5 (Ronde Kilat): when the round ends, bank the shields it
+  // earned (1 per 3 correct answers) through the ordinary pickup
+  // action — exactly once per round.
+  useEffect(() => {
+    if (!lightningDone || !lightningPanel || lightningShieldsAwarded.current)
+      return;
+    lightningShieldsAwarded.current = true;
+    const shields = shieldsEarned(lightningCorrect);
+    for (let i = 0; i < shields; i += 1) {
+      dispatch({ type: "COLLECT_SHIELD" });
+    }
+    if (shields > 0) playSound("shield");
+  }, [lightningDone, lightningPanel, lightningCorrect]);
+
   const questionStart = encounterQuestionCounts
     .slice(0, run.encounterIndex)
     .reduce((total, count) => total + count, 0);
@@ -347,8 +400,55 @@ export default function AdventureMode({
 
   function dismissOwlPanel() {
     if (!owlPanel) return;
-    const { resolve } = owlPanel;
+    const { stop, resolve } = owlPanel;
     setOwlPanel(null);
+    // Sprint 5 (Ronde Kilat): crossing into a new zone (the recall
+    // and boss-tip stops) first runs a 30-second lightning round.
+    // The owl's resolver is held back until the round ends, so the
+    // scene stays paused throughout — no scene changes needed.
+    if (shouldTriggerLightningRound(stop.kind) && questions.length > 0) {
+      setLightningPanel({
+        zoneId: stop.zoneId,
+        queue: buildLightningQueue(questions),
+        resolve,
+      });
+      setLightningIndex(0);
+      setLightningCorrect(0);
+      setLightningTriedOptionIds([]);
+      setLightningSecondsLeft(LIGHTNING_DURATION_SECONDS);
+      setLightningDone(false);
+      lightningShieldsAwarded.current = false;
+      playSound("powerup");
+      return;
+    }
+    resolve();
+  }
+
+  // Sprint 5 (Ronde Kilat): correct answers advance immediately;
+  // wrong picks only mark the option. Nothing here touches HP, the
+  // encounter queue or the battle score.
+  function handleLightningAnswer(optionId: string) {
+    if (!lightningPanel || lightningDone) return;
+    const question = lightningPanel.queue[lightningIndex];
+    if (!question || lightningTriedOptionIds.includes(optionId)) return;
+    if (optionId === question.correctOptionId) {
+      playSound("correct");
+      const nextIndex = lightningIndex + 1;
+      setLightningCorrect((value) => value + 1);
+      setLightningTriedOptionIds([]);
+      setLightningIndex(nextIndex);
+      if (nextIndex >= lightningPanel.queue.length) setLightningDone(true);
+      return;
+    }
+    playSound("wrong");
+    setLightningTriedOptionIds((previous) => [...previous, optionId]);
+  }
+
+  function closeLightningRound() {
+    if (!lightningPanel) return;
+    const { resolve } = lightningPanel;
+    setLightningPanel(null);
+    setLightningDone(false);
     resolve();
   }
 
@@ -1014,6 +1114,111 @@ export default function AdventureMode({
                     Tutup Dulu
                   </button>
                 </footer>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* Sprint 5 (Ronde Kilat): the 30-second bonus round between
+            zones. The scene is still paused from the owl stop; its
+            resolver only fires when this panel closes. */}
+        {lightningPanel && (
+          <div
+            className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ronde Kilat"
+          >
+            <section className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-4 border-amber-300 bg-white shadow-2xl">
+              <header className="bg-amber-50 px-5 py-3">
+                <p className="text-[11px] font-black uppercase tracking-widest text-amber-600">
+                  ⚡ Ronde Kilat — Menuju {ZONES[lightningPanel.zoneId].name}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span
+                    className={`text-2xl font-black tabular-nums ${
+                      lightningSecondsLeft <= 10 && !lightningDone
+                        ? "text-red-600"
+                        : "text-slate-900"
+                    }`}
+                  >
+                    ⏱️ {lightningDone ? 0 : lightningSecondsLeft} detik
+                  </span>
+                  <span className="text-base font-black text-emerald-700">
+                    ✅ Benar: {lightningCorrect}
+                  </span>
+                  <span className="text-base font-black text-sky-700">
+                    🛡️ +{shieldsEarned(lightningCorrect)} perisai
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-slate-500">
+                  Jawab sebanyak-banyaknya! Setiap 3 jawaban benar = +1
+                  perisai. Jawaban salah tidak mengurangi HP.
+                </p>
+              </header>
+
+              {lightningDone ? (
+                <div className="px-5 py-6 text-center">
+                  <div className="text-5xl" aria-hidden>
+                    ⚡
+                  </div>
+                  <h2 className="mt-2 text-2xl font-black text-slate-900">
+                    {lightningIndex >= lightningPanel.queue.length &&
+                    lightningSecondsLeft > 0
+                      ? "Hebat, semua soal ronde selesai!"
+                      : "Waktu habis!"}
+                  </h2>
+                  <p className="mt-2 text-base font-semibold text-slate-600">
+                    Kamu menjawab {lightningCorrect} soal dengan benar.
+                  </p>
+                  <p className="mt-1 text-base font-black text-sky-700">
+                    {shieldsEarned(lightningCorrect) > 0
+                      ? `Kamu mendapat 🛡️ +${shieldsEarned(lightningCorrect)} perisai!`
+                      : "Belum dapat perisai kali ini — kumpulkan 3 jawaban benar untuk 1 perisai. Tetap semangat!"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={closeLightningRound}
+                    className="mt-5 w-full rounded-full bg-amber-400 px-6 py-3 text-base font-black text-amber-950 shadow-md transition hover:bg-amber-300 active:scale-95"
+                  >
+                    Lanjut Berpetualang ▶
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                    {lightningPanel.queue[lightningIndex] && (
+                      <QuestionCard
+                        questionNumber={lightningIndex + 1}
+                        totalQuestions={lightningPanel.queue.length}
+                        question={lightningPanel.queue[lightningIndex].question}
+                        image={lightningPanel.queue[lightningIndex].image}
+                        imageAlt={lightningPanel.queue[lightningIndex].imageAlt}
+                        options={lightningPanel.queue[lightningIndex].options}
+                        correctOptionId={
+                          lightningPanel.queue[lightningIndex].correctOptionId
+                        }
+                        triedOptionIds={lightningTriedOptionIds}
+                        status="active"
+                        explanation={
+                          lightningPanel.queue[lightningIndex].explanation
+                        }
+                        hideExplanation
+                        compactLayout
+                        onSelect={handleLightningAnswer}
+                      />
+                    )}
+                  </div>
+                  <footer className="border-t-2 border-slate-100 px-5 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setLightningDone(true)}
+                      className="w-full rounded-full border-2 border-slate-300 bg-white px-6 py-2.5 text-sm font-black text-slate-500 shadow-sm transition hover:bg-slate-100 active:scale-95"
+                    >
+                      Lewati Ronde Ini
+                    </button>
+                  </footer>
+                </>
               )}
             </section>
           </div>
