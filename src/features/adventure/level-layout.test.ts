@@ -105,6 +105,23 @@ describe("generateLevelLayout — invariants for any run length", () => {
       // One chest step per zone.
       expect(layout.chestPlatforms).toHaveLength(layout.zones.length);
 
+      // Sprint 6: one gap feature per ground gap, alternating
+      // moving/crumbling starting with moving, each spanning its
+      // gap with its top at y 510 — a 46px step up from the segment
+      // tops and within jump reach (<= 216px) of the pit floor at
+      // the world bottom (720).
+      expect(layout.gapFeatures).toHaveLength(Math.max(0, n - 1));
+      layout.gapFeatures.forEach((feature, i) => {
+        expect(feature.kind).toBe(i % 2 === 0 ? "moving" : "crumbling");
+        expect(feature.y - 14).toBe(510);
+        expect(feature.x - feature.width / 2).toBeLessThanOrEqual(feature.gapX);
+        expect(feature.x + feature.width / 2).toBeGreaterThanOrEqual(
+          feature.gapX + feature.gapWidth,
+        );
+        expect(720 - (feature.y - 14)).toBeLessThanOrEqual(216);
+        expect(LEVEL.groundTopY - (feature.y - 14)).toBe(46);
+      });
+
       // Surfaces cover every ground segment and platform.
       expect(layout.surfaces).toHaveLength(
         layout.groundSegments.length + layout.platforms.length,

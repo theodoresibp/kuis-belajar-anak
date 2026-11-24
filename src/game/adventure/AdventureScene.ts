@@ -47,6 +47,15 @@ interface MonsterPoseKeys {
  *  delivers their real artwork. */
 const FALLBACK_TINTS = [0xffffff, 0xd9f99d, 0xfde68a, 0xfbcfe8, 0xa5f3fc];
 
+/** Sprint 6 (gap features): the moving platforms shuttle ±25px
+ *  across their gap at a gentle 40px/s; a crumbling bridge shakes
+ *  for 800ms of being stood on, falls, and respawns 3s later. */
+const GAP_MOVER_SPEED = 40;
+const GAP_MOVER_RANGE = 25;
+const BRIDGE_CRUMBLE_MS = 800;
+const BRIDGE_FALL_MS = 450;
+const BRIDGE_RESPAWN_MS = 3000;
+
 /** Sprint F glow colour per important tier (auras, defeat rings). */
 const TIER_GLOW: Partial<Record<MonsterTier, number>> = {
   elite: 0xf59e0b,
@@ -93,6 +102,33 @@ export default class AdventureScene extends Phaser.Scene {
   private mapPaused = false;
   private chestPaused = false;
   private chestSprites: Phaser.Physics.Arcade.Sprite[] = [];
+  /** Sprint 6: moving platforms over the ground gaps. The visual is
+   *  a separate image following the physics body (null when the
+   *  platform artwork is unavailable and the body itself shows). */
+  private gapMovers: {
+    body: Phaser.Physics.Arcade.Image;
+    visual: Phaser.GameObjects.Image | null;
+    minX: number;
+    maxX: number;
+    dir: 1 | -1;
+  }[] = [];
+  /** Sprint 6: crumbling bridges over the ground gaps. Their state
+   *  machine runs on the effect clock, so popups freeze it fairly. */
+  private gapBridges: {
+    body: Phaser.Physics.Arcade.Image;
+    visual: Phaser.GameObjects.Image | null;
+    baseX: number;
+    /** The y the visible target (visual image, or the body itself
+     *  when there is no artwork) rests at. */
+    restY: number;
+    state: "idle" | "shaking" | "falling" | "gone";
+    /** Milliseconds of (near-)continuous standing, accumulated per
+     *  frame — frame-rate independent, unlike comparing timestamps
+     *  across the physics-step boundary. */
+    stoodMs: number;
+    lastStoodMs: number;
+    stateAtMs: number;
+  }[] = [];
   /** Sprint 3 (Peti Harta): timed power-up effects run on their own
    *  clock that only advances while the run is actually playing, so
    *  opening a popup (encounter/owl/map/chest) never drains them. */
@@ -236,6 +272,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.createOwls();
     this.createHazardsAndPowerUps();
     this.createChests();
+    this.createGapFeatures();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -1007,6 +1044,144 @@ export default class AdventureScene extends Phaser.Scene {
     }
   };
 
+  /** Sprint 6: builds the moving platforms and crumbling bridges
+   *  the layout places over the ground gaps. Both are optional
+   *  routes — the plain jump across every gap keeps working. */
+  private createGapFeatures() {
+    this.layout.gapFeatures.forEach((feature) => {
+      const topY = feature.y - 14;
+      const body = this.physics.add.image(
+        feature.x,
+        feature.y,
+        "forest-platform",
+      );
+      body.setDisplaySize(feature.width, 28);
+      body.setImmovable(true);
+      body.body.allowGravity = false;
+
+      // Same artwork treatment as the static platforms: the wood
+      // visual on top, the physics body hidden behind it.
+      let visual: Phaser.GameObjects.Image | null = null;
+      if (this.environment.platformSpritesReady) {
+        body.setVisible(false);
+        visual = this.add.image(feature.x, topY - 2, "platform-wood");
+        visual.setOrigin(0.5, 0);
+        visual.setDisplaySize(feature.width + 14, 62);
+        visual.setDepth(2);
+      }
+
+      if (feature.kind === "moving") {
+        body.setVelocityX(GAP_MOVER_SPEED);
+        this.physics.add.collider(this.player, body);
+        this.gapMovers.push({
+          body,
+          visual,
+          minX: feature.x - GAP_MOVER_RANGE,
+          maxX: feature.x + GAP_MOVER_RANGE,
+          dir: 1,
+        });
+        return;
+      }
+
+      const bridge: (typeof this.gapBridges)[number] = {
+        body,
+        visual,
+        baseX: feature.x,
+        restY: visual ? topY - 2 : feature.y,
+        state: "idle",
+        stoodMs: 0,
+        lastStoodMs: Number.NEGATIVE_INFINITY,
+        stateAtMs: 0,
+      };
+      // The collider callback doubles as the standing sensor: it
+      // fires on every physics step while the hero touches the
+      // bridge, and the state machine reads the timestamp.
+      this.physics.add.collider(this.player, body, () => {
+        bridge.lastStoodMs = this.effectClockMs;
+      });
+      this.gapBridges.push(bridge);
+    });
+  }
+
+  /** Sprint 6: drives the gap features. Called from update() right
+   *  after the effect clock advances, so every pause (encounter,
+   *  owl, chest, map) freezes them along with everything else. */
+  private updateGapFeatures(delta: number) {
+    for (const mover of this.gapMovers) {
+      if (mover.body.x <= mover.minX) mover.dir = 1;
+      else if (mover.body.x >= mover.maxX) mover.dir = -1;
+      mover.body.setVelocityX(GAP_MOVER_SPEED * mover.dir);
+      mover.visual?.setX(mover.body.x);
+    }
+
+    for (const bridge of this.gapBridges) {
+      const target = bridge.visual ?? bridge.body;
+      // The collider callback stamps lastStoodMs from inside the
+      // physics step; at low frame rates a single frame's delta can
+      // exceed a tight freshness window, so the window is generous
+      // and the crumble timer accumulates per-frame instead.
+      const standing = this.effectClockMs - bridge.lastStoodMs <= 350;
+      switch (bridge.state) {
+        case "idle":
+          if (standing) {
+            bridge.state = "shaking";
+            bridge.stoodMs = 0;
+          }
+          break;
+        case "shaking":
+          // Only the visual shakes; the physics body stays put, so
+          // standing on a shaking bridge never jitters the hero.
+          target.setX(bridge.baseX + Math.sin(this.effectClockMs * 0.09) * 2);
+          if (!standing) {
+            bridge.state = "idle";
+            bridge.stoodMs = 0;
+            target.setX(bridge.baseX);
+          } else {
+            bridge.stoodMs += delta;
+            if (bridge.stoodMs >= BRIDGE_CRUMBLE_MS) {
+              bridge.state = "falling";
+              bridge.stateAtMs = this.effectClockMs;
+              target.setX(bridge.baseX);
+              bridge.body.disableBody(false, false);
+            }
+          }
+          break;
+        case "falling": {
+          const progress = Math.min(
+            1,
+            (this.effectClockMs - bridge.stateAtMs) / BRIDGE_FALL_MS,
+          );
+          target.setY(bridge.restY + progress * 110);
+          target.setAlpha(1 - progress);
+          if (progress >= 1) {
+            bridge.state = "gone";
+            bridge.stateAtMs = this.effectClockMs;
+            target.setVisible(false);
+          }
+          break;
+        }
+        case "gone":
+          if (this.effectClockMs - bridge.stateAtMs >= BRIDGE_RESPAWN_MS) {
+            target.setVisible(true);
+            target.setAlpha(1);
+            target.setX(bridge.baseX);
+            target.setY(bridge.restY);
+            bridge.body.enableBody(
+              false,
+              bridge.baseX,
+              bridge.body.y,
+              true,
+              bridge.visual === null,
+            );
+            bridge.state = "idle";
+            bridge.stoodMs = 0;
+            bridge.lastStoodMs = Number.NEGATIVE_INFINITY;
+          }
+          break;
+      }
+    }
+  }
+
   private createEncounters() {
     this.plan.forEach((encounter, index) => {
       const definition = getAdventureMonsterById(encounter.monsterId);
@@ -1647,6 +1822,10 @@ export default class AdventureScene extends Phaser.Scene {
     // Sprint 3: the power-up effect clock only advances while the
     // run is actually playing (every pause returns above).
     this.effectClockMs += delta;
+
+    // Sprint 6: moving platforms and crumbling bridges run on the
+    // same unpaused clock.
+    this.updateGapFeatures(delta);
 
     // Sprint 3: a chest whose popup was closed unopened re-arms once
     // the player has walked away from it.

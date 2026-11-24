@@ -26,6 +26,12 @@
  *   hosts it is chosen by the layout seed: the game passes a fresh
  *   random seed on every load, so the chest's spot changes from run
  *   to run while always staying on a validated, reachable platform.
+ * - Sprint 6: every ground gap gets ONE feature platform over it,
+ *   alternating moving / crumbling, top at y 510 — a 46px step up
+ *   from the segment tops (556) and 210px above the pit floor (the
+ *   world bottom, 720), so it is reachable from everywhere and the
+ *   ordinary jump across the 110px gap stays possible. Features are
+ *   an optional, more playful route: no existing platform changes.
  */
 
 export interface LevelEncounterSpot {
@@ -63,6 +69,23 @@ export interface LevelChestPlatform extends LevelPlatform {
   zoneId: ZoneId;
 }
 
+/**
+ * Sprint 6: a playful platform over one ground gap — either a moving
+ * platform that ferries the hero across, or a crumbling bridge that
+ * falls away shortly after being stood on (and later respawns).
+ */
+export interface LevelGapFeature {
+  kind: "moving" | "crumbling";
+  /** Left edge and width of the ground gap this feature serves. */
+  gapX: number;
+  gapWidth: number;
+  /** Centre x of the platform. */
+  x: number;
+  /** Centre y of the platform (28px thick, like every platform). */
+  y: number;
+  width: number;
+}
+
 export interface LevelLayout {
   worldWidth: number;
   worldHeight: number;
@@ -71,6 +94,7 @@ export interface LevelLayout {
   groundSegments: LevelGroundSegment[];
   platforms: LevelPlatform[];
   chestPlatforms: LevelChestPlatform[];
+  gapFeatures: LevelGapFeature[];
   hazards: { x: number }[];
   pickups: LevelPickup[];
   surfaces: LevelSurface[];
@@ -211,6 +235,24 @@ export function generateLevelLayout(
     pickups.push({ x: encounters[count - 1].x - 150, kind: "heart" });
   }
 
+  // Sprint 6: one feature platform per ground gap, alternating
+  // moving / crumbling. Top at y 510 (centre 524): a small step up
+  // from the segment tops and still within jump reach of the pit
+  // floor, so the features decorate the crossing without gating it.
+  const gapFeatures: LevelGapFeature[] = [];
+  for (let i = 0; i + 1 < groundSegments.length; i += 1) {
+    const gapX = groundSegments[i].x + groundSegments[i].width;
+    const gapWidth = groundSegments[i + 1].x - gapX;
+    gapFeatures.push({
+      kind: i % 2 === 0 ? "moving" : "crumbling",
+      gapX,
+      gapWidth,
+      x: gapX + gapWidth / 2,
+      y: 524,
+      width: 150,
+    });
+  }
+
   const surfaces: LevelSurface[] = [
     ...groundSegments.map((segment) => ({
       x0: segment.x,
@@ -232,6 +274,7 @@ export function generateLevelLayout(
     groundSegments,
     platforms,
     chestPlatforms,
+    gapFeatures,
     hazards,
     pickups,
     surfaces,
