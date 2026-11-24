@@ -79,6 +79,11 @@ export default function AdventureGameCanvas({
 
   // Menyimpan pointer ID agar beberapa tombol dapat ditekan bersamaan.
   const activePointers = useRef<Map<number, VirtualDirection>>(new Map());
+  const dpadRef = useRef<HTMLDivElement>(null);
+  // Which D-pad halves are currently held (drives the pressed styling).
+  const [dpadDirections, setDpadDirections] = useState<
+    ReadonlySet<VirtualDirection>
+  >(new Set());
   const onEncounterRef = useRef(onEncounter);
   const onAdventureCompleteRef = useRef(onAdventureComplete);
   const onHazardRef = useRef(onHazard);
@@ -260,7 +265,7 @@ export default function AdventureGameCanvas({
   };
 
   const handlePointerRelease = (
-    event: ReactPointerEvent<HTMLButtonElement>,
+    event: ReactPointerEvent<HTMLButtonElement | HTMLDivElement>,
   ) => {
     const direction = activePointers.current.get(event.pointerId);
 
@@ -279,6 +284,65 @@ export default function AdventureGameCanvas({
     if (!anotherPointerHoldingSameDirection) {
       sendControl(direction, false);
     }
+    syncDpadDirections();
+  };
+
+  const syncDpadDirections = () => {
+    setDpadDirections(
+      new Set(
+        Array.from(activePointers.current.values()).filter(
+          (direction) => direction === "left" || direction === "right",
+        ),
+      ),
+    );
+  };
+
+  // The D-pad is one fused rocker: the direction comes from WHERE on
+  // the pad the pointer is, and follows pointermove — so sliding a
+  // thumb from the right half to the left half switches direction in
+  // the same gesture. (With two separate buttons + pointer capture,
+  // that slide never registered on the other button: changing
+  // direction felt stuck/laggy, especially right -> left.)
+  const dpadDirectionAt = (clientX: number): VirtualDirection => {
+    const rect = dpadRef.current?.getBoundingClientRect();
+    if (!rect) return "left";
+    return clientX < rect.left + rect.width / 2 ? "left" : "right";
+  };
+
+  const handleDpadPointerDown = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+    if (!ready || activePointers.current.has(event.pointerId)) {
+      return;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const direction = dpadDirectionAt(event.clientX);
+    activePointers.current.set(event.pointerId, direction);
+    sendControl(direction, true);
+    syncDpadDirections();
+  };
+
+  const handleDpadPointerMove = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    const current = activePointers.current.get(event.pointerId);
+    if (!current || (current !== "left" && current !== "right")) {
+      return;
+    }
+    const direction = dpadDirectionAt(event.clientX);
+    if (direction === current) {
+      return;
+    }
+    activePointers.current.set(event.pointerId, direction);
+    const anotherPointerHoldingOldDirection = Array.from(
+      activePointers.current.values(),
+    ).some((activeDirection) => activeDirection === current);
+    if (!anotherPointerHoldingOldDirection) {
+      sendControl(current, false);
+    }
+    sendControl(direction, true);
+    syncDpadDirections();
   };
 
   return (
@@ -362,21 +426,30 @@ export default function AdventureGameCanvas({
           className="pointer-events-none adventure-controls absolute inset-x-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5"
           aria-label="Kontrol permainan"
         >
-          {/* One fused rocker pad instead of two separate squares — a wider
-              shape is easier to find by feel without looking down, and
-              there's no dead zone between the two halves. */}
-          <div className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/95 shadow-xl">
+          {/* One fused rocker pad: the wrapper owns the pointer events
+              and the direction follows the thumb's position, so sliding
+              across the middle switches direction instantly. The two
+              halves are presentational (pointer-events-none). */}
+          <div
+            ref={dpadRef}
+            className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/95 shadow-xl"
+            onPointerDown={handleDpadPointerDown}
+            onPointerMove={handleDpadPointerMove}
+            onPointerUp={handlePointerRelease}
+            onPointerCancel={handlePointerRelease}
+            onLostPointerCapture={handlePointerRelease}
+          >
             {(["left", "right"] as const).map((direction) => (
               <button
                 key={direction}
                 type="button"
                 aria-label={CONTROL_LABELS[direction]}
                 disabled={!ready}
-                onPointerDown={(event) => handlePointerDown(event, direction)}
-                onPointerUp={handlePointerRelease}
-                onPointerCancel={handlePointerRelease}
-                onLostPointerCapture={handlePointerRelease}
-                className="adventure-control-btn flex h-14 w-14 touch-none select-none items-center justify-center text-3xl font-black text-white active:bg-violet-900 disabled:opacity-50 sm:h-[72px] sm:w-[72px] sm:text-4xl"
+                tabIndex={-1}
+                className={
+                  "adventure-control-btn pointer-events-none flex h-14 w-14 touch-none select-none items-center justify-center text-3xl font-black text-white transition-colors duration-75 disabled:opacity-50 sm:h-[72px] sm:w-[72px] sm:text-4xl" +
+                  (dpadDirections.has(direction) ? " bg-violet-900" : "")
+                }
               >
                 {CONTROL_SYMBOLS[direction]}
               </button>
