@@ -50,6 +50,8 @@ import {
   shieldsEarned,
   shouldTriggerLightningRound,
 } from "@/features/adventure/lightning-round";
+import { missionForZone } from "@/features/adventure/collect-mission";
+import { pickMonsterLine } from "@/features/adventure/monster-lines";
 import { MaterialSections, MaterialSummary } from "@/components/MaterialView";
 import Image from "next/image";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
@@ -161,6 +163,41 @@ export default function AdventureMode({
     stop: OwlStop;
     resolve: () => void;
   } | null>(null);
+  // Misi Kumpulkan: per-zone collect counts (state drives the HUD
+  // chip; a mirror ref counts inside the event handler) and the
+  // zones whose shield reward already fired.
+  const missionCountRef = useRef<Partial<Record<ZoneId, number>>>({});
+  const [missionCollected, setMissionCollected] = useState<
+    Partial<Record<ZoneId, number>>
+  >({});
+  const missionRewardedRef = useRef<Set<ZoneId>>(new Set());
+  // Fitur Monster Berbicara: the active monster's greeting line,
+  // picked once per encounter (seeded by its index, so re-renders
+  // never change it mid-battle).
+  const monsterLine = activeEncounter
+    ? pickMonsterLine(
+        activeEncounter.monsterId,
+        activeEncounter.tier,
+        activeEncounter.index,
+      )
+    : null;
+  const activeOwlMission = owlPanel
+    ? missionForZone(plan, owlPanel.stop.zoneId)
+    : null;
+  const currentMissionZone = zoneIdForEncounter(
+    Math.min(run.encounterIndex, plan.length - 1),
+    plan.length,
+  );
+  const currentMission = missionForZone(plan, currentMissionZone);
+  const currentMissionCollected = missionCollected[currentMissionZone] ?? 0;
+  const missionProgress = currentMission
+    ? {
+        emoji: currentMission.item.emoji,
+        collected: Math.min(currentMissionCollected, currentMission.goal),
+        goal: currentMission.goal,
+        done: currentMissionCollected >= currentMission.goal,
+      }
+    : null;
   // Sprint 2 (Peta Dunia): the in-run world map overlay.
   const [worldMapOpen, setWorldMapOpen] = useState(false);
   // Sprint 4 (Album Monster): the persistent defeated-monster
@@ -263,6 +300,26 @@ export default function AdventureMode({
       document.removeEventListener("fullscreenchange", syncFullscreen);
   }, []);
 
+  // Misi Kumpulkan: a collectible was picked up in this zone. The
+  // scene only reports the zone; counting and the one-time shield
+  // reward live here, next to the rest of the run state.
+  function handleCollectible(zoneId: ZoneId) {
+    if (run.status !== "exploring") return;
+    const mission = missionForZone(plan, zoneId);
+    if (!mission) return;
+    const next = (missionCountRef.current[zoneId] ?? 0) + 1;
+    missionCountRef.current = {
+      ...missionCountRef.current,
+      [zoneId]: next,
+    };
+    setMissionCollected(missionCountRef.current);
+    if (next >= mission.goal && !missionRewardedRef.current.has(zoneId)) {
+      missionRewardedRef.current.add(zoneId);
+      playSound("shield");
+      dispatch({ type: "COLLECT_SHIELD" });
+    }
+  }
+
   async function startAdventure() {
     const element = fullscreenRef.current;
     try {
@@ -284,6 +341,9 @@ export default function AdventureMode({
         error,
       );
     }
+    missionCountRef.current = {};
+    missionRewardedRef.current = new Set();
+    setMissionCollected({});
     startMusic();
     setHasStarted(true);
   }
@@ -762,6 +822,8 @@ export default function AdventureMode({
             onBossAttack={handleBossAttack}
             onOwlStop={handleOwlStop}
             onChestStop={handleChestStop}
+            onCollectible={handleCollectible}
+            missionProgress={missionProgress}
             worldMapOpen={worldMapOpen}
             onOpenWorldMap={() => setWorldMapOpen(true)}
             onRequestRestart={() => setRestartConfirm("full")}
@@ -867,6 +929,17 @@ export default function AdventureMode({
                     </span> */}
                   </div>
                 </div>
+
+                {monsterLine && (
+                  <div className="mb-3 flex items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-white/85 px-4 py-2.5">
+                    <span className="text-2xl leading-none" aria-hidden>
+                      {activeEncounter.emoji}
+                    </span>
+                    <p className="text-sm font-semibold italic leading-snug text-slate-700">
+                      &ldquo;{monsterLine}&rdquo;
+                    </p>
+                  </div>
+                )}
 
                 {activeEncounter.attackDamage > 0 && (
                   <div
@@ -1018,6 +1091,17 @@ export default function AdventureMode({
                 <div className="px-5 py-4">
                   <p className="text-base font-semibold leading-relaxed text-slate-700">
                     {owlPanel.stop.text}
+                  </p>
+                </div>
+              )}
+
+              {activeOwlMission && (
+                <div className="border-t-2 border-slate-100 px-5 py-3">
+                  <p className="rounded-2xl border-2 border-teal-200 bg-teal-50 px-4 py-2.5 text-center text-sm font-bold text-teal-900">
+                    🎯 Misi dari Burung Hantu: kumpulkan{" "}
+                    {activeOwlMission.goal} {activeOwlMission.item.emoji}{" "}
+                    {activeOwlMission.item.name} yang melayang di atas
+                    platform zona ini — hadiahnya 🛡️ +1 perisai!
                   </p>
                 </div>
               )}

@@ -86,6 +86,17 @@ export interface LevelGapFeature {
   width: number;
 }
 
+/** One floating collectible of the owl's zone mission (Misi
+ *  Kumpulkan): hovers over an approach platform; counts and goals
+ *  live in collect-mission.ts and match this placement exactly. */
+export interface LevelCollectible {
+  zoneId: ZoneId;
+  kind: CollectItemKind;
+  /** Centre of the floating item. */
+  x: number;
+  y: number;
+}
+
 export interface LevelLayout {
   worldWidth: number;
   worldHeight: number;
@@ -95,6 +106,7 @@ export interface LevelLayout {
   platforms: LevelPlatform[];
   chestPlatforms: LevelChestPlatform[];
   gapFeatures: LevelGapFeature[];
+  collectibles: LevelCollectible[];
   hazards: { x: number }[];
   pickups: LevelPickup[];
   surfaces: LevelSurface[];
@@ -109,6 +121,7 @@ import {
   type ZoneRange,
 } from "./zones";
 import { hashSeed, mulberry32 } from "./encounter-generator";
+import { COLLECT_ITEMS, type CollectItemKind } from "./collect-mission";
 
 export const LEVEL = {
   worldHeight: 640,
@@ -180,6 +193,26 @@ export function generateLevelLayout(
       width: platformWidth,
       kind: highKind,
     });
+  }
+
+  // Misi Kumpulkan: two collectibles per encounter approach, floating
+  //  44px over the low and high platforms' tops (centre = platform
+  //  centre Y − 58), assigned to the encounter's zone — exactly the
+  //  availability collect-mission.ts promises the owl's panel.
+  const collectibles: LevelCollectible[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const zoneStart = i * monsterStep;
+    const zoneId = zoneIdForEncounter(i, count);
+    const kind = COLLECT_ITEMS[zoneId].kind;
+    collectibles.push(
+      { zoneId, kind, x: zoneStart + 450, y: 445 - 58 },
+      {
+        zoneId,
+        kind,
+        x: zoneStart + 730,
+        y: (i % 2 === 0 ? 380 : 365) - 58,
+      },
+    );
   }
 
   const zones = zoneRangesForEncounters(
@@ -275,6 +308,7 @@ export function generateLevelLayout(
     platforms,
     chestPlatforms,
     gapFeatures,
+    collectibles,
     hazards,
     pickups,
     surfaces,

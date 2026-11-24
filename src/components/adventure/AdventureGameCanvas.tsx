@@ -41,6 +41,15 @@ interface Props {
   onAdventureComplete: () => void;
   onHazard: () => void;
   onPickup: (kind: "heart" | "shield" | "orb") => void;
+  /** Misi Kumpulkan: a collectible of this zone was picked up. */
+  onCollectible: (zoneId: ZoneId) => void;
+  /** Misi Kumpulkan progress for the hero's current zone (HUD chip). */
+  missionProgress: {
+    emoji: string;
+    collected: number;
+    goal: number;
+    done: boolean;
+  } | null;
   onBossWarning: (active: boolean) => void;
   onBossAttack: () => void;
   /** Sprint 1 (Burung Hantu): the scene paused at a zone's owl;
@@ -82,12 +91,14 @@ export default function AdventureGameCanvas({
   monsterProgress,
   shieldCharges,
   energyOrbActive,
+  missionProgress,
   isDefeated,
   bossResetSignal,
   onEncounter,
   onAdventureComplete,
   onHazard,
   onPickup,
+  onCollectible,
   onBossWarning,
   onBossAttack,
   onOwlStop,
@@ -110,6 +121,7 @@ export default function AdventureGameCanvas({
   const onAdventureCompleteRef = useRef(onAdventureComplete);
   const onHazardRef = useRef(onHazard);
   const onPickupRef = useRef(onPickup);
+  const onCollectibleRef = useRef(onCollectible);
   const onBossWarningRef = useRef(onBossWarning);
   const onBossAttackRef = useRef(onBossAttack);
   const onOwlStopRef = useRef(onOwlStop);
@@ -120,6 +132,7 @@ export default function AdventureGameCanvas({
     onAdventureCompleteRef.current = onAdventureComplete;
     onHazardRef.current = onHazard;
     onPickupRef.current = onPickup;
+    onCollectibleRef.current = onCollectible;
     onBossWarningRef.current = onBossWarning;
     onBossAttackRef.current = onBossAttack;
     onOwlStopRef.current = onOwlStop;
@@ -129,6 +142,7 @@ export default function AdventureGameCanvas({
     onAdventureComplete,
     onHazard,
     onPickup,
+    onCollectible,
     onBossWarning,
     onBossAttack,
     onOwlStop,
@@ -214,6 +228,8 @@ export default function AdventureGameCanvas({
         const handleHazard = () => onHazardRef.current();
         const handlePickup = (kind: "heart" | "shield" | "orb") =>
           onPickupRef.current(kind);
+        const handleCollectible = (zoneId: ZoneId) =>
+          onCollectibleRef.current(zoneId);
         const handleBossWarning = () => onBossWarningRef.current(true);
         const handleBossWarningClear = () => onBossWarningRef.current(false);
         const handleBossAttack = () => {
@@ -235,6 +251,7 @@ export default function AdventureGameCanvas({
         game.events.on("adventure-complete", handleAdventureComplete);
         game.events.on("adventure-hazard", handleHazard);
         game.events.on("adventure-pickup", handlePickup);
+        game.events.on("adventure-collectible", handleCollectible);
         game.events.on("boss-attack-warning", handleBossWarning);
         game.events.on("boss-attack-warning-clear", handleBossWarningClear);
         game.events.on("boss-attack", handleBossAttack);
@@ -246,6 +263,7 @@ export default function AdventureGameCanvas({
           game.events.off("adventure-complete", handleAdventureComplete);
           game.events.off("adventure-hazard", handleHazard);
           game.events.off("adventure-pickup", handlePickup);
+          game.events.off("adventure-collectible", handleCollectible);
           game.events.off("boss-attack-warning", handleBossWarning);
           game.events.off("boss-attack-warning-clear", handleBossWarningClear);
           game.events.off("boss-attack", handleBossAttack);
@@ -432,6 +450,13 @@ export default function AdventureGameCanvas({
                 {energyOrbActive && (
                   <span className="ml-2 font-black text-violet-300">
                     🔮 Orb aktif: damage 2×!
+                  </span>
+                )}
+                {missionProgress && (
+                  <span className="ml-2 font-black text-teal-300">
+                    {missionProgress.done
+                      ? "🎯 Misi selesai! 🛡️ +1"
+                      : `🎯 ${missionProgress.emoji} ${missionProgress.collected}/${missionProgress.goal}`}
                   </span>
                 )}
               </div>

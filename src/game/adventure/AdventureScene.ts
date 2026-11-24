@@ -20,6 +20,7 @@ import {
 } from "./EnvironmentFactory";
 import { getDifficulty, type DifficultySettings } from "@/features/adventure/difficulty";
 import { zoneIdAtX, type ZoneId } from "@/features/adventure/zones";
+import type { CollectItemKind } from "@/features/adventure/collect-mission";
 import {
   buildChests,
   BERRY_DURATION_MS,
@@ -228,6 +229,11 @@ export default class AdventureScene extends Phaser.Scene {
     this.load.image("powerup-berry-art", "/assets/adventure/powerups/berry.webp");
     this.load.image("powerup-wing-art", "/assets/adventure/powerups/wing.webp");
 
+    // Misi Kumpulkan collectibles (procedural textures remain as fallbacks).
+    this.load.image("collect-firefly-art", "/assets/adventure/collectibles/firefly.webp");
+    this.load.image("collect-shell-art", "/assets/adventure/collectibles/shell.webp");
+    this.load.image("collect-star-art", "/assets/adventure/collectibles/star.webp");
+
     this.load.on("loaderror", (file: Phaser.Loader.File) => {
       console.error("Adventure asset gagal dimuat:", file.key, file.src);
     });
@@ -273,6 +279,7 @@ export default class AdventureScene extends Phaser.Scene {
     this.createHazardsAndPowerUps();
     this.createChests();
     this.createGapFeatures();
+    this.createCollectibles();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -524,6 +531,22 @@ export default class AdventureScene extends Phaser.Scene {
     wingFallback.fillEllipse(20, 20, 11, 24);
     wingFallback.generateTexture("powerup-wing-fallback", 44, 44);
     wingFallback.destroy();
+
+    // Misi Kumpulkan fallbacks: signature-colour orbs with a highlight.
+    const collectFallbacks: [CollectItemKind, number][] = [
+      ["firefly", 0xfde047],
+      ["shell", 0xf9a8d4],
+      ["star", 0xfbbf24],
+    ];
+    for (const [kind, color] of collectFallbacks) {
+      const g = this.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(color, 1);
+      g.fillCircle(22, 22, 20);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(15, 14, 6);
+      g.generateTexture(`collect-${kind}-fallback`, 44, 44);
+      g.destroy();
+    }
   }
 
   private createHeroFrame(
@@ -1621,6 +1644,92 @@ export default class AdventureScene extends Phaser.Scene {
       this.physics.add.overlap(this.player, item, this.collectPowerUp, undefined, this);
     });
   }
+
+  /** Misi Kumpulkan: the owl's collectibles hover over the approach
+   *  platforms (two per encounter, from the layout). Same recipe as
+   *  the heart/shield pickups — tinted glow, gentle bob, overlap to
+   *  collect — but they only report their zone; the mission counting
+   *  and the shield reward live in AdventureMode. */
+  private createCollectibles() {
+    const artKeys: Record<CollectItemKind, string> = {
+      firefly: "collect-firefly-art",
+      shell: "collect-shell-art",
+      star: "collect-star-art",
+    };
+    const tints: Record<CollectItemKind, number> = {
+      firefly: 0xfde047,
+      shell: 0xf9a8d4,
+      star: 0xfbbf24,
+    };
+    this.layout.collectibles.forEach(({ x, y, zoneId, kind }) => {
+      const artKey = artKeys[kind];
+      const texture = this.textures.exists(artKey)
+        ? artKey
+        : `collect-${kind}-fallback`;
+      const glow = this.add
+        .image(x, y, "glow-soft")
+        .setTint(tints[kind])
+        .setDisplaySize(110, 110)
+        .setAlpha(0.5)
+        .setDepth(7);
+      this.tweens.add({
+        targets: glow,
+        alpha: 0.28,
+        scaleX: glow.scaleX * 1.18,
+        scaleY: glow.scaleY * 1.18,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      const item = this.physics.add.sprite(x, y, texture);
+      item.setDisplaySize(52, 52);
+      item.setImmovable(true);
+      item.body.allowGravity = false;
+      item.setDepth(8);
+      item.setData("collect-zone", zoneId);
+      item.setData("collect-kind", kind);
+      item.setData("glow", glow);
+      this.tweens.add({
+        targets: [item, glow],
+        y: y - 14,
+        duration: 850,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      this.physics.add.overlap(
+        this.player,
+        item,
+        this.collectCollectible,
+        undefined,
+        this,
+      );
+    });
+  }
+
+  private collectCollectible = (_player: unknown, itemObject: unknown) => {
+    if (this.encounterPaused) return;
+    if (!(itemObject instanceof Phaser.GameObjects.GameObject)) return;
+    const item = itemObject as Phaser.Physics.Arcade.Sprite;
+    if (!item.active) return;
+    const zoneId = item.getData("collect-zone") as ZoneId | undefined;
+    const kind = item.getData("collect-kind") as CollectItemKind | undefined;
+    if (!zoneId || !kind) return;
+    const glow = item.getData("glow") as Phaser.GameObjects.Image | undefined;
+    const { x, y } = item;
+    item.destroy();
+    glow?.destroy();
+    const colors =
+      kind === "firefly"
+        ? [0xfde047, 0xa3e635, 0xffffff]
+        : kind === "shell"
+          ? [0xf9a8d4, 0xfbcfe8, 0xffffff]
+          : [0xfbbf24, 0xfde68a, 0xffffff];
+    this.sparkleBurst(x, y, colors, 10);
+    this.playPickupSound();
+    this.game.events.emit("adventure-collectible", zoneId);
+  };
 
   /** Sprint F entrance reaction: a "!" pop beside the monster's head,
    *  a ground ring pulse, a brief gold flash and sparkles. Deliberately

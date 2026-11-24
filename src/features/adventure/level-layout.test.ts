@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateLevelLayout, LEVEL } from "./level-layout";
+import { zoneIdForEncounter, type ZoneId } from "./zones";
+import { COLLECT_ITEMS, COLLECTIBLES_PER_ENCOUNTER } from "./collect-mission";
 
 const onGround = (layout: ReturnType<typeof generateLevelLayout>, x: number) =>
   layout.groundSegments.some(
@@ -126,6 +128,44 @@ describe("generateLevelLayout — invariants for any run length", () => {
       expect(layout.surfaces).toHaveLength(
         layout.groundSegments.length + layout.platforms.length,
       );
+    }
+  });
+});
+
+describe("generateLevelLayout — collectibles (Misi Kumpulkan)", () => {
+  it("two per encounter, matching the mission module's availability (n = 1..25)", () => {
+    for (let n = 1; n <= 25; n += 1) {
+      const layout = generateLevelLayout(n);
+      expect(layout.collectibles).toHaveLength(
+        n * COLLECTIBLES_PER_ENCOUNTER,
+      );
+      for (const zone of ["hutan", "pantai", "kastil"] as ZoneId[]) {
+        const encounters = Array.from({ length: n }, (_, i) => i).filter(
+          (i) => zoneIdForEncounter(i, n) === zone,
+        ).length;
+        const items = layout.collectibles.filter((c) => c.zoneId === zone);
+        expect(items).toHaveLength(encounters * COLLECTIBLES_PER_ENCOUNTER);
+        for (const item of items) {
+          expect(item.kind).toBe(COLLECT_ITEMS[zone].kind);
+        }
+      }
+    }
+  });
+
+  it("every collectible hovers centred over an approach platform, out of ground reach", () => {
+    for (let n = 1; n <= 25; n += 1) {
+      const layout = generateLevelLayout(n);
+      for (const item of layout.collectibles) {
+        const platform = layout.platforms.find(
+          (p) => p.x + p.width / 2 === item.x && p.y - 58 === item.y,
+        );
+        expect(platform).toBeDefined();
+        // Item bottom floats above the platform top…
+        const top = (platform?.y ?? 0) - 14;
+        expect(top - (item.y + 22)).toBe(22);
+        // …and far above a hero standing on the ground (no free grabs).
+        expect(LEVEL.groundTopY - (item.y + 22)).toBeGreaterThan(100);
+      }
     }
   });
 });
