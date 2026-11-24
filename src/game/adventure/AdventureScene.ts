@@ -82,6 +82,7 @@ export default class AdventureScene extends Phaser.Scene {
   private activeMonster?: Phaser.Physics.Arcade.Sprite;
   private encounterPaused = false;
   private owlPaused = false;
+  private mapPaused = false;
   private owlZoneIndex = -1;
   private owlVisitedZones = new Set<number>();
   private nextEncounterIndex = 0;
@@ -246,6 +247,8 @@ export default class AdventureScene extends Phaser.Scene {
     this.game.events.on("stop-adventure", this.handleStopAdventure, this);
     this.game.events.on("boss-attack-reset", this.handleBossAttackReset, this);
     this.game.events.on("resolve-owl", this.handleResolveOwl, this);
+    this.game.events.on("pause-run", this.handlePauseRun, this);
+    this.game.events.on("resume-run", this.handleResumeRun, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(
@@ -261,6 +264,8 @@ export default class AdventureScene extends Phaser.Scene {
       this.game.events.off("toggle-sound", this.handleToggleSound, this);
       this.game.events.off("stop-adventure", this.handleStopAdventure, this);
       this.game.events.off("resolve-owl", this.handleResolveOwl, this);
+      this.game.events.off("pause-run", this.handlePauseRun, this);
+      this.game.events.off("resume-run", this.handleResumeRun, this);
       this.heroPoseTimer?.remove(false);
       this.heroPoseTimer = null;
     });
@@ -693,6 +698,26 @@ export default class AdventureScene extends Phaser.Scene {
     if (!this.owlPaused) return;
     this.owlPaused = false;
     this.physics.world.resume();
+  };
+
+  /** Sprint 2 (Peta Dunia): opening the world map pauses the run;
+   *  closing it resumes — unless an encounter/owl pause owns the
+   *  world at that moment. */
+  private handlePauseRun = () => {
+    if (this.encounterPaused || this.owlPaused || this.isAdventureStopped) {
+      return;
+    }
+    this.mapPaused = true;
+    this.player?.setVelocity(0, 0);
+    this.physics.world.pause();
+  };
+
+  private handleResumeRun = () => {
+    if (!this.mapPaused) return;
+    this.mapPaused = false;
+    if (!this.encounterPaused && !this.owlPaused) {
+      this.physics.world.resume();
+    }
   };
 
   private createEncounters() {
@@ -1267,6 +1292,11 @@ export default class AdventureScene extends Phaser.Scene {
     }
 
     if (this.owlPaused) {
+      this.player?.setVelocityX(0);
+      return;
+    }
+
+    if (this.mapPaused) {
       this.player?.setVelocityX(0);
       return;
     }

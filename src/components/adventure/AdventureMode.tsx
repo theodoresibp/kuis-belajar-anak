@@ -24,7 +24,9 @@ import {
 } from "@/features/adventure/adventure.reducer";
 import { generateEncounterPlan } from "@/features/adventure/encounter-generator";
 import { buildOwlStops, type OwlStop } from "@/features/adventure/owl";
-import type { ZoneId } from "@/features/adventure/zones";
+import { buildWorldMap } from "@/features/adventure/world-map";
+import { ZONES, type ZoneId } from "@/features/adventure/zones";
+import WorldMap from "./WorldMap";
 import { MaterialSections, MaterialSummary } from "@/components/MaterialView";
 import Image from "next/image";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
@@ -109,6 +111,8 @@ export default function AdventureMode({
     () => buildOwlStops(chapter, plan.length),
     [chapter, plan],
   );
+  // Sprint 2 (Peta Dunia): route data for the map overlay's status line.
+  const worldMap = useMemo(() => buildWorldMap(plan), [plan]);
   const encounterQuestionCounts = plan.map(
     (encounter) => encounter.questionCount,
   );
@@ -134,6 +138,8 @@ export default function AdventureMode({
     stop: OwlStop;
     resolve: () => void;
   } | null>(null);
+  // Sprint 2 (Peta Dunia): the in-run world map overlay.
+  const [worldMapOpen, setWorldMapOpen] = useState(false);
   // Bumped on every correct answer; the canvas forwards it to the
   // scene, which restarts the boss timed-attack cycle (see
   // AdventureScene.handleBossAttackReset).
@@ -541,12 +547,14 @@ export default function AdventureMode({
             onBossWarning={setBossWarning}
             onBossAttack={handleBossAttack}
             onOwlStop={handleOwlStop}
+            worldMapOpen={worldMapOpen}
+            onOpenWorldMap={() => setWorldMapOpen(true)}
             onRequestRestart={() => setRestartConfirm("full")}
           />
         )}
 
         {!hasStarted && (
-          <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
+          <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 overflow-y-auto bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
             <div className="text-6xl sm:text-7xl" aria-hidden>
               🌲⚔️🌲
             </div>
@@ -564,6 +572,13 @@ export default function AdventureMode({
             </div>
             <div className="rounded-2xl border border-white/20 bg-black/20 px-5 py-3 text-sm font-bold text-emerald-100">
               📱 Mainkan dalam posisi landscape untuk pengalaman terbaik
+            </div>
+            {/* Sprint 2 (Peta Dunia): today's route, from the real plan. */}
+            <div className="w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-white/25 bg-white shadow-xl">
+              <p className="px-4 pt-2.5 text-center text-xs font-black uppercase tracking-widest text-slate-500">
+                🗺️ Peta Perjalanan Hari Ini
+              </p>
+              <WorldMap plan={plan} currentIndex={0} />
             </div>
             <button
               type="button"
@@ -776,6 +791,15 @@ export default function AdventureMode({
                 </div>
               )}
 
+              {/* Sprint 2 (Peta Dunia): where the journey stands now. */}
+              <div className="border-t-2 border-slate-100 px-2 pt-1">
+                <WorldMap
+                  plan={plan}
+                  currentIndex={run.encounterIndex}
+                  variant="compact"
+                />
+              </div>
+
               <footer className="border-t-2 border-slate-100 px-5 py-3">
                 <button
                   type="button"
@@ -783,6 +807,40 @@ export default function AdventureMode({
                   className="w-full rounded-full bg-teal-600 px-6 py-3 text-base font-black text-white shadow-md transition hover:bg-teal-700 active:scale-95"
                 >
                   {owlPanel.stop.buttonLabel}
+                </button>
+              </footer>
+            </section>
+          </div>
+        )}
+
+        {/* Sprint 2 (Peta Dunia): the in-run map overlay. The scene
+            pauses while it is open (worldMapOpen prop on the canvas). */}
+        {worldMapOpen && (
+          <div
+            className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Peta Dunia"
+          >
+            <section className="w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-sky-200 bg-white shadow-2xl">
+              <header className="bg-sky-50 px-5 py-3">
+                <h2 className="text-lg font-black text-slate-900 sm:text-xl">
+                  🗺️ Peta Dunia
+                </h2>
+                <p className="text-sm font-semibold text-slate-500">
+                  {run.encounterIndex >= worldMap.nodes.length
+                    ? "Semua monster sudah dikalahkan. Kerja bagus!"
+                    : `Monster dikalahkan: ${run.encounterIndex} dari ${worldMap.nodes.length}. Selanjutnya: ${worldMap.nodes[run.encounterIndex].monsterName} di ${ZONES[worldMap.nodes[run.encounterIndex].zoneId].name}.`}
+                </p>
+              </header>
+              <WorldMap plan={plan} currentIndex={run.encounterIndex} />
+              <footer className="border-t-2 border-slate-100 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => setWorldMapOpen(false)}
+                  className="w-full rounded-full bg-sky-600 px-6 py-3 text-base font-black text-white shadow-md transition hover:bg-sky-700 active:scale-95"
+                >
+                  Kembali Bermain
                 </button>
               </footer>
             </section>

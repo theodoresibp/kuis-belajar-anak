@@ -42,6 +42,9 @@ interface Props {
   /** Sprint 1 (Burung Hantu): the scene paused at a zone's owl;
    *  resolve() resumes the run. */
   onOwlStop: (zoneId: ZoneId, resolve: () => void) => void;
+  /** Sprint 2 (Peta Dunia): while true, the scene pauses the run. */
+  worldMapOpen: boolean;
+  onOpenWorldMap: () => void;
   onRequestRestart: () => void;
 }
 
@@ -77,6 +80,8 @@ export default function AdventureGameCanvas({
   onBossWarning,
   onBossAttack,
   onOwlStop,
+  worldMapOpen,
+  onOpenWorldMap,
   onRequestRestart,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -255,6 +260,11 @@ export default function AdventureGameCanvas({
     gameRef.current?.events.emit("boss-attack-reset");
   }, [bossResetSignal]);
 
+  // Sprint 2 (Peta Dunia): pause the run while the map is open.
+  useEffect(() => {
+    gameRef.current?.events.emit(worldMapOpen ? "pause-run" : "resume-run");
+  }, [worldMapOpen]);
+
   const sendControl = useCallback(
     (direction: VirtualDirection, pressed: boolean) => {
       gameRef.current?.events.emit("virtual-control", direction, pressed);
@@ -432,6 +442,15 @@ export default function AdventureGameCanvas({
               className="rounded-xl border border-white/70 bg-slate-950/70 px-2.5 py-2 text-xs font-bold text-white shadow-lg sm:px-3 sm:text-sm disabled:opacity-50"
             >
               🔄
+            </button>
+            <button
+              type="button"
+              aria-label="Buka peta dunia"
+              disabled={!ready}
+              onClick={onOpenWorldMap}
+              className="rounded-xl border border-white/70 bg-slate-950/70 px-2.5 py-2 text-xs font-bold text-white shadow-lg sm:px-3 sm:text-sm disabled:opacity-50"
+            >
+              🗺️
             </button>
           </div>
         </div>
