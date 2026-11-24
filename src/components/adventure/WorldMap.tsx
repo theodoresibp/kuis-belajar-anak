@@ -6,157 +6,16 @@ import {
   layoutWorldMapNodes,
 } from "@/features/adventure/world-map";
 import { getAdventureMonsterById } from "@/features/adventure/monsters.config";
-import type { ZoneId } from "@/features/adventure/zones";
 
 /**
  * Sprint 2 (Peta Dunia): the run's route as a journey map.
  *
- * The full variant draws the nodes over the illustrated parchment
+ * The nodes are drawn over the illustrated parchment
  * map (START in the forest, over the bridge, along the rainbow
  * beach, up to the castle FINISH) — the final boss node shows the
- * boss's face (Monster Mama). The compact variant (owl panel) is a
- * simple SVG trail with zone bands. Both are pure presentations of
- * the plan: defeated = green check, next = pulsing red ring.
+ * boss's face (Monster Mama). It is a pure presentation of the
+ * plan: defeated = green check, next = pulsing red ring.
  */
-
-const ZONE_BAND: Record<ZoneId, string> = {
-  hutan: "#bfe8c9",
-  pantai: "#f7e3ae",
-  kastil: "#ddd0f5",
-};
-
-const SVG_WIDTH = 640;
-const PAD_X = 46;
-
-function nodeX(index: number, count: number): number {
-  if (count <= 1) return SVG_WIDTH / 2;
-  return PAD_X + (index * (SVG_WIDTH - PAD_X * 2)) / (count - 1);
-}
-
-function trailPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) {
-    const p = points[0];
-    return `M ${p.x - 24} ${p.y} L ${p.x + 24} ${p.y}`;
-  }
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length - 1; i += 1) {
-    const midX = (points[i].x + points[i + 1].x) / 2;
-    const midY = (points[i].y + points[i + 1].y) / 2;
-    d += ` Q ${points[i].x} ${points[i].y}, ${midX} ${midY}`;
-  }
-  const last = points[points.length - 1];
-  d += ` L ${last.x} ${last.y}`;
-  return d;
-}
-
-function CompactMap({
-  plan,
-  currentIndex,
-}: {
-  plan: readonly PlannedEncounter[];
-  currentIndex: number;
-}) {
-  const map = useMemo(() => buildWorldMap(plan), [plan]);
-  const height = 118;
-  const midY = 62;
-  const amp = 24;
-  const points = map.nodes.map((node, i) => ({
-    x: nodeX(i, map.nodes.length),
-    y: map.nodes.length <= 1 ? midY : midY + (i % 2 === 0 ? -amp : amp),
-  }));
-
-  return (
-    <svg
-      viewBox={`0 0 ${SVG_WIDTH} ${height}`}
-      className="block h-auto w-full"
-      role="img"
-      aria-label="Peta perjalanan petualangan"
-    >
-      {map.zones.map((span) => {
-        const fromX =
-          span.fromIndex === 0
-            ? 0
-            : (nodeX(span.fromIndex - 1, map.nodes.length) +
-                nodeX(span.fromIndex, map.nodes.length)) /
-              2;
-        const toX =
-          span.toIndex === map.nodes.length - 1
-            ? SVG_WIDTH
-            : (nodeX(span.toIndex, map.nodes.length) +
-                nodeX(span.toIndex + 1, map.nodes.length)) /
-              2;
-        return (
-          <rect
-            key={span.zoneId}
-            x={fromX}
-            y={0}
-            width={toX - fromX}
-            height={height}
-            fill={ZONE_BAND[span.zoneId]}
-          />
-        );
-      })}
-      <path
-        d={trailPath(points)}
-        fill="none"
-        stroke="#e8cf9a"
-        strokeWidth={10}
-        strokeLinecap="round"
-      />
-      <path
-        d={trailPath(points)}
-        fill="none"
-        stroke="#c9a86a"
-        strokeWidth={2.5}
-        strokeDasharray="1 10"
-        strokeLinecap="round"
-      />
-      {map.nodes.map((node, i) => {
-        const { x, y } = points[i];
-        const defeated = i < currentIndex;
-        const current = i === currentIndex;
-        const r = 11 + (node.isBoss ? 4 : 0);
-        return (
-          <g key={node.index}>
-            {current && (
-              <circle cx={x} cy={y - r - 11} r={4} fill="#e2574c">
-                <animate
-                  attributeName="r"
-                  values="4;6;4"
-                  dur="1.6s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-            )}
-            <circle
-              cx={x}
-              cy={y}
-              r={r}
-              fill={defeated ? "#2f9e5f" : node.isBoss ? "#7c5cd6" : "#ffffff"}
-              stroke={current ? "#e2574c" : defeated ? "#2f9e5f" : "#9aa3ad"}
-              strokeWidth={current ? 3.5 : 2.5}
-            />
-            {defeated ? (
-              <path
-                d={`M ${x - 6} ${y} l 4.5 4.5 l 8 -9`}
-                stroke="#ffffff"
-                strokeWidth={2.8}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ) : (
-              <text x={x} y={y + 4.5} textAnchor="middle" fontSize={node.isBoss ? 13 : 11}>
-                {node.isBoss ? "👑" : node.emoji}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 function IllustratedMap({
   plan,
@@ -270,15 +129,10 @@ function IllustratedMap({
 export default function WorldMap({
   plan,
   currentIndex,
-  variant = "full",
 }: {
   plan: readonly PlannedEncounter[];
   /** Number of monsters already defeated; that node is "current". */
   currentIndex: number;
-  variant?: "full" | "compact";
 }) {
-  if (variant === "compact") {
-    return <CompactMap plan={plan} currentIndex={currentIndex} />;
-  }
   return <IllustratedMap plan={plan} currentIndex={currentIndex} />;
 }

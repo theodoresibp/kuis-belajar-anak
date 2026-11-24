@@ -1022,15 +1022,6 @@ export default function AdventureMode({
                 </div>
               )}
 
-              {/* Sprint 2 (Peta Dunia): where the journey stands now. */}
-              <div className="border-t-2 border-slate-100 px-2 pt-1">
-                <WorldMap
-                  plan={plan}
-                  currentIndex={run.encounterIndex}
-                  variant="compact"
-                />
-              </div>
-
               <footer className="border-t-2 border-slate-100 px-5 py-3">
                 <button
                   type="button"
