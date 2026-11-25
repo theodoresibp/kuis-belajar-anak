@@ -73,12 +73,6 @@ const CONTROL_LABELS: Record<VirtualDirection, string> = {
   jump: "Melompat",
 };
 
-const CONTROL_SYMBOLS: Record<VirtualDirection, string> = {
-  left: "←",
-  right: "→",
-  jump: "↑",
-};
-
 export default function AdventureGameCanvas({
   plan,
   difficulty,
@@ -112,11 +106,16 @@ export default function AdventureGameCanvas({
 
   // Menyimpan pointer ID agar beberapa tombol dapat ditekan bersamaan.
   const activePointers = useRef<Map<number, VirtualDirection>>(new Map());
-  const dpadRef = useRef<HTMLDivElement>(null);
-  // Which D-pad halves are currently held (drives the pressed styling).
-  const [dpadDirections, setDpadDirections] = useState<
-    ReadonlySet<VirtualDirection>
-  >(new Set());
+  const stickRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  // The analog stick's active pointer (at most one thumb steers).
+  const stickStateRef = useRef<{
+    pointerId: number;
+    dir: "left" | "right" | null;
+    jump: boolean;
+  } | null>(null);
+  // Which way the stick is pushed (highlights the ring arrows).
+  const [stickDir, setStickDir] = useState<"left" | "right" | null>(null);
   const onEncounterRef = useRef(onEncounter);
   const onAdventureCompleteRef = useRef(onAdventureComplete);
   const onHazardRef = useRef(onHazard);
@@ -291,6 +290,7 @@ export default function AdventureGameCanvas({
       disposed = true;
 
       pointers.clear();
+      stickStateRef.current = null;
 
       gameRef.current?.destroy(true);
       gameRef.current = null;
@@ -350,74 +350,119 @@ export default function AdventureGameCanvas({
 
     activePointers.current.delete(event.pointerId);
 
-    // Jangan melepas arah jika masih ada jari lain
-    // yang sedang menahan tombol dengan arah yang sama.
-    const anotherPointerHoldingSameDirection = Array.from(
-      activePointers.current.values(),
-    ).some((activeDirection) => activeDirection === direction);
-
-    if (!anotherPointerHoldingSameDirection) {
+    // Jangan melepas arah jika masih ditahan sumber lain
+    // (jari lain di tombol yang sama, atau analog stick).
+    if (!isDirectionHeld(direction)) {
       sendControl(direction, false);
     }
-    syncDpadDirections();
   };
 
-  const syncDpadDirections = () => {
-    setDpadDirections(
-      new Set(
-        Array.from(activePointers.current.values()).filter(
-          (direction) => direction === "left" || direction === "right",
-        ),
-      ),
-    );
+  // A direction counts as held while ANY source holds it: a button
+  // pointer or the analog stick. Releases consult this so one source
+  // letting go never cancels another source's hold.
+  const isDirectionHeld = (direction: VirtualDirection): boolean => {
+    if (
+      Array.from(activePointers.current.values()).some(
+        (activeDirection) => activeDirection === direction,
+      )
+    ) {
+      return true;
+    }
+    const stick = stickStateRef.current;
+    if (!stick) return false;
+    return direction === "jump" ? stick.jump : stick.dir === direction;
   };
 
-  // The D-pad is one fused rocker: the direction comes from WHERE on
-  // the pad the pointer is, and follows pointermove — so sliding a
-  // thumb from the right half to the left half switches direction in
-  // the same gesture. (With two separate buttons + pointer capture,
-  // that slide never registered on the other button: changing
-  // direction felt stuck/laggy, especially right -> left.)
-  const dpadDirectionAt = (clientX: number): VirtualDirection => {
-    const rect = dpadRef.current?.getBoundingClientRect();
-    if (!rect) return "left";
-    return clientX < rect.left + rect.width / 2 ? "left" : "right";
+  // Analog stick (MOBA style): the knob follows the thumb anywhere
+  // inside the round base, so steering is one continuous slide —
+  // push left/right to walk, push up to jump. The previous two-button
+  // look made players lift their finger to change direction (which
+  // felt like lag); a stick invites sliding instead.
+  const STICK_DEAD_ZONE = 8; // px of sideways travel before walking engages
+  const STICK_JUMP_TRAVEL = 22; // px of upward travel that counts as jump
+
+  const setKnobOffset = (x: number, y: number) => {
+    const knob = knobRef.current;
+    if (knob) {
+      knob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    }
   };
 
-  const handleDpadPointerDown = (
+  const applyStickPosition = (clientX: number, clientY: number) => {
+    const state = stickStateRef.current;
+    const rect = stickRef.current?.getBoundingClientRect();
+    if (!state || !rect) return;
+    let dx = clientX - (rect.left + rect.width / 2);
+    let dy = clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    const maxTravel = rect.width * 0.28;
+    if (distance > maxTravel) {
+      dx = (dx / distance) * maxTravel;
+      dy = (dy / distance) * maxTravel;
+    }
+    setKnobOffset(dx, dy);
+
+    const dir =
+      dx < -STICK_DEAD_ZONE ? "left" : dx > STICK_DEAD_ZONE ? "right" : null;
+    if (dir !== state.dir) {
+      const previous = state.dir;
+      state.dir = dir;
+      if (previous && !isDirectionHeld(previous)) {
+        sendControl(previous, false);
+      }
+      if (dir) {
+        sendControl(dir, true);
+      }
+      setStickDir(dir);
+    }
+    const jump = dy < -STICK_JUMP_TRAVEL;
+    if (jump !== state.jump) {
+      state.jump = jump;
+      if (jump) {
+        sendControl("jump", true);
+      } else if (!isDirectionHeld("jump")) {
+        sendControl("jump", false);
+      }
+    }
+  };
+
+  const handleStickPointerDown = (
     event: ReactPointerEvent<HTMLDivElement>,
   ) => {
     event.preventDefault();
-    if (!ready || activePointers.current.has(event.pointerId)) {
+    if (!ready || stickStateRef.current) {
       return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
-    const direction = dpadDirectionAt(event.clientX);
-    activePointers.current.set(event.pointerId, direction);
-    sendControl(direction, true);
-    syncDpadDirections();
+    stickStateRef.current = { pointerId: event.pointerId, dir: null, jump: false };
+    applyStickPosition(event.clientX, event.clientY);
   };
 
-  const handleDpadPointerMove = (
+  const handleStickPointerMove = (
     event: ReactPointerEvent<HTMLDivElement>,
   ) => {
-    const current = activePointers.current.get(event.pointerId);
-    if (!current || (current !== "left" && current !== "right")) {
+    if (stickStateRef.current?.pointerId !== event.pointerId) {
       return;
     }
-    const direction = dpadDirectionAt(event.clientX);
-    if (direction === current) {
+    applyStickPosition(event.clientX, event.clientY);
+  };
+
+  const handleStickPointerRelease = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    const state = stickStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) {
       return;
     }
-    activePointers.current.set(event.pointerId, direction);
-    const anotherPointerHoldingOldDirection = Array.from(
-      activePointers.current.values(),
-    ).some((activeDirection) => activeDirection === current);
-    if (!anotherPointerHoldingOldDirection) {
-      sendControl(current, false);
+    stickStateRef.current = null;
+    if (state.dir && !isDirectionHeld(state.dir)) {
+      sendControl(state.dir, false);
     }
-    sendControl(direction, true);
-    syncDpadDirections();
+    if (state.jump && !isDirectionHeld("jump")) {
+      sendControl("jump", false);
+    }
+    setKnobOffset(0, 0);
+    setStickDir(null);
   };
 
   return (
@@ -522,34 +567,57 @@ export default function AdventureGameCanvas({
           className="pointer-events-none adventure-controls absolute inset-x-3 z-20 flex items-end justify-between sm:inset-x-5 sm:bottom-5"
           aria-label="Kontrol permainan"
         >
-          {/* One fused rocker pad: the wrapper owns the pointer events
-              and the direction follows the thumb's position, so sliding
-              across the middle switches direction instantly. The two
-              halves are presentational (pointer-events-none). */}
+          {/* Analog stick (MOBA style): a round base with a knob that
+              follows the thumb, so steering is one continuous slide
+              instead of two buttons players kept lifting off. Push
+              left/right to walk, push up to jump; the separate jump
+              button on the right still works as before. */}
           <div
-            ref={dpadRef}
-            className="adventure-control-dpad pointer-events-auto flex touch-none select-none divide-x divide-white/30 overflow-hidden rounded-2xl border-2 border-white/70 bg-violet-700/95 shadow-xl"
-            onPointerDown={handleDpadPointerDown}
-            onPointerMove={handleDpadPointerMove}
-            onPointerUp={handlePointerRelease}
-            onPointerCancel={handlePointerRelease}
-            onLostPointerCapture={handlePointerRelease}
+            ref={stickRef}
+            role="button"
+            aria-label="Analog arah: geser kiri atau kanan untuk berjalan, dorong ke atas untuk melompat"
+            className={
+              "adventure-control-stick pointer-events-auto relative h-32 w-32 touch-none select-none rounded-full border-2 border-white/50 bg-slate-900/40 shadow-xl sm:h-36 sm:w-36" +
+              (ready ? "" : " opacity-50")
+            }
+            onPointerDown={handleStickPointerDown}
+            onPointerMove={handleStickPointerMove}
+            onPointerUp={handleStickPointerRelease}
+            onPointerCancel={handleStickPointerRelease}
+            onLostPointerCapture={handleStickPointerRelease}
           >
-            {(["left", "right"] as const).map((direction) => (
-              <button
-                key={direction}
-                type="button"
-                aria-label={CONTROL_LABELS[direction]}
-                disabled={!ready}
-                tabIndex={-1}
-                className={
-                  "adventure-control-btn pointer-events-none flex h-14 w-14 touch-none select-none items-center justify-center text-3xl font-black text-white transition-colors duration-75 disabled:opacity-50 sm:h-[72px] sm:w-[72px] sm:text-4xl" +
-                  (dpadDirections.has(direction) ? " bg-violet-900" : "")
-                }
-              >
-                {CONTROL_SYMBOLS[direction]}
-              </button>
-            ))}
+            <span
+              aria-hidden
+              className={
+                "absolute left-2.5 top-1/2 -translate-y-1/2 text-base font-black transition-colors duration-75 " +
+                (stickDir === "left" ? "text-white" : "text-white/40")
+              }
+            >
+              ◀
+            </span>
+            <span
+              aria-hidden
+              className={
+                "absolute right-2.5 top-1/2 -translate-y-1/2 text-base font-black transition-colors duration-75 " +
+                (stickDir === "right" ? "text-white" : "text-white/40")
+              }
+            >
+              ▶
+            </span>
+            <span
+              aria-hidden
+              className="absolute left-1/2 top-2 -translate-x-1/2 text-sm font-black text-white/40"
+            >
+              ▲
+            </span>
+            <div
+              ref={knobRef}
+              aria-hidden
+              className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full border-2 border-white/85 bg-violet-600 shadow-lg sm:h-16 sm:w-16"
+              style={{ transform: "translate(-50%, -50%)" }}
+            >
+              <div className="absolute inset-2 rounded-full border border-white/25" />
+            </div>
           </div>
           <button
             type="button"
