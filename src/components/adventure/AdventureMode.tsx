@@ -1319,12 +1319,12 @@ export default function AdventureMode({
             pauses while it is open (worldMapOpen prop on the canvas). */}
         {worldMapOpen && (
           <div
-            className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
+            className="fixed inset-0 z-[65] flex overflow-y-auto bg-slate-950/70 p-3 backdrop-blur-sm sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-label="Peta Dunia"
           >
-            <section className="w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-sky-200 bg-white shadow-2xl">
+            <section className="m-auto w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-sky-200 bg-white shadow-2xl">
               <header className="bg-sky-50 px-5 py-3">
                 <h2 className="text-lg font-black text-slate-900 sm:text-xl">
                   🗺️ Peta Dunia
@@ -1335,7 +1335,18 @@ export default function AdventureMode({
                     : `Monster dikalahkan: ${run.encounterIndex} dari ${worldMap.nodes.length}. Selanjutnya: ${worldMap.nodes[run.encounterIndex].monsterName} di ${ZONES[worldMap.nodes[run.encounterIndex].zoneId].name}.`}
                 </p>
               </header>
-              <WorldMap plan={plan} currentIndex={run.encounterIndex} />
+              {/* The map's width is also capped by the viewport
+                  HEIGHT: on a short landscape phone the full-width
+                  map made the card taller than the screen and pushed
+                  the close button out of reach. 1.792 = 1600/893. */}
+              <div
+                className="mx-auto w-full"
+                style={{
+                  maxWidth: "calc(max(0px, 100dvh - 215px) * 1.792)",
+                }}
+              >
+                <WorldMap plan={plan} currentIndex={run.encounterIndex} />
+              </div>
               <footer className="border-t-2 border-slate-100 px-5 py-3">
                 <button
                   type="button"
