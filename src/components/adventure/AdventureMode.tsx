@@ -831,7 +831,13 @@ export default function AdventureMode({
         )}
 
         {!hasStarted && (
-          <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 overflow-y-auto bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
+          <section className="adventure-start-screen absolute inset-0 z-40 flex flex-col overflow-y-auto bg-[radial-gradient(ellipse_at_bottom,_#14532d,_#0f172a_72%)] px-6 py-8 text-center text-white">
+            {/* my-auto wrapper: centres the content when it fits and
+                lets it scroll from the top when it does not — plain
+                justify-center in a shrinking flex column squashed the
+                world map card (its bottom was clipped on tablets and
+                it collapsed to just its title on phones). */}
+            <div className="my-auto flex w-full flex-col items-center gap-5">
             <div className="text-6xl sm:text-7xl" aria-hidden>
               🌲⚔️🌲
             </div>
@@ -851,7 +857,7 @@ export default function AdventureMode({
               📱 Mainkan dalam posisi landscape untuk pengalaman terbaik
             </div>
             {/* Sprint 2 (Peta Dunia): today's route, from the real plan. */}
-            <div className="w-full max-w-2xl overflow-hidden rounded-3xl border-4 border-white/25 bg-white shadow-xl">
+            <div className="w-full max-w-2xl shrink-0 overflow-hidden rounded-3xl border-4 border-white/25 bg-white shadow-xl">
               <p className="px-4 pt-2.5 text-center text-xs font-black uppercase tracking-widest text-slate-500">
                 🗺️ Peta Perjalanan Hari Ini
               </p>
@@ -876,6 +882,7 @@ export default function AdventureMode({
               📖 Album Monster — {countCollected(album)} dari {ALBUM_TOTAL}{" "}
               terkumpul
             </button>
+            </div>
           </section>
         )}
 
